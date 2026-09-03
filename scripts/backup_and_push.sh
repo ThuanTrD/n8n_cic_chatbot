@@ -43,7 +43,7 @@ python3 "$REPO_ROOT/scripts/sanitize_workflows.py" --check-only "$next_dir"
 rm -rf "$REPO_ROOT/workflows"
 mv "$next_dir" "$REPO_ROOT/workflows"
 
-git -C "$REPO_ROOT" add   .gitignore README.md scripts workflows docs/governance
+git -C "$REPO_ROOT" add   .gitignore README.md deploy scripts workflows docs/governance
 
 if git -C "$REPO_ROOT" diff --cached --quiet; then
   echo "No sanitized workflow changes to commit"

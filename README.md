@@ -37,3 +37,13 @@ systemctl status hermes-serial-gateway.service
 curl http://172.18.0.1:18644/health
 journalctl -u hermes-serial-gateway.service
 ```
+
+The production Qwen flow uses a separate gateway with the same bounded queue.
+It serializes router, answer, and verifier requests so concurrent Facebook
+messages do not trigger concurrent workstation inference.
+
+```bash
+systemctl status qwen-serial-gateway.service
+curl http://172.18.0.1:18645/health
+journalctl -u qwen-serial-gateway.service
+```
