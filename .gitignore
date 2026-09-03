@@ -13,3 +13,5 @@ raw-export/
 *.key
 *.log
 *.tmp
+__pycache__/
+*.py[cod]
