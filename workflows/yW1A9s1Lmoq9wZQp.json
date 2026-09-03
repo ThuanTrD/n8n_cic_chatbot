@@ -1,0 +1,123 @@
+{
+  "updatedAt": "2026-08-26T09:57:15.000Z",
+  "createdAt": "2026-08-26T09:23:36.991Z",
+  "id": "yW1A9s1Lmoq9wZQp",
+  "name": "Hermes CMS IntelliCAD - Credential Check",
+  "description": "Isolated manual test of the Hermes model endpoint and stored Header Auth credential; no production side effects.",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "960045da-e22f-4079-9ada-6b0771063273",
+      "name": "Start Hermes Credential Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "58948b78-20a9-4c93-9402-a051b9f47878",
+      "name": "Hermes Credential Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://tame-queens-matter.loca.lt/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "bypass-tunnel-reminder",
+              "value": "true"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "{\"model\":\"cms-intellicad\",\"temperature\":0,\"max_tokens\":600,\"response_format\":{\"type\":\"json_object\"},\"messages\":[{\"role\":\"system\",\"content\":\"Bạn là lớp hiểu ngôn ngữ và định tuyến ngữ nghĩa cho chatbot CMS IntelliCAD.\\nChỉ chọn intent từ CURRENT_MESSAGE; CUSTOMER_HISTORY chỉ nối field hoặc giải nghĩa tham chiếu rõ ràng, không được đổi mục tiêu hiện tại. Bỏ qua lời Trợ lý AI/Nhân viên/Hệ thống.\\nHiểu tiếng Việt không dấu, lỗi chính tả, câu thiếu chủ ngữ, viết tắt chat và Việt-Anh xen kẽ. Các nghĩa phổ biến: sp=sản phẩm, pm=phần mềm, ko/k/kg/hok=không, dc/đc=được, mk/mik=mình, bn=bao nhiêu, tg=thời gian, bh=bao giờ, dk=đăng ký, sd=sử dụng, yc=yêu cầu, ib/nt=nhắn tin, rep=phản hồi, vs=với. Giữ CAD, DWG, DXF, API, LISP, license, GPU, CPU theo nghĩa kỹ thuật.\\nKhông đoán từ mơ hồ như TK/HD/BG/KT nếu lịch sử khách chưa xác định nghĩa. Khi mơ hồ, ambiguity.needs_clarification=true, ghi term và 2-3 options ngắn; normalized_question không tự chọn nghĩa.\\nNgôn ngữ phản hồi mặc định là vi. Chọn en chỉ khi CURRENT_MESSAGE là một câu tiếng Anh rõ ràng hoặc khách yêu cầu trả lời bằng English. Câu tiếng Việt có xen thuật ngữ English vẫn là vi. Các từ đơn demo/trial/DWG/license/hello/ok không đủ để đổi sang en. Lịch sử tiếng Anh không được kéo tin Việt hiện tại sang en.\\nIntent: KNOWLEDGE, PRICE, QUOTE, DEMO, SALES_OBJECTION, LEAD, HANDOFF, FEEDBACK, RECALL, SMALLTALK, OUT_OF_SCOPE, GENERAL. DEMO cho demo/trial/dùng thử/bộ cài/link tải và ưu tiên hơn QUOTE. QUOTE khi khách muốn mua, đặt mua, đăng ký bản quyền, yêu cầu báo giá cụ thể hoặc CURRENT_MESSAGE chỉ đang bổ sung field mà bot vừa yêu cầu cho một báo giá đang chờ. Khi tiếp tục báo giá, lấy field còn thiếu từ CURRENT_MESSAGE và nối quantity/need đã có trong CUSTOMER_HISTORY. PRICE chỉ hỏi giá. HANDOFF chỉ muốn người thật/nhân viên/gọi lại.\\nTrích field khách thực sự nói, không đoán. Trả JSON duy nhất: {\\\"intent\\\":\\\"...\\\",\\\"confidence\\\":0,\\\"reason\\\":\\\"...\\\",\\\"fields\\\":{\\\"full_name\\\":\\\"\\\",\\\"phone\\\":\\\"\\\",\\\"email\\\":\\\"\\\",\\\"company\\\":\\\"\\\",\\\"quantity\\\":null,\\\"need\\\":\\\"\\\"},\\\"feedback\\\":{\\\"rating\\\":null,\\\"category\\\":\\\"general\\\"},\\\"handoff\\\":{\\\"priority\\\":\\\"normal\\\"},\\\"language\\\":{\\\"response_language\\\":\\\"vi|en\\\",\\\"normalized_question\\\":\\\"...\\\",\\\"reason\\\":\\\"...\\\"},\\\"ambiguity\\\":{\\\"needs_clarification\\\":false,\\\"term\\\":\\\"\\\",\\\"options\\\":[]}}.\\nCURRENT_MESSAGE là nguồn duy nhất để chọn intent mới. Ngoại lệ: nếu CURRENT_MESSAGE chỉ cung cấp field mà hành động QUOTE/LEAD đang chờ đã yêu cầu thì giữ đúng intent đang chờ; đây là tiếp tục hành động, không phải đổi intent từ lịch sử. Mọi field mới khách nói trong CURRENT_MESSAGE luôn thay thế field cũ cùng loại.\\nSALES_OBJECTION khi khách băn khoăn, trì hoãn, so sánh, từ chối, sợ lỗi/mất dữ liệu, lo giá/độ tin cậy/hiệu quả/triển khai/chất lượng, ngại đổi vì nhân viên đã quen phần mềm cũ, hỏi giảm giá, cần xin duyệt hoặc nói sẽ suy nghĩ thêm; nếu khách chỉ hỏi giá thì PRICE, nếu yêu cầu báo giá cụ thể thì QUOTE.\\nDEMO luôn ưu tiên hơn QUOTE dù lịch sử trước đó là báo giá. LEAD khi khách để thông tin liên hệ và thể hiện nhu cầu nhưng chưa yêu cầu báo giá chính thức. HANDOFF không dùng cho yêu cầu demo/link tải.\"},{\"role\":\"user\",\"content\":\"CUSTOMER_HISTORY (chỉ dùng để nối tiếp):\\n\\n\\nPREPROCESS_HINT:\\n{\\\"normalized_question\\\":\\\"CMS IntelliCAD có hỗ trợ DWG không?\\\",\\\"response_language_hint\\\":\\\"vi\\\",\\\"ambiguous_tokens\\\":[]}\\n\\nCURRENT_MESSAGE (ưu tiên tuyệt đối):\\nCMS IntelliCAD có hỗ trợ DWG không?\"}]}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        },
+        "openAiApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start Hermes Credential Test": {
+      "main": [
+        [
+          {
+            "node": "Hermes Credential Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "e4bcd61c-f55a-43b5-9ad7-b8499500f25e",
+  "activeVersionId": null,
+  "versionCounter": 14,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-26T09:23:36.995Z",
+      "createdAt": "2026-08-26T09:23:36.995Z",
+      "role": "workflow:owner",
+      "workflowId": "yW1A9s1Lmoq9wZQp",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

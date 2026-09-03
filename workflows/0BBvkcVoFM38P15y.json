@@ -1,0 +1,355 @@
+{
+  "updatedAt": "2026-08-25T03:13:42.688Z",
+  "createdAt": "2026-08-20T09:30:17.886Z",
+  "id": "0BBvkcVoFM38P15y",
+  "name": "Facebook Page Messenger -> Q&A Google Sheets",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b00aca5f-df69-4253-95c4-8dbfcb5226d0",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        2752,
+        1760
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://graph.facebook.com/' + $('CONFIG - EDIT HERE').first().json.graph_version + '/' + $('CONFIG - EDIT HERE').first().json.page_id + '/conversations' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,participants,updated_time"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $('CONFIG - EDIT HERE').first().json.page_access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body.paging?.next || '' }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.paging?.next }}",
+              "limitPagesFetched": true,
+              "maxRequests": 1000,
+              "requestInterval": 100
+            }
+          }
+        }
+      },
+      "id": "4750bec3-e75c-4747-ad85-2956ac78be49",
+      "name": "FB - Get All Conversations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3200,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('CONFIG - EDIT HERE').first().json;\nconst out = [];\n\nfor (const page of $input.all()) {\n  const conversations = Array.isArray(page.json?.data) ? page.json.data : [];\n\n  for (const c of conversations) {\n    const participants = Array.isArray(c.participants?.data)\n      ? c.participants.data\n      : [];\n\n    const customer = participants.find(\n      p => String(p.id || '') !== String(cfg.page_id || '')\n    );\n\n    out.push({\n      json: {\n        conversation_id: String(c.id || ''),\n        updated_time: c.updated_time || null,\n        page_id: String(cfg.page_id || ''),\n        graph_version: String(cfg.graph_version || 'v26.0'),\n        page_access_token: String(cfg.page_access_token || ''),\n        customer_psid: customer?.id ? String(customer.id) : '',\n        customer_name: customer?.name || ''\n      }\n    });\n  }\n}\n\nreturn out.filter(i => i.json.conversation_id);"
+      },
+      "id": "5ede55e8-6052-4357-b6ab-3d78445655a1",
+      "name": "Split Conversations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://graph.facebook.com/' + $json.graph_version + '/' + $json.conversation_id + '/messages' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,created_time,from,to,message"
+            },
+            {
+              "name": "limit",
+              "value": "100"
+            },
+            {
+              "name": "access_token",
+              "value": "={{ $json.page_access_token }}"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body.paging?.next || '' }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.paging?.next }}",
+              "limitPagesFetched": true,
+              "maxRequests": 1000,
+              "requestInterval": 100
+            }
+          }
+        }
+      },
+      "id": "b49e8fbb-0826-45d9-ae87-792156d77a2c",
+      "name": "FB - Get All Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3744,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx = $('Split Conversations').item.json;\n\nreturn {\n  json: {\n    conversation_id: ctx.conversation_id,\n    page_id: ctx.page_id,\n    customer_psid: ctx.customer_psid || '',\n    customer_name: ctx.customer_name || '',\n    messages: Array.isArray($json?.data) ? $json.data : []\n  }\n};"
+      },
+      "id": "ec1fd61f-1148-4e53-a061-9fc697a672d0",
+      "name": "Attach Conversation Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const pages = $input.all();\nconst byConversation = new Map();\n\nfor (const item of pages) {\n  const j = item.json;\n  const cid = String(j.conversation_id || '');\n  if (!cid) continue;\n\n  if (!byConversation.has(cid)) {\n    byConversation.set(cid, {\n      conversation_id: cid,\n      page_id: String(j.page_id || ''),\n      customer_psid: String(j.customer_psid || ''),\n      customer_name: String(j.customer_name || ''),\n      messages: []\n    });\n  }\n\n  const conv = byConversation.get(cid);\n\n  for (const m of (Array.isArray(j.messages) ? j.messages : [])) {\n    if (!m?.id) continue;\n    conv.messages.push(m);\n  }\n}\n\nconst rows = [];\n\nfor (const conv of byConversation.values()) {\n  // Deduplicate messages because pagination/retries may overlap.\n  const uniq = new Map();\n  for (const m of conv.messages) {\n    uniq.set(String(m.id), m);\n  }\n\n  const messages = [...uniq.values()]\n    .filter(m => String(m.message || '').trim())\n    .sort((a, b) => {\n      return new Date(a.created_time || 0).getTime()\n        - new Date(b.created_time || 0).getTime();\n    });\n\n  let customerName = conv.customer_name || '';\n  let questions = [];\n  let answers = [];\n\n  const flush = () => {\n    const q = questions.join('\\n').trim();\n    const a = answers.join('\\n').trim();\n\n    // Chỉ xuất cặp đã có cả câu hỏi và câu trả lời.\n    if (q && a) {\n      rows.push({\n        json: {\n          'Tên khách hàng': customerName || conv.customer_psid || 'Không xác định',\n          'Câu hỏi': q,\n          'Câu trả lời': a\n        }\n      });\n    }\n\n    questions = [];\n    answers = [];\n  };\n\n  for (const msg of messages) {\n    const senderId = String(msg.from?.id || '');\n    const text = String(msg.message || '').trim();\n    if (!text) continue;\n\n    const isPage = senderId === String(conv.page_id);\n\n    if (!isPage) {\n      if (!customerName && msg.from?.name) {\n        customerName = String(msg.from.name);\n      }\n\n      // Khách nhắn tiếp sau khi Page đã trả lời => Q&A mới.\n      if (answers.length > 0) {\n        flush();\n      }\n\n      questions.push(text);\n    } else {\n      // Bỏ qua tin Page chủ động gửi khi chưa có câu hỏi.\n      if (questions.length > 0) {\n        answers.push(text);\n      }\n    }\n  }\n\n  flush();\n}\n\nreturn rows;"
+      },
+      "id": "7eadd434-69bf-4bb1-a0e8-2abefd1fb533",
+      "name": "Build Q&A Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4304,
+        1744
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
+          "mode": "list",
+          "cachedResultName": "Cuộc trò chuyện"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4528,
+        1744
+      ],
+      "id": "25a650fb-f40b-477c-a723-5acb9e9d9fc8",
+      "name": "FB - Save Conversation",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-1",
+              "name": "graph_version",
+              "value": "v26.0",
+              "type": "string"
+            },
+            {
+              "id": "cfg-2",
+              "name": "page_id",
+              "value": "1274733055725344",
+              "type": "string"
+            },
+            {
+              "id": "cfg-3",
+              "name": "page_access_token",
+              "value": "__REDACTED_SECRET__",
+              "type": "string"
+            },
+            {
+              "id": "cfg-4",
+              "name": "google_sheet_id",
+              "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
+              "type": "string"
+            },
+            {
+              "id": "cfg-5",
+              "name": "google_sheet_name",
+              "value": "Trang tính1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1e8ca363-2f22-41c7-9c48-73dced5a73c6",
+      "name": "CONFIG - EDIT HERE",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        1744
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "CONFIG - EDIT HERE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB - Get All Conversations": {
+      "main": [
+        [
+          {
+            "node": "Split Conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Conversations": {
+      "main": [
+        [
+          {
+            "node": "FB - Get All Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB - Get All Messages": {
+      "main": [
+        [
+          {
+            "node": "Attach Conversation Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Conversation Context": {
+      "main": [
+        [
+          {
+            "node": "Build Q&A Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Q&A Rows": {
+      "main": [
+        [
+          {
+            "node": "FB - Save Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONFIG - EDIT HERE": {
+      "main": [
+        [
+          {
+            "node": "FB - Get All Conversations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "18e6d878-b080-404f-bca0-acf3c1c4145d",
+  "activeVersionId": null,
+  "versionCounter": 44,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-20T09:30:17.923Z",
+      "createdAt": "2026-08-20T09:30:17.923Z",
+      "role": "workflow:owner",
+      "workflowId": "0BBvkcVoFM38P15y",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

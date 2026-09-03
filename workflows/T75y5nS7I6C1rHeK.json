@@ -1,0 +1,1701 @@
+{
+  "updatedAt": "2026-08-25T03:13:42.688Z",
+  "createdAt": "2026-08-21T04:09:18.299Z",
+  "id": "T75y5nS7I6C1rHeK",
+  "name": "thêm sheet vào intellicad",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Mỗi input item ở đây chính là 1 chunk.\nconst inputItems = $input.all();\n\nreturn inputItems.map((item, index) => {\n  const src = item.json ?? {};\n  const chunkIndex = Number(src.chunk_index);\n\n  if (!src.document_version_id) {\n    throw new Error(`Item ${index}: thiếu document_version_id.`);\n  }\n  if (!Number.isInteger(chunkIndex) || chunkIndex < 0) {\n    throw new Error(`Item ${index}: chunk_index không hợp lệ.`);\n  }\n  if (!String(src.content ?? '').trim()) {\n    throw new Error(`Item ${index}: content rỗng.`);\n  }\n\n  return {\n    json: {\n      document_version_id: src.document_version_id,\n      product_id: src.product_id,\n      chunk_index: chunkIndex,\n      section: src.section ?? 'FAQ_HOI_THOAI_FACEBOOK_INTELLICAD',\n      title: src.title ?? `FAQ hội thoại Facebook IntelliCAD - Chunk ${chunkIndex + 1}`,\n      content: String(src.content),\n      language_code: src.language_code ?? 'vi',\n      content_hash: src.content_hash,\n      metadata: src.metadata ?? { content_type: 'faq', source: 'facebook_conversation', product: 'IntelliCAD', customer_name_included: false }\n    }\n  };\n});"
+      },
+      "id": "b7238c40-5626-41a8-bfc8-1fc0082f222c",
+      "name": "FB FAQ - Prepare Chunk Insert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        3280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chỉ dùng id thật do product_document_chunks trả về.\nconst rows = $input.all();\n\nreturn rows.map((item, index) => {\n  const row = item.json ?? {};\n\n  if (!row.id) {\n    throw new Error(`Item ${index}: Supabase không trả product_document_chunks.id.`);\n  }\n  if (!row.document_version_id) {\n    throw new Error(`Item ${index}: chunk đã tạo thiếu document_version_id.`);\n  }\n  if (!String(row.content ?? '').trim()) {\n    throw new Error(`Item ${index}: chunk đã tạo thiếu content.`);\n  }\n\n  return {\n    json: {\n      chunk_id: row.id,\n      document_version_id: row.document_version_id,\n      product_id: row.product_id,\n      chunk_index: Number(row.chunk_index),\n      content: String(row.content),\n      content_hash: row.content_hash,\n      language_code: row.language_code ?? 'vi',\n      metadata: row.metadata ?? { content_type: 'faq', source: 'facebook_conversation', product: 'IntelliCAD', customer_name_included: false }\n    }\n  };\n});"
+      },
+      "id": "91a37230-2cbb-43b4-a69f-1afa6744817c",
+      "name": "FB FAQ - Prepare Embedding Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3072,
+        3120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json || {};\nconst src = $('FB FAQ - Resolve Embedding Model').item.json;\nconst embedding = response?.data?.[0]?.embedding ?? response?.embedding ?? response?.vector;\nconst model = String(response?.model || 'qwen3-embedding-8b').toLowerCase();\n\nif (model !== 'qwen3-embedding-8b') {\n  throw new Error(`FB_FAQ_WRONG_EMBEDDING_MODEL ${model}`);\n}\nif (!Array.isArray(embedding) || embedding.length !== 4096) {\n  throw new Error(`FB_FAQ_WRONG_SOURCE_DIMENSION ${Array.isArray(embedding) ? embedding.length : 'invalid'}`);\n}\n\nconst truncated = embedding.slice(0, 1024).map(Number);\nif (truncated.some(value => !Number.isFinite(value))) {\n  throw new Error('FB_FAQ_INVALID_EMBEDDING_VALUE');\n}\nconst norm = Math.sqrt(truncated.reduce((sum, value) => sum + value * value, 0));\nif (!Number.isFinite(norm) || norm <= 1e-12) {\n  throw new Error('FB_FAQ_INVALID_EMBEDDING_NORM');\n}\n\nreturn [{\n  json: {\n    ...src,\n    embedding: truncated.map(value => value / norm),\n    dimension: 1024,\n    source_dimension: 4096,\n    embedding_model_name: model\n  }\n}];"
+      },
+      "id": "5db3fb1f-8059-4276-9789-06accca9fee2",
+      "name": "FB FAQ - Normalize Embedding Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4672,
+        3408
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
+          "mode": "list",
+          "cachedResultName": "Cuộc trò chuyện",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -992,
+        2960
+      ],
+      "id": "66c580a6-7ff0-4a8d-8269-9cf6232f1ee1",
+      "name": "FB FAQ - Get Sheet Rows",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "product_id",
+              "keyValue": "={{ $('FB FAQ - Attach Document Context').item.json.product_id }}"
+            },
+            {
+              "keyName": "document_type",
+              "keyValue": "faq"
+            },
+            {
+              "keyName": "title",
+              "keyValue": "={{ $('FB FAQ - Attach Document Context').item.json.title }}"
+            },
+            {
+              "keyName": "source_type",
+              "keyValue": "google_sheets"
+            }
+          ]
+        }
+      },
+      "id": "e200acd1-049f-4fb2-8cc4-7e3c3937297d",
+      "name": "FB FAQ - Supabase Get Document",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        112,
+        3104
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1c684821-0c18-45b5-854a-02335ac50ea7",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "57355458-f6bb-4981-8c54-bbbaf3f81239",
+      "name": "FB FAQ - IF Document Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_documents",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.product_id }}"
+            },
+            {
+              "fieldId": "document_type",
+              "fieldValue": "faq"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.title }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.language_code }}"
+            },
+            {
+              "fieldId": "source_type",
+              "fieldValue": "google_sheets"
+            },
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.source_url }}"
+            },
+            {
+              "fieldId": "file_name",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.file_name }}"
+            },
+            {
+              "fieldId": "mime_type",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.mime_type }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $('FB FAQ - Attach Document Context').item.json.document_identity_hash }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "active"
+            },
+            {
+              "fieldId": "is_official",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "id": "1af5d332-b283-4b2c-b227-10e0ed488d1a",
+      "name": "FB FAQ - Supabase Create Document",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        576,
+        3152
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = $json.id;\n\nif (!id) {\n  throw new Error('Không lấy được product_documents.id');\n}\n\nconst ctx = $('FB FAQ - Attach Document Context').item.json;\n\nreturn [{\n  json: {\n    ...ctx,\n    document_id: id\n  }\n}];"
+      },
+      "id": "d93b68db-359b-41a4-b8f2-53b8e9eff96a",
+      "name": "FB FAQ - Resolve Document ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_versions",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('FB FAQ - Resolve Document ID').item.json.document_id }}"
+            }
+          ]
+        }
+      },
+      "id": "6d0e47dd-39c8-4666-be2e-006f81ba7daa",
+      "name": "FB FAQ - Supabase Get All Versions",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        3440
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json).filter(row => row?.id);\nconst ctx = $('FB FAQ - Resolve Document ID').first().json;\nconst maxVersion = rows.reduce((max, row) => Math.max(max, Number.parseInt(row.version_number, 10) || 0), 0);\nreturn [{ json: { ...ctx, version_number: maxVersion + 1 } }];"
+      },
+      "id": "e2218fab-08f8-47e8-9f7e-ec73edf55a16",
+      "name": "FB FAQ - Prepare New Version",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        3280
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_versions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_id",
+              "fieldValue": "={{ $json.document_id }}"
+            },
+            {
+              "fieldId": "version_number",
+              "fieldValue": "={{ $json.version_number }}"
+            },
+            {
+              "fieldId": "source_content_hash",
+              "fieldValue": "={{ $json.sheet_content_hash }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $json.document_text }}"
+            },
+            {
+              "fieldId": "parse_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "processing"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            },
+            {
+              "fieldId": "extraction_method",
+              "fieldValue": "google_sheets"
+            },
+            {
+              "fieldId": "extracted_fields",
+              "fieldValue": "={{ {} }}"
+            }
+          ]
+        }
+      },
+      "id": "6a43aeeb-3a1f-47a0-a85b-c7a0af37681a",
+      "name": "FB FAQ - Supabase Create Version",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        3280
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_chunks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_version_id",
+              "fieldValue": "={{ $json.document_version_id }}"
+            },
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.product_id }}"
+            },
+            {
+              "fieldId": "chunk_index",
+              "fieldValue": "={{ $json.chunk_index }}"
+            },
+            {
+              "fieldId": "section",
+              "fieldValue": "={{ $json.section }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.content }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $json.language_code }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "id": "146d8ac9-7cf9-464a-b9af-fbf1150c1fe1",
+      "name": "FB FAQ - Supabase Create Chunk",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        3280
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const product = $input.all().map(item => item.json).find(row => String(row?.id) === '1369');\nif (!product) throw new Error('FB_FAQ_INTELLICAD_PRODUCT_1369_NOT_FOUND');\nconst sheet = $('FB FAQ - Normalize + Deduplicate Sheet').first().json;\nif (!Array.isArray(sheet.candidates) || !sheet.candidates.length) throw new Error('FB_FAQ_INTELLICAD_NO_CANDIDATES');\nconst sourceUrl = 'https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=0';\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;\n  for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }\n  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');\n}\nreturn [{ json: {\n  ...sheet,\n  product_id: 1369,\n  product_code: product.code,\n  product_name: 'CMS IntelliCAD',\n  title: 'FAQ hội thoại Facebook IntelliCAD',\n  document_type: 'faq',\n  language_code: 'vi',\n  source_type: 'google_sheets',\n  source_url: sourceUrl,\n  file_name: 'Cuộc trò chuyện Facebook IntelliCAD - Q&A',\n  mime_type: 'application/vnd.google-apps.spreadsheet',\n  document_identity_hash: hashText('1369|google_sheets|' + sourceUrl + '|faq'),\n  metadata: { content_type: 'faq', source: 'facebook_conversation', product: 'CMS IntelliCAD', product_code: product.code, incremental: true },\n} }];"
+      },
+      "id": "e9c106f5-4e74-4d86-b483-59619f7f325e",
+      "name": "FB FAQ - Attach Document Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        2768
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-api.cic.com.vn:9443/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: $('FB FAQ - Resolve Embedding Model').item.json.content } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "11c5d195-c8f2-4a58-9369-7dbcb85dda71",
+      "name": "FB FAQ - Embedding API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4448,
+        3408
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000
+    },
+    {
+      "parameters": {
+        "jsCode": "const modelRows = $input.all().map(item => item.json).filter(row => row?.id);\nconst modelId = modelRows[0]?.id;\nconst src = $('FB FAQ - Loop Embeddings').item.json;\n\nif (!modelId) throw new Error('FB_FAQ_EMBEDDING_MODEL_NOT_FOUND');\nif (!src?.chunk_id || !String(src.content || '').trim()) {\n  throw new Error('FB_FAQ_EMBEDDING_LOOP_CONTEXT_INVALID');\n}\n\nreturn [{ json: { ...src, embedding_model_id: modelId } }];"
+      },
+      "id": "1d126dec-b669-4e23-a118-67bb7fafbe8a",
+      "name": "FB FAQ - Resolve Embedding Model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3776,
+        3280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_chunk_embeddings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chunk_id",
+              "keyValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "keyName": "embedding_model_id",
+              "keyValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "keyName": "content_hash",
+              "keyValue": "={{ $json.content_hash }}"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "true"
+            },
+            {
+              "keyName": "is_retrievable",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "9209e449-47a4-46e2-96e8-522ee44cab75",
+      "name": "FB FAQ - Supabase Get Existing Embedding",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4000,
+        3280
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c18b0583-28dc-4c0e-93f6-7d369ddfcef9",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e0207598-a692-44f4-9a3c-271998447b6b",
+      "name": "FB FAQ - IF Embedding Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4224,
+        3280
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $json;\nif (!src?.chunk_id || !src?.embedding_model_id) {\n  throw new Error('FB_FAQ_EMBEDDING_INSERT_CONTEXT_INVALID');\n}\nif (!Array.isArray(src.embedding) || src.embedding.length !== 1024) {\n  throw new Error('FB_FAQ_EMBEDDING_STORAGE_DIMENSION_INVALID');\n}\n\nreturn [{\n  json: {\n    chunk_id: src.chunk_id,\n    embedding_model_id: src.embedding_model_id,\n    embedding: JSON.stringify(src.embedding),\n    content_hash: src.content_hash,\n    document_version_id: src.document_version_id,\n    is_active: true,\n    is_retrievable: true,\n    metadata: {\n      content_type: 'faq',\n      source: 'facebook_conversation',\n      product: 'IntelliCAD',\n      customer_name_included: false,\n      product_id: src.product_id,\n      document_version_id: src.document_version_id,\n      chunk_index: src.chunk_index,\n      language_code: src.language_code,\n      embedding_model: 'qwen3-embedding-8b',\n      source_dimension: 4096,\n      embedding_dimension: 1024,\n      dimension_reduction: 'mrl_prefix_l2_normalized',\n      embedding_provider: 'cic-ai-api'\n    }\n  }\n}];"
+      },
+      "id": "82008398-ed1f-4e2d-a61a-2bc917520e42",
+      "name": "FB FAQ - Prepare Embedding Insert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4896,
+        3408
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_chunk_embeddings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_id",
+              "fieldValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "fieldId": "embedding_model_id",
+              "fieldValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "fieldId": "embedding",
+              "fieldValue": "={{ $json.embedding }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "is_retrievable",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "id": "0350c3c7-ae29-450a-9ed2-4946aae4b9a9",
+      "name": "FB FAQ - Supabase Create Chunk Embedding",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5120,
+        3408
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('FB FAQ - Validate Embedding Coverage').first().json.document_version_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "source_content_hash",
+              "fieldValue": "={{ $('FB FAQ - Resolve Document ID').first().json.sheet_content_hash }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $('FB FAQ - Resolve Document ID').first().json.document_text }}"
+            }
+          ]
+        }
+      },
+      "id": "021b5904-b7c2-42b4-97e4-479abcf37ada",
+      "name": "FB FAQ - Mark Version Completed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4176,
+        3056
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "id": "ec6f85ad-b1c4-4178-a300-69806fab97d3",
+      "name": "FB FAQ - Get Active Embedding Model",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        3280
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('FB FAQ - Resolve Document ID').first().json.document_id }}"
+            },
+            {
+              "keyName": "is_current",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3952,
+        3056
+      ],
+      "id": "9b81c1ad-a6eb-4673-905f-275bd6ebd9d1",
+      "name": "FB FAQ - Unset Previous Current Version",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "id": "79795efd-5ffe-458f-b9ac-410d0ae2d2cf",
+      "name": "FB FAQ - Get Audit Embedding Model",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        2784
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ff323531-5d9b-4fc2-8e19-1e8339fba548",
+      "name": "FB FAQ - Loop Embeddings",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3328,
+        3280
+      ],
+      "notesInFlow": true,
+      "notes": "Checks and creates exactly one FAQ embedding per iteration."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_document_chunks?select=id,chunk_index,content_hash,product_chunk_embeddings(id,embedding_model_id,content_hash,is_active,is_retrievable)&document_version_id=eq.' + $('FB FAQ - Plan Incremental FAQ').first().json.document_version_id + '&order=chunk_index.asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "d0e2b987-9179-47a9-befa-a9483511d4ce",
+      "name": "FB FAQ - Get Embedding Coverage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3504,
+        3056
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all().map(item => item.json);\nconst rows = input.flatMap(value => Array.isArray(value) ? value : (Array.isArray(value?.data) ? value.data : (value?.id ? [value] : [])));\nconst modelId = $('FB FAQ - Get Audit Embedding Model').first().json.id;\nconst planned = $('FB FAQ - Plan Incremental FAQ').all().map(item => item.json);\nconst indexes = rows.map(row => Number(row.chunk_index)).sort((a, b) => a - b);\nconst bad = [];\nfor (const row of rows) {\n  const embeddings = Array.isArray(row.product_chunk_embeddings) ? row.product_chunk_embeddings : [];\n  const valid = embeddings.filter(embedding => embedding.embedding_model_id === modelId && embedding.is_active === true && embedding.is_retrievable === true && embedding.content_hash === row.content_hash);\n  if (valid.length !== 1) bad.push({ chunk_index: row.chunk_index, valid_embeddings: valid.length });\n}\nconst contiguous = indexes.length > 0 && indexes.every((value, index) => value === index);\nif (!rows.length || !contiguous || bad.length) throw new Error('FB_FAQ_EMBEDDING_COVERAGE_INCOMPLETE actual=' + rows.length + ' contiguous=' + contiguous + ' bad=' + JSON.stringify(bad));\nreturn [{ json: {\n  document_version_id: planned.find(row => row.document_version_id)?.document_version_id,\n  chunk_count: rows.length, embedding_count: rows.length, coverage_complete: true,\n  work_count: planned.filter(row => row.has_work).length,\n  new_faq_count: planned.filter(row => row.action === 'insert_chunk').length,\n  repaired_embedding_count: planned.filter(row => row.action === 'embed_existing').length,\n} }];"
+      },
+      "id": "ea4e2939-df01-412f-b62d-ea58eec2b140",
+      "name": "FB FAQ - Validate Embedding Coverage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3728,
+        3056
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "1369"
+            }
+          ]
+        }
+      },
+      "id": "c8911e79-29b5-4ed3-94ac-874f66a8499f",
+      "name": "FB FAQ - Get IntelliCAD Product",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        2800
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "dd1dda74-c619-4394-ae82-b8e37cd6b4d9",
+      "name": "FB FAQ - Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((item, index) => ({ row: item.json ?? {}, input_index: index }));\nfunction key(value) {\n  return String(value ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();\n}\nfunction clean(value) {\n  return String(value ?? '').normalize('NFC').replace(/\\r\\n?/g, '\\n').split('\\n').map(line => line.trim().replace(/[ \\t]+/g, ' ')).join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\nfunction field(row, wanted) {\n  for (const [name, value] of Object.entries(row)) if (wanted.includes(key(name))) return clean(value);\n  return '';\n}\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;\n  for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }\n  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');\n}\nfunction splitAnswer(question, answer, maxChars = 4500) {\n  const prefix = 'Câu hỏi: ' + question + '\\nCâu trả lời: ';\n  if ((prefix + answer).length <= maxChars) return [answer];\n  const maxBody = Math.max(800, maxChars - prefix.length - 100);\n  const parts = [];\n  let start = 0;\n  while (start < answer.length) {\n    let end = Math.min(start + maxBody, answer.length);\n    if (end < answer.length) {\n      const slice = answer.slice(start, end);\n      const best = Math.max(slice.lastIndexOf('\\n\\n'), slice.lastIndexOf('. '), slice.lastIndexOf('; '), slice.lastIndexOf(', '), slice.lastIndexOf(' '));\n      if (best > maxBody * 0.6) end = start + best + 1;\n    }\n    parts.push(answer.slice(start, end).trim());\n    start = end;\n  }\n  return parts.filter(Boolean);\n}\nconst unique = new Map();\nlet invalidRows = 0, duplicateRows = 0;\nfor (const { row, input_index } of rows) {\n  const question = field(row, ['cau hoi', 'question']);\n  const answer = field(row, ['cau tra loi', 'tra loi', 'answer']);\n  if (!question || !answer) { invalidRows++; continue; }\n  const parts = splitAnswer(question, answer);\n  for (let partIndex = 0; partIndex < parts.length; partIndex++) {\n    const partLabel = parts.length > 1 ? ' (Phần ' + (partIndex + 1) + '/' + parts.length + ')' : '';\n    const content = 'Câu hỏi' + partLabel + ': ' + question + '\\nCâu trả lời: ' + parts[partIndex];\n    const contentHash = hashText('faq-intellicad-v1\\n' + clean(content));\n    if (unique.has(contentHash)) { duplicateRows++; continue; }\n    unique.set(contentHash, {\n      content,\n      content_hash: contentHash,\n      source_row_number: Number(row.row_number ?? row.rowNumber ?? input_index + 2),\n      part_index: partIndex,\n      part_count: parts.length,\n    });\n  }\n}\nconst candidates = [...unique.values()];\nif (!candidates.length) throw new Error('FB_FAQ_INTELLICAD_NO_VALID_ROWS');\nconst documentText = candidates.map(item => item.content).join('\\n\\n---\\n\\n');\nconst sheetContentHash = hashText(candidates.map(item => item.content_hash).sort().join('|'));\nreturn [{ json: {\n  candidates,\n  document_text: documentText,\n  sheet_content_hash: sheetContentHash,\n  sheet_row_count: rows.length,\n  valid_faq_count: candidates.length,\n  invalid_row_count: invalidRows,\n  duplicate_in_sheet_count: duplicateRows,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        2960
+      ],
+      "id": "64dccf34-7845-48a7-a2b4-ff828b3f2038",
+      "name": "FB FAQ - Normalize + Deduplicate Sheet"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_versions",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('FB FAQ - Resolve Document ID').item.json.document_id }}"
+            }
+          ]
+        }
+      },
+      "id": "ffedf32b-3034-42d7-8850-514c903b3b21",
+      "name": "FB FAQ - Get Latest FAQ Version",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        2960
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json).filter(row => row?.id);\nif (!rows.length) return [{ json: { version_exists: false } }];\nrows.sort((a, b) => Number(b.version_number || 0) - Number(a.version_number || 0) || String(b.created_at || '').localeCompare(String(a.created_at || '')));\nreturn [{ json: { ...rows[0], version_exists: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        2960
+      ],
+      "id": "e8bb1bc4-cac4-4b2a-852d-2b30a81cdf7c",
+      "name": "FB FAQ - Select Latest FAQ Version"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faq-version-exists",
+              "leftValue": "={{ $json.version_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "820fd6e2-71e9-4627-b030-92dfe5ebd1e4",
+      "name": "FB FAQ - IF Version Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        2960
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_document_chunks?select=id,document_version_id,product_id,chunk_index,section,title,content,language_code,content_hash,metadata,product_chunk_embeddings(id,embedding_model_id,content_hash,is_active,is_retrievable)&document_version_id=eq.' + $('FB FAQ - Select Latest FAQ Version').first().json.id + '&order=chunk_index.asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "1eb13cd2-e398-4e8f-b71b-bda1378af7a5",
+      "name": "FB FAQ - Get Existing FAQ + Embeddings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1472,
+        2736
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('FB FAQ - Resolve Document ID').first().json;\nconst current = $('FB FAQ - Select Latest FAQ Version').first().json;\nconst modelId = $('FB FAQ - Get Audit Embedding Model').first().json.id;\nif (!modelId) throw new Error('FB_FAQ_EMBEDDING_MODEL_NOT_FOUND');\nconst input = $input.all().map(item => item.json);\nconst flat = input.flatMap(value => Array.isArray(value) ? value : (Array.isArray(value?.data) ? value.data : [value]));\nconst versionId = current.version_exists ? current.id : flat.find(row => row?.id && row?.document_id === ctx.document_id)?.id;\nif (!versionId) throw new Error('FB_FAQ_DOCUMENT_VERSION_ID_MISSING');\nconst existing = current.version_exists\n  ? flat.filter(row => row?.id && row.document_version_id === versionId && Number.isInteger(Number(row.chunk_index)))\n  : [];\nconst byHash = new Map();\nfor (const row of existing) if (row.content_hash && !byHash.has(row.content_hash)) byHash.set(row.content_hash, row);\nlet nextIndex = existing.reduce((max, row) => Math.max(max, Number(row.chunk_index)), -1) + 1;\nconst work = [];\nlet alreadyPresent = 0;\nfor (const faq of ctx.candidates) {\n  const row = byHash.get(faq.content_hash);\n  if (!row) {\n    work.push({ json: {\n      action: 'insert_chunk', has_work: true, needs_chunk_insert: true,\n      document_version_id: versionId, product_id: ctx.product_id, chunk_index: nextIndex++,\n      section: 'FAQ_HOI_THOAI_FACEBOOK_INTELLICAD',\n      title: 'FAQ hội thoại Facebook IntelliCAD', content: faq.content,\n      language_code: 'vi', content_hash: faq.content_hash,\n      metadata: { ...ctx.metadata, source_row_number: faq.source_row_number, part_index: faq.part_index, part_count: faq.part_count, faq_content_hash: faq.content_hash },\n    } });\n    continue;\n  }\n  alreadyPresent++;\n  const embeddings = Array.isArray(row.product_chunk_embeddings) ? row.product_chunk_embeddings : [];\n  const valid = embeddings.filter(embedding => embedding.embedding_model_id === modelId && embedding.content_hash === row.content_hash && embedding.is_active === true && embedding.is_retrievable === true);\n  if (valid.length !== 1) {\n    work.push({ json: { ...row, action: 'embed_existing', has_work: true, needs_chunk_insert: false } });\n  }\n}\nif (work.length) return work;\nreturn [{ json: {\n  action: 'skip', has_work: false, needs_chunk_insert: false,\n  document_id: ctx.document_id, document_version_id: versionId,\n  sheet_faq_count: ctx.candidates.length, already_present_count: alreadyPresent,\n  duplicate_in_sheet_count: ctx.duplicate_in_sheet_count,\n  reason: 'all FAQ rows already exist and have valid embeddings',\n} }];"
+      },
+      "id": "56fb1ab1-52c5-42ae-ac1f-87e7875d19fd",
+      "name": "FB FAQ - Plan Incremental FAQ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        3280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faq-incremental-work-exists",
+              "leftValue": "={{ $json.has_work }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cf07811d-e780-4c45-93a7-14153b6e8e52",
+      "name": "FB FAQ - IF Incremental Work Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1984,
+        2976
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faq-chunk-insert-needed",
+              "leftValue": "={{ $json.needs_chunk_insert }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a913d9b8-87df-4a56-a8d0-2c4975930241",
+      "name": "FB FAQ - IF Chunk Insert Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2672,
+        3264
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('FB FAQ - Resolve Document ID').first().json;\nconst validation = $('FB FAQ - Validate Embedding Coverage').first().json;\nreturn [{ json: {\n  status: validation.work_count > 0 ? 'completed' : 'skipped',\n  reason: validation.work_count > 0 ? 'new or incomplete IntelliCAD FAQ processed' : 'all IntelliCAD FAQ rows already exist',\n  product_id: ctx.product_id, document_id: ctx.document_id,\n  document_version_id: validation.document_version_id,\n  sheet_faq_count: ctx.valid_faq_count,\n  new_faq_count: validation.new_faq_count,\n  repaired_embedding_count: validation.repaired_embedding_count,\n  duplicate_in_sheet_count: ctx.duplicate_in_sheet_count,\n  total_chunk_count: validation.chunk_count,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4544,
+        3040
+      ],
+      "id": "c9b23499-93ac-427a-b7cd-e15b5548c679",
+      "name": "FB FAQ - Sync Result"
+    },
+    {
+      "parameters": {
+        "chatId": "6263462807",
+        "text": "=✅ Đồng bộ FAQ IntelliCAD hoàn tất\n\n📦 Sản phẩm: CMS IntelliCAD\n🆔 Product ID: {{$json.product_id}}\n\n➕ FAQ thêm mới: {{$json.new_faq_count}}\n🔧 Embedding được sửa: {{$json.repaired_embedding_count}}\n📄 Tổng FAQ trong Sheet: {{$json.sheet_faq_count}}\n🧩 Tổng chunk hiện tại: {{$json.total_chunk_count}}\n\n📌 Document ID: {{$json.document_id}}\n📌 Version ID: {{$json.document_version_id}}\n📊 Trạng thái: {{$json.status}}\n\n🕐 Thời gian: {{$now.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss')}}\n⚙️ Execution ID: {{$execution.id}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4880,
+        3008
+      ],
+      "id": "3623c239-6b0c-4085-bd04-fb8de1a3b5c1",
+      "name": "Send Telegram FAQ Sync",
+      "webhookId": "0df4a634-a892-421a-bab5-cb50d428079c",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "telegramApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "44bafc4d-5bd0-4baa-9662-0ad728161282-condition",
+              "leftValue": "={{ Number($json.new_faq_count || 0) > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "44bafc4d-5bd0-4baa-9662-0ad728161282",
+      "name": "FB FAQ - IF Telegram Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4688,
+        2912
+      ]
+    }
+  ],
+  "connections": {
+    "FB FAQ - Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Get Sheet Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get Sheet Rows": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Normalize + Deduplicate Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Normalize + Deduplicate Sheet": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Get IntelliCAD Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get IntelliCAD Product": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Attach Document Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Attach Document Context": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Supabase Get Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Get Document": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - IF Document Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - IF Document Exists": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Resolve Document ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FB FAQ - Supabase Create Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Create Document": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Resolve Document ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Resolve Document ID": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Get Audit Embedding Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get Audit Embedding Model": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Get Latest FAQ Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get Latest FAQ Version": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Select Latest FAQ Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Select Latest FAQ Version": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - IF Version Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - IF Version Exists": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Get Existing FAQ + Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FB FAQ - Supabase Get All Versions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get Existing FAQ + Embeddings": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Plan Incremental FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Get All Versions": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Prepare New Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Prepare New Version": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Supabase Create Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Create Version": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Plan Incremental FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Plan Incremental FAQ": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - IF Incremental Work Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - IF Incremental Work Exists": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - IF Chunk Insert Needed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FB FAQ - Get Embedding Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - IF Chunk Insert Needed": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Prepare Chunk Insert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FB FAQ - Prepare Embedding Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Prepare Chunk Insert": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Supabase Create Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Create Chunk": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Prepare Embedding Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Prepare Embedding Input": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Loop Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Loop Embeddings": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Get Embedding Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FB FAQ - Get Active Embedding Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get Active Embedding Model": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Resolve Embedding Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Resolve Embedding Model": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Supabase Get Existing Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Get Existing Embedding": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - IF Embedding Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - IF Embedding Exists": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Loop Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FB FAQ - Embedding API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Embedding API": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Normalize Embedding Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Normalize Embedding Response": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Prepare Embedding Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Prepare Embedding Insert": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Supabase Create Chunk Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Supabase Create Chunk Embedding": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Loop Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Get Embedding Coverage": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Validate Embedding Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Validate Embedding Coverage": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Unset Previous Current Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Unset Previous Current Version": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Mark Version Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Mark Version Completed": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - Sync Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - Sync Result": {
+      "main": [
+        [
+          {
+            "node": "FB FAQ - IF Telegram Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FB FAQ - IF Telegram Needed": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram FAQ Sync",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "00438dda-96c0-4ee7-abc1-b060e4006f20",
+  "activeVersionId": null,
+  "versionCounter": 26,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-21T04:09:18.312Z",
+      "createdAt": "2026-08-21T04:09:18.312Z",
+      "role": "workflow:owner",
+      "workflowId": "T75y5nS7I6C1rHeK",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

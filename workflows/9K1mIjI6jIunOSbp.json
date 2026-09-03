@@ -1,0 +1,98 @@
+{
+  "updatedAt": "2026-08-25T03:36:32.000Z",
+  "createdAt": "2026-08-25T03:33:04.847Z",
+  "id": "9K1mIjI6jIunOSbp",
+  "name": "TEMP - ENJICAD Page ID Diagnostic",
+  "description": "Temporary read-only lookup for the ENJICAD Facebook Page ID before webhook testing.",
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "id": "d17727de-00ad-48cf-b870-d3e3110d9f39",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "cfa1693f-b82f-4e49-b249-8fe9a666a073",
+      "name": "Lookup ENJICAD Page ID",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT\n  ca.id::text AS channel_account_id,\n  b.chatbot_id::text AS chatbot_id,\n  ckb.knowledge_base_id::text AS knowledge_base_id,\n  coalesce(\n    nullif(to_jsonb(ca)->>'page_id', ''),\n    nullif(to_jsonb(ca)->>'external_account_id', ''),\n    nullif(to_jsonb(ca)->>'account_id', ''),\n    nullif(to_jsonb(ca)->'metadata'->>'page_id', ''),\n    nullif(to_jsonb(ca)->'config'->>'page_id', ''),\n    nullif(ca.secret_ref, '')\n  ) AS page_id\nFROM channel_accounts ca\nJOIN chatbot_channel_bindings b ON b.channel_account_id = ca.id AND b.is_active = true\nJOIN chatbot_knowledge_bindings ckb ON ckb.chatbot_id = b.chatbot_id AND ckb.can_search = true\nJOIN knowledge_base_products kbp ON kbp.knowledge_base_id = ckb.knowledge_base_id AND kbp.product_id = 1103\nWHERE ca.channel_type = 'facebook'\nLIMIT 20;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Lookup ENJICAD Page ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "b9495c2c-9614-4f92-aeeb-f37101d53df5",
+  "activeVersionId": null,
+  "versionCounter": 3,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-25T03:33:04.851Z",
+      "createdAt": "2026-08-25T03:33:04.851Z",
+      "role": "workflow:owner",
+      "workflowId": "9K1mIjI6jIunOSbp",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

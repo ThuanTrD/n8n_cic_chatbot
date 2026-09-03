@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily sanitized n8n workflow Git backup
+
+[Timer]
+OnCalendar=*-*-* 23:50:00 Asia/Ho_Chi_Minh
+Persistent=true
+RandomizedDelaySec=30
+Unit=n8n-git-backup.service
+
+[Install]
+WantedBy=timers.target

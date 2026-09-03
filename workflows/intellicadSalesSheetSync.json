@@ -1,0 +1,670 @@
+{
+  "updatedAt": "2026-08-28T07:34:22.000Z",
+  "createdAt": "2026-08-24T08:04:25.963Z",
+  "id": "intellicadSalesSheetSync",
+  "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b969c373-4204-4350-b0af-70e6f6bc219c",
+      "name": "Mỗi phút"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        176
+      ],
+      "id": "a2a1cdc2-85e8-41b4-a2ee-3df0df398ea9",
+      "name": "Đồng bộ thủ công"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
+          "mode": "list",
+          "cachedResultName": "Cuộc trò chuyện",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1064603921,
+          "mode": "list",
+          "cachedResultName": "Báo giá",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=1064603921"
+        },
+        "options": {},
+        "authentication": "serviceAccount"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        240,
+        80
+      ],
+      "id": "69ed2f24-c112-4dd1-aae5-8eaae1cbd4d1",
+      "name": "Đọc Sheet Báo giá",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (SELECT $1::jsonb AS data),\nnormalized AS (\n  SELECT\n    nullif(trim(data->>'Mã đồng bộ'),'') sync_key,\n    nullif(trim(data->>'Mã lead'),'') lead_id,\n    nullif(trim(data->>'quote_id'),'') quote_id,\n    nullif(trim(data->>'conversation_id'),'') conversation_id,\n    nullif(trim(data->>'product_id'),'') product_id,\n    nullif(trim(data->>'assigned_user_id'),'') assigned_user_id_raw,\n    trim(coalesce(data->>'Nhân viên phụ trách','')) assigned_name,\n    CASE lower(trim(coalesce(data->>'Nguồn lead','')))\n      WHEN 'facebook' THEN 'facebook' WHEN 'website' THEN 'web' WHEN 'web' THEN 'web'\n      WHEN 'zalo' THEN 'zalo' WHEN 'telegram' THEN 'telegram'\n      ELSE lower(trim(coalesce(data->>'Nguồn lead',''))) END source,\n    trim(coalesce(data->>'Tên khách hàng','')) customer_name,\n    regexp_replace(coalesce(data->>'Số điện thoại',''),'[^+0-9]','','g') phone,\n    trim(coalesce(data->>'Email','')) email,\n    trim(coalesce(data->>'Công ty','')) company,\n    CASE lower(trim(coalesce(data->>'Loại khách hàng','')))\n      WHEN 'cá nhân' THEN 'personal' WHEN 'personal' THEN 'personal'\n      WHEN 'doanh nghiệp' THEN 'business' WHEN 'business' THEN 'business'\n      ELSE 'unknown' END customer_type,\n    CASE WHEN trim(coalesce(data->>'Số lượng','')) ~ '^[0-9]+([.,][0-9]+)?$'\n      THEN replace(trim(data->>'Số lượng'),',','.')::numeric END quantity,\n    trim(coalesce(data->>'Nhu cầu','')) need,\n    lower(trim(coalesce(data->>'Trạng thái lead',''))) lead_status,\n    CASE lower(trim(coalesce(data->>'Trạng thái báo giá','')))\n      WHEN 'new' THEN 'new' WHEN 'chưa báo giá' THEN ''\n      WHEN 'reviewing' THEN 'reviewing' WHEN 'đang xử lý' THEN 'reviewing'\n      WHEN 'sent' THEN 'sent' WHEN 'đã gửi' THEN 'sent'\n      WHEN 'accepted' THEN 'accepted' WHEN 'đồng ý' THEN 'accepted'\n      WHEN 'rejected' THEN 'rejected' WHEN 'từ chối' THEN 'rejected'\n      WHEN 'expired' THEN 'expired' WHEN 'hết hạn' THEN 'expired'\n      WHEN 'closed' THEN 'closed' WHEN 'đã đóng' THEN 'closed'\n      ELSE lower(trim(coalesce(data->>'Trạng thái báo giá',''))) END quote_status,\n    CASE\n      WHEN trim(coalesce(data->>'Lần liên hệ gần nhất',''))='' THEN NULL\n      WHEN trim(data->>'Lần liên hệ gần nhất') ~ '^\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}$'\n        THEN (to_timestamp(trim(data->>'Lần liên hệ gần nhất'),'DD/MM/YYYY HH24:MI:SS')::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')\n      WHEN trim(data->>'Lần liên hệ gần nhất') ~ '^\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}$'\n        THEN (to_timestamp(trim(data->>'Lần liên hệ gần nhất'),'DD/MM/YYYY HH24:MI')::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')\n      WHEN trim(data->>'Lần liên hệ gần nhất') ~ '^\\d{4}-\\d{2}-\\d{2}'\n        THEN trim(data->>'Lần liên hệ gần nhất')::timestamptz END last_contacted_at,\n    CASE\n      WHEN trim(coalesce(data->>'Lịch liên hệ tiếp theo',''))='' THEN NULL\n      WHEN trim(data->>'Lịch liên hệ tiếp theo') ~ '^\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2}$'\n        THEN (to_timestamp(trim(data->>'Lịch liên hệ tiếp theo'),'DD/MM/YYYY HH24:MI:SS')::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')\n      WHEN trim(data->>'Lịch liên hệ tiếp theo') ~ '^\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}$'\n        THEN (to_timestamp(trim(data->>'Lịch liên hệ tiếp theo'),'DD/MM/YYYY HH24:MI')::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')\n      WHEN trim(data->>'Lịch liên hệ tiếp theo') ~ '^\\d{4}-\\d{2}-\\d{2}'\n        THEN trim(data->>'Lịch liên hệ tiếp theo')::timestamptz END next_follow_up_at,\n    nullif(left(trim(coalesce(data->>'Ghi chú nhân viên','')),2000),'') staff_note,\n    nullif(trim(data->>'db_hash'),'') db_hash\n  FROM input\n),\nresolved AS (\n  SELECT n.*,\n    CASE\n      WHEN lower(n.assigned_name) IN ('','ai assistant') THEN NULL\n      WHEN n.assigned_user_id_raw ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'\n        AND EXISTS(SELECT 1 FROM user_profiles u WHERE u.id=n.assigned_user_id_raw::uuid AND u.status='active')\n        THEN n.assigned_user_id_raw::uuid\n      ELSE (SELECT u.id FROM user_profiles u WHERE u.status='active'\n        AND lower(trim(coalesce(u.full_name,'')))=lower(n.assigned_name)\n        ORDER BY u.updated_at DESC LIMIT 1)\n    END assigned_user_id\n  FROM normalized n\n),\nhashed AS (\n  SELECT r.*,md5(concat_ws(chr(31),'company-sheet-v2',r.source,r.customer_name,r.phone,r.email,r.company,r.customer_type,\n    coalesce(trim(to_char(r.quantity,'FM9999999990.########')),''),r.need,r.lead_status,r.quote_status,\n    coalesce(r.assigned_user_id::text,''),\n    coalesce(to_char(r.last_contacted_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS'),''),\n    coalesce(to_char(r.next_follow_up_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS'),''),\n    coalesce(r.staff_note,''))) sheet_hash\n  FROM resolved r\n),\nvalid AS (\n  SELECT * FROM hashed\n  WHERE sync_key IS NOT NULL AND db_hash IS NOT NULL AND sheet_hash<>db_hash\n    AND lead_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'\n    AND conversation_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'\n    AND product_id='1369' AND sync_key='lead:'||lead_id\n),\nlead_update AS (\n  UPDATE leads l SET\n    source=CASE WHEN v.source<>'' THEN left(v.source,80) ELSE l.source END,\n    full_name=CASE WHEN v.customer_name<>'' THEN left(v.customer_name,160) ELSE l.full_name END,\n    phone=CASE WHEN v.phone ~ '^\\+?[0-9]{7,15}$' THEN v.phone ELSE l.phone END,\n    email=CASE WHEN v.email='' THEN NULL WHEN v.email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$' THEN left(v.email,200) ELSE l.email END,\n    company=nullif(left(v.company,200),''),customer_type=v.customer_type,\n    requested_quantity=CASE WHEN v.quantity>0 AND v.quantity<=100000 THEN v.quantity ELSE l.requested_quantity END,\n    need=CASE WHEN v.need<>'' THEN left(v.need,2000) ELSE l.need END,\n    status=CASE WHEN v.lead_status=ANY(ARRAY['new','contacted','qualified','quoted','won','lost','closed']) THEN v.lead_status ELSE l.status END,\n    assigned_user_id=v.assigned_user_id,last_contacted_at=v.last_contacted_at,\n    next_follow_up_at=v.next_follow_up_at,staff_note=v.staff_note,sheet_last_edited_at=now(),updated_at=now()\n  FROM valid v\n  WHERE l.id=v.lead_id::uuid AND l.conversation_id=v.conversation_id::uuid AND l.product_id=1369\n  RETURNING l.id,l.conversation_id,l.product_id\n),\nquote_update AS (\n  UPDATE quote_requests q SET\n    customer_name=CASE WHEN v.customer_name<>'' THEN left(v.customer_name,160) ELSE q.customer_name END,\n    phone=CASE WHEN v.phone ~ '^\\+?[0-9]{7,15}$' THEN v.phone ELSE q.phone END,\n    email=CASE WHEN v.email='' THEN NULL WHEN v.email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$' THEN left(v.email,200) ELSE q.email END,\n    company=nullif(left(v.company,200),''),notes=CASE WHEN v.need<>'' THEN left(v.need,2000) ELSE q.notes END,\n    status=CASE WHEN v.quote_status=ANY(ARRAY['new','reviewing','sent','accepted','rejected','expired','closed']) THEN v.quote_status ELSE q.status END,\n    updated_at=now()\n  FROM valid v\n  WHERE v.quote_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'\n    AND q.id=v.quote_id::uuid AND q.conversation_id=v.conversation_id::uuid\n  RETURNING q.id\n),\nitem_update AS (\n  UPDATE quote_request_items i SET quantity=v.quantity\n  FROM valid v\n  WHERE v.quote_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'\n    AND i.quote_request_id=v.quote_id::uuid AND i.product_id=1369 AND i.product_version_id IS NULL\n    AND v.quantity>0 AND v.quantity<=100000\n  RETURNING i.id\n),\nstate_pending AS (\n  INSERT INTO lead_sheet_sync_state(lead_id,sync_status,last_attempt_at,error_message,sheet_row_key,updated_at)\n  SELECT v.lead_id::uuid,'pending',now(),NULL,v.sync_key,now() FROM valid v\n  ON CONFLICT (lead_id) DO UPDATE SET sync_status='pending',last_attempt_at=now(),error_message=NULL,updated_at=now()\n  RETURNING lead_id\n)\nSELECT coalesce((SELECT sync_key FROM valid LIMIT 1),'') sync_key,\n  EXISTS(SELECT 1 FROM lead_update) lead_changed,\n  EXISTS(SELECT 1 FROM quote_update) quote_changed,\n  EXISTS(SELECT 1 FROM item_update) item_changed;",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify($json) }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        80
+      ],
+      "id": "11e4f052-e582-4bee-9be1-f582dcb5929e",
+      "name": "Áp chỉnh sửa Sheet vào Database",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows=$input.all().map(item=>item.json||{});return [{json:{sheet_rows_checked:rows.length,database_changes:rows.filter(row=>row.lead_changed||row.quote_changed||row.item_changed).length}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        80
+      ],
+      "id": "94920322-f1e2-419e-9018-96d219af0872",
+      "name": "Chốt lượt đọc Sheet"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH rows AS (\n  SELECT 'lead:'||l.id::text sync_key,l.id::text lead_id,q.request_code,\n    CASE lower(coalesce(l.source,'')) WHEN 'facebook' THEN 'Facebook' WHEN 'web' THEN 'Website'\n      WHEN 'zalo' THEN 'Zalo' WHEN 'telegram' THEN 'Telegram' ELSE coalesce(l.source,'') END source_display,\n    'CMS IntelliCAD'::text product,coalesce(q.customer_name,l.full_name,'') customer_name,\n    coalesce(q.phone,l.phone,'') phone,coalesce(q.email,l.email,'') email,\n    coalesce(q.company,l.company,'') company,\n    CASE l.customer_type WHEN 'personal' THEN 'Cá nhân' WHEN 'business' THEN 'Doanh nghiệp' ELSE 'Chưa xác định' END customer_type_display,\n    coalesce(qi.quantity,l.requested_quantity) quantity,coalesce(q.notes,l.need,'') need,\n    coalesce(l.status,'') lead_status,coalesce(q.status,'') quote_status,\n    coalesce(nullif(trim(u.full_name),''),'AI Assistant') assigned_name,l.assigned_user_id,\n    l.last_contacted_at,l.next_follow_up_at,coalesce(l.staff_note,'') staff_note,\n    CASE WHEN lower(coalesce(l.source,''))='facebook'\n      THEN 'https://business.facebook.com/latest/inbox/all?asset_id='||coalesce(ca.external_account_id,ca.config->>'page_id',ca.secret_ref,'')||'&selected_item_id='||c.external_user_id\n      ELSE '' END conversation_link,\n    least(coalesce(l.created_at,q.created_at),coalesce(q.created_at,l.created_at)) created_at,\n    greatest(coalesce(l.updated_at,q.updated_at),coalesce(q.updated_at,l.updated_at)) record_updated_at,\n    l.sheet_last_edited_at,coalesce(ss.sync_status,'pending') sync_status,q.id::text quote_id,l.conversation_id::text conversation_id,l.product_id::text product_id\n  FROM leads l\n  JOIN conversations c ON c.id=l.conversation_id\n  JOIN channel_accounts ca ON ca.id=c.channel_account_id\n  LEFT JOIN user_profiles u ON u.id=l.assigned_user_id\n  LEFT JOIN lead_sheet_sync_state ss ON ss.lead_id=l.id\n  LEFT JOIN LATERAL (\n    SELECT qr.* FROM quote_requests qr JOIN quote_request_items item ON item.quote_request_id=qr.id\n    WHERE qr.conversation_id=l.conversation_id AND item.product_id=l.product_id\n      AND ((nullif(regexp_replace(coalesce(l.phone,''),'[^0-9]','','g'),'') IS NOT NULL\n        AND regexp_replace(coalesce(qr.phone,''),'[^0-9]','','g')=regexp_replace(coalesce(l.phone,''),'[^0-9]','','g'))\n      OR (nullif(regexp_replace(coalesce(l.phone,''),'[^0-9]','','g'),'') IS NULL\n        AND nullif(lower(trim(coalesce(l.email,''))),'') IS NOT NULL\n        AND lower(trim(coalesce(qr.email,'')))=lower(trim(l.email))))\n    ORDER BY qr.updated_at DESC LIMIT 1\n  ) q ON true\n  LEFT JOIN quote_request_items qi ON qi.quote_request_id=q.id AND qi.product_id=l.product_id AND qi.product_version_id IS NULL\n  WHERE l.product_id=1369\n), hashed AS (\n  SELECT r.*,md5(concat_ws(chr(31),'company-sheet-v2',lower(coalesce(NULLIF(r.source_display,''),'')),r.customer_name,\n    r.phone,r.email,r.company,CASE r.customer_type_display WHEN 'Cá nhân' THEN 'personal' WHEN 'Doanh nghiệp' THEN 'business' ELSE 'unknown' END,\n    coalesce(trim(to_char(r.quantity,'FM9999999990.########')),''),r.need,r.lead_status,CASE WHEN r.quote_status IN ('','new') THEN '' ELSE r.quote_status END,\n    coalesce(r.assigned_user_id::text,''),\n    coalesce(to_char(r.last_contacted_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS'),''),\n    coalesce(to_char(r.next_follow_up_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS'),''),r.staff_note)) db_hash\n  FROM rows r\n)\nSELECT lead_id AS \"Mã lead\",coalesce(request_code,'') AS \"Mã báo giá\",source_display AS \"Nguồn lead\",\n  product AS \"Sản phẩm\",customer_name AS \"Tên khách hàng\",CASE WHEN phone<>'' THEN chr(39)||phone ELSE '' END AS \"Số điện thoại\",email AS \"Email\",\n  company AS \"Công ty\",customer_type_display AS \"Loại khách hàng\",\n  coalesce(trim(to_char(quantity,'FM9999999990.########')),'') AS \"Số lượng\",need AS \"Nhu cầu\",\n  upper(lead_status) AS \"Trạng thái lead\",\n  CASE quote_status WHEN '' THEN 'CHƯA BÁO GIÁ' WHEN 'new' THEN 'CHƯA BÁO GIÁ'\n    WHEN 'reviewing' THEN 'ĐANG XỬ LÝ' WHEN 'sent' THEN 'ĐÃ GỬI' WHEN 'accepted' THEN 'ĐỒNG Ý'\n    WHEN 'rejected' THEN 'TỪ CHỐI' WHEN 'expired' THEN 'HẾT HẠN' WHEN 'closed' THEN 'ĐÃ ĐÓNG'\n    ELSE upper(quote_status) END AS \"Trạng thái báo giá\",\n  assigned_name AS \"Nhân viên phụ trách\",\n  coalesce(to_char(last_contacted_at AT TIME ZONE 'Asia/Ho_Chi_Minh','DD/MM/YYYY HH24:MI:SS'),'') AS \"Lần liên hệ gần nhất\",\n  coalesce(to_char(next_follow_up_at AT TIME ZONE 'Asia/Ho_Chi_Minh','DD/MM/YYYY HH24:MI:SS'),'') AS \"Lịch liên hệ tiếp theo\",\n  staff_note AS \"Ghi chú nhân viên\",conversation_link AS \"Link hội thoại\",\n  coalesce(to_char(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh','DD/MM/YYYY HH24:MI'),'') AS \"Ngày tạo lead\",\n  coalesce(to_char(record_updated_at AT TIME ZONE 'Asia/Ho_Chi_Minh','DD/MM/YYYY HH24:MI:SS'),'') AS \"Cập nhật lần cuối\",\n  coalesce(to_char(coalesce(sheet_last_edited_at,record_updated_at) AT TIME ZONE 'Asia/Ho_Chi_Minh','DD/MM/YYYY HH24:MI:SS'),'') AS \"Cập nhật DB\",\n  upper(sync_status) AS \"Trạng thái đồng bộ\",sync_key AS \"Mã đồng bộ\",coalesce(quote_id,'') AS \"quote_id\",\n  conversation_id AS \"conversation_id\",product_id AS \"product_id\",\n  coalesce(assigned_user_id::text,'') AS \"assigned_user_id\",db_hash AS \"db_hash\"\nFROM hashed ORDER BY created_at DESC NULLS LAST;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        960,
+        80
+      ],
+      "id": "b063163e-f554-49e3-be77-373945a6d75e",
+      "name": "Đọc Hồ sơ Báo giá từ Database",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const dbItems=$input.all();const sheetItems=$('Đọc Sheet Báo giá').all();const existing=new Map(sheetItems.map(item=>[String(item.json?.['Mã đồng bộ']||''),item.json||{}]).filter(([key])=>key));const systemFields=['Mã lead','Mã báo giá','Trạng thái đồng bộ','quote_id','conversation_id','product_id','assigned_user_id'];return dbItems.filter(item=>{const row=item.json||{},old=existing.get(String(row['Mã đồng bộ']||''));if(!old)return true;if(String(old.db_hash||'')!==String(row.db_hash||''))return true;return systemFields.some(key=>String(old[key]||'')!==String(row[key]||''));});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        80
+      ],
+      "id": "c409d6bc-ce88-49d4-8d80-8ce58e01877a",
+      "name": "Chỉ đẩy dòng Database thay đổi"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
+          "mode": "list",
+          "cachedResultName": "Cuộc trò chuyện",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1064603921,
+          "mode": "list",
+          "cachedResultName": "Báo giá",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=1064603921"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Mã lead": "={{ $json[\"Mã lead\"] ?? \"\" }}",
+            "Mã báo giá": "={{ $json[\"Mã báo giá\"] ?? \"\" }}",
+            "Nguồn lead": "={{ $json[\"Nguồn lead\"] ?? \"\" }}",
+            "Sản phẩm": "={{ $json[\"Sản phẩm\"] ?? \"\" }}",
+            "Tên khách hàng": "={{ $json[\"Tên khách hàng\"] ?? \"\" }}",
+            "Số điện thoại": "={{ $json[\"Số điện thoại\"] ?? \"\" }}",
+            "Email": "={{ $json[\"Email\"] ?? \"\" }}",
+            "Công ty": "={{ $json[\"Công ty\"] ?? \"\" }}",
+            "Loại khách hàng": "={{ $json[\"Loại khách hàng\"] ?? \"\" }}",
+            "Số lượng": "={{ $json[\"Số lượng\"] ?? \"\" }}",
+            "Nhu cầu": "={{ $json[\"Nhu cầu\"] ?? \"\" }}",
+            "Trạng thái lead": "={{ $json[\"Trạng thái lead\"] ?? \"\" }}",
+            "Trạng thái báo giá": "={{ $json[\"Trạng thái báo giá\"] ?? \"\" }}",
+            "Nhân viên phụ trách": "={{ $json[\"Nhân viên phụ trách\"] ?? \"\" }}",
+            "Lần liên hệ gần nhất": "={{ $json[\"Lần liên hệ gần nhất\"] ?? \"\" }}",
+            "Lịch liên hệ tiếp theo": "={{ $json[\"Lịch liên hệ tiếp theo\"] ?? \"\" }}",
+            "Ghi chú nhân viên": "={{ $json[\"Ghi chú nhân viên\"] ?? \"\" }}",
+            "Link hội thoại": "={{ $json[\"Link hội thoại\"] ?? \"\" }}",
+            "Ngày tạo lead": "={{ $json[\"Ngày tạo lead\"] ?? \"\" }}",
+            "Cập nhật lần cuối": "={{ $json[\"Cập nhật lần cuối\"] ?? \"\" }}",
+            "Cập nhật DB": "={{ $json[\"Cập nhật DB\"] ?? \"\" }}",
+            "Trạng thái đồng bộ": "={{ $json[\"Trạng thái đồng bộ\"] ?? \"\" }}",
+            "Mã đồng bộ": "={{ $json[\"Mã đồng bộ\"] ?? \"\" }}",
+            "quote_id": "={{ $json[\"quote_id\"] ?? \"\" }}",
+            "conversation_id": "={{ $json[\"conversation_id\"] ?? \"\" }}",
+            "product_id": "={{ $json[\"product_id\"] ?? \"\" }}",
+            "assigned_user_id": "={{ $json[\"assigned_user_id\"] ?? \"\" }}",
+            "db_hash": "={{ $json[\"db_hash\"] ?? \"\" }}"
+          },
+          "matchingColumns": [
+            "Mã đồng bộ"
+          ],
+          "schema": [
+            {
+              "id": "Mã lead",
+              "displayName": "Mã lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mã báo giá",
+              "displayName": "Mã báo giá",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nguồn lead",
+              "displayName": "Nguồn lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sản phẩm",
+              "displayName": "Sản phẩm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tên khách hàng",
+              "displayName": "Tên khách hàng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Số điện thoại",
+              "displayName": "Số điện thoại",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Công ty",
+              "displayName": "Công ty",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Loại khách hàng",
+              "displayName": "Loại khách hàng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Số lượng",
+              "displayName": "Số lượng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nhu cầu",
+              "displayName": "Nhu cầu",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trạng thái lead",
+              "displayName": "Trạng thái lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trạng thái báo giá",
+              "displayName": "Trạng thái báo giá",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nhân viên phụ trách",
+              "displayName": "Nhân viên phụ trách",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lần liên hệ gần nhất",
+              "displayName": "Lần liên hệ gần nhất",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lịch liên hệ tiếp theo",
+              "displayName": "Lịch liên hệ tiếp theo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ghi chú nhân viên",
+              "displayName": "Ghi chú nhân viên",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Link hội thoại",
+              "displayName": "Link hội thoại",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ngày tạo lead",
+              "displayName": "Ngày tạo lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cập nhật lần cuối",
+              "displayName": "Cập nhật lần cuối",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cập nhật DB",
+              "displayName": "Cập nhật DB",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trạng thái đồng bộ",
+              "displayName": "Trạng thái đồng bộ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mã đồng bộ",
+              "displayName": "Mã đồng bộ",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "quote_id",
+              "displayName": "quote_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_id",
+              "displayName": "product_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "assigned_user_id",
+              "displayName": "assigned_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "db_hash",
+              "displayName": "db_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {},
+        "authentication": "serviceAccount"
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1440,
+        80
+      ],
+      "id": "427a2cdf-ed6d-4473-a2bc-1040fbffeb63",
+      "name": "Cập nhật Sheet Báo giá",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO lead_sheet_sync_state(lead_id,sync_status,last_attempt_at,synced_at,error_message,sheet_row_key,db_hash,updated_at) VALUES (($1::jsonb->>'lead_id')::uuid,'synced',now(),now(),NULL,$1::jsonb->>'sync_key',$1::jsonb->>'db_hash',now()) ON CONFLICT (lead_id) DO UPDATE SET sync_status='synced',last_attempt_at=now(),synced_at=now(),error_message=NULL,sheet_row_key=excluded.sheet_row_key,db_hash=excluded.db_hash,updated_at=now() RETURNING lead_id,sync_status,synced_at;",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify({lead_id:String($json[\"Mã lead\"]??\"\"),sync_key:String($json[\"Mã đồng bộ\"]??\"\"),db_hash:String($json[\"db_hash\"]??\"\")}) }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1680,
+        80
+      ],
+      "id": "d1e94774-febc-4dbe-9418-947a62da1b9f",
+      "name": "Đánh dấu Sheet đã đồng bộ",
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Mỗi phút": {
+      "main": [
+        [
+          {
+            "node": "Đọc Sheet Báo giá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Đồng bộ thủ công": {
+      "main": [
+        [
+          {
+            "node": "Đọc Sheet Báo giá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Đọc Sheet Báo giá": {
+      "main": [
+        [
+          {
+            "node": "Áp chỉnh sửa Sheet vào Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Áp chỉnh sửa Sheet vào Database": {
+      "main": [
+        [
+          {
+            "node": "Chốt lượt đọc Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chốt lượt đọc Sheet": {
+      "main": [
+        [
+          {
+            "node": "Đọc Hồ sơ Báo giá từ Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Đọc Hồ sơ Báo giá từ Database": {
+      "main": [
+        [
+          {
+            "node": "Chỉ đẩy dòng Database thay đổi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chỉ đẩy dòng Database thay đổi": {
+      "main": [
+        [
+          {
+            "node": "Cập nhật Sheet Báo giá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cập nhật Sheet Báo giá": {
+      "main": [
+        [
+          {
+            "node": "Đánh dấu Sheet đã đồng bộ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "6bf507ec-ff96-419d-a61e-014bbd2d3b69",
+  "activeVersionId": "6bf507ec-ff96-419d-a61e-014bbd2d3b69",
+  "versionCounter": 12,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-24T08:04:25.970Z",
+      "createdAt": "2026-08-24T08:04:25.970Z",
+      "role": "workflow:owner",
+      "workflowId": "intellicadSalesSheetSync",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

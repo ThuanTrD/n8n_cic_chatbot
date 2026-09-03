@@ -1,0 +1,104 @@
+{
+  "workflowCount": 11,
+  "workflows": [
+    {
+      "id": "0BBvkcVoFM38P15y",
+      "name": "Facebook Page Messenger -> Q&A Google Sheets",
+      "active": false,
+      "archived": false,
+      "file": "0BBvkcVoFM38P15y.json",
+      "redactions": 2
+    },
+    {
+      "id": "9K1mIjI6jIunOSbp",
+      "name": "TEMP - ENJICAD Page ID Diagnostic",
+      "active": false,
+      "archived": true,
+      "file": "9K1mIjI6jIunOSbp.json",
+      "redactions": 1
+    },
+    {
+      "id": "FKayVMyWoQKSErYE",
+      "name": "Thêm dữ liệu Drive vào CMS IntelliCAD",
+      "active": false,
+      "archived": false,
+      "file": "FKayVMyWoQKSErYE.json",
+      "redactions": 26
+    },
+    {
+      "id": "JivRSTL8gODfi5sc",
+      "name": "CMS IntelliCAD - Facebook Chatbot",
+      "active": true,
+      "archived": false,
+      "file": "JivRSTL8gODfi5sc.json",
+      "redactions": 66
+    },
+    {
+      "id": "T75y5nS7I6C1rHeK",
+      "name": "thêm sheet vào intellicad",
+      "active": false,
+      "archived": false,
+      "file": "T75y5nS7I6C1rHeK.json",
+      "redactions": 17
+    },
+    {
+      "id": "TyBwz43jg84QeoOA",
+      "name": "thêm dữ liệu enjicad từ drive",
+      "active": false,
+      "archived": false,
+      "file": "TyBwz43jg84QeoOA.json",
+      "redactions": 27
+    },
+    {
+      "id": "Yns4Vi7tQiwFHW32",
+      "name": "AI Tool AI Agent Reply_lấy ở ytb",
+      "active": false,
+      "archived": false,
+      "file": "Yns4Vi7tQiwFHW32.json",
+      "redactions": 1
+    },
+    {
+      "id": "dMoXXuKEuUW7vRFV",
+      "name": "ENJICAD Facebook - Qwen Agent RAG Preload TEST",
+      "active": true,
+      "archived": false,
+      "file": "dMoXXuKEuUW7vRFV.json",
+      "redactions": 30
+    },
+    {
+      "id": "intellicadSalesSheetSync",
+      "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
+      "active": true,
+      "archived": false,
+      "file": "intellicadSalesSheetSync.json",
+      "redactions": 5
+    },
+    {
+      "id": "rfZhcWA2P0XrWYAb",
+      "name": "thêm dữ liệu enjicad từ sheet",
+      "active": false,
+      "archived": false,
+      "file": "rfZhcWA2P0XrWYAb.json",
+      "redactions": 33
+    },
+    {
+      "id": "yW1A9s1Lmoq9wZQp",
+      "name": "Hermes CMS IntelliCAD - Credential Check",
+      "active": false,
+      "archived": true,
+      "file": "yW1A9s1Lmoq9wZQp.json",
+      "redactions": 2
+    }
+  ],
+  "redactionCounts": {
+    "bearer": 16,
+    "openai_like": 0,
+    "github": 0,
+    "google_api": 0,
+    "aws_access": 0,
+    "private_key": 0,
+    "jwt": 0,
+    "credential_references": 186,
+    "sensitive_named_values": 8
+  }
+}

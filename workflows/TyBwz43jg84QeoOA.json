@@ -1,0 +1,3645 @@
+{
+  "updatedAt": "2026-08-25T03:13:42.688Z",
+  "createdAt": "2026-08-11T09:21:25.041Z",
+  "id": "TyBwz43jg84QeoOA",
+  "name": "thêm dữ liệu enjicad từ drive",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3824,
+        1584
+      ],
+      "id": "acc903b8-7b23-4d39-83c3-0e5a9bcc4ca3",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-pptx",
+              "leftValue": "={{ $('Prepare Source Metadata1').item.json.mime_type }}",
+              "rightValue": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "is-docx",
+              "leftValue": "={{ $('Prepare Source Metadata1').item.json.mime_type }}",
+              "rightValue": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        496,
+        2160
+      ],
+      "id": "1ea5a674-8a47-4405-a21f-f296e4d2c5a5",
+      "name": "IF Office File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sie-tissue-physics-switched.trycloudflare.com/v1/parse",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=__REDACTED_SECRET__"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -112,
+        3856
+      ],
+      "id": "8e88a148-0fe2-452f-b348-5070cf99b790",
+      "name": "Office Document Parser",
+      "notesInFlow": true,
+      "disabled": true,
+      "onError": "continueErrorOutput",
+      "notes": "Deprecated and disconnected: Office files are sent directly to Gemini with their real MIME type."
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        256,
+        2272
+      ],
+      "id": "9eafad56-b270-419a-bbda-141ec68c1f06",
+      "name": "Download File1",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const drive = $json;\nconst allowed = new Set([\n  'application/pdf',\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',\n  'application/vnd.openxmlformats-officedocument.presentationml.presentation',\n  'application/vnd.google-apps.spreadsheet'\n]);\nconst mimeType = drive.mimeType || drive.mime_type;\nif (!allowed.has(mimeType)) throw new Error(`UNSUPPORTED_FILE_TYPE: ${mimeType}`);\nconst fileId = drive.id || drive.file_id;\nconst fileName = drive.name || drive.file_name;\nconst sourceHash = drive.md5Checksum || drive.sha256Checksum || `${fileId}:${drive.modifiedTime || drive.version || ''}`;\nif (!fileId || !fileName || !sourceHash) throw new Error('INVALID_DRIVE_METADATA');\nreturn [{json:{file_id:fileId,file_name:fileName,mime_type:mimeType,source_url:drive.webViewLink || (mimeType === 'application/vnd.google-apps.spreadsheet' ? `https://docs.google.com/spreadsheets/d/${fileId}/edit` : `https://drive.google.com/file/d/${fileId}/view`),source_hash:String(sourceHash),product_code:'ENJICAD',knowledge_base_code:'KB_PRODUCT_ENJICAD',language_code:'vi'}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2720,
+        1616
+      ],
+      "id": "ce3d1c36-3f2e-478b-8340-1c34e7139723",
+      "name": "Prepare Source Metadata1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const meta = $('Prepare Source Metadata1').item.json;\nconst response = $json || {};\n\nconst payload =\n  response.data &&\n  typeof response.data === 'object' &&\n  !Array.isArray(response.data)\n    ? response.data\n    : response;\n\n\n// ==============================\n// EXTRACT TEXT\n// ==============================\nfunction extractText(obj) {\n  if (!obj || typeof obj !== 'object') return '';\n\n  // 1. Các parser cũ\n  const direct =\n    obj.markdown ??\n    obj.text ??\n    obj.content ??\n    obj.result;\n\n  if (typeof direct === 'string' && direct.trim()) {\n    return direct;\n  }\n\n  // 2. response.data là string\n  if (typeof obj.data === 'string' && obj.data.trim()) {\n    return obj.data;\n  }\n\n  // 3. Gemini generateContent\n  if (Array.isArray(obj.candidates)) {\n    const texts = [];\n\n    for (const candidate of obj.candidates) {\n      const parts = candidate?.content?.parts;\n\n      if (!Array.isArray(parts)) continue;\n\n      for (const part of parts) {\n        // Không lấy thinking/reasoning nếu model trả về\n        if (part?.thought === true) continue;\n\n        if (typeof part?.text === 'string' && part.text.trim()) {\n          texts.push(part.text);\n        }\n      }\n    }\n\n    return texts.join('\\n');\n  }\n\n  return '';\n}\n\n\nlet raw = extractText(payload);\n\n// fallback nếu data wrapper không chứa text\nif (!raw && payload !== response) {\n  raw = extractText(response);\n}\n\nraw = String(raw || '').trim();\n\nconst finishReasons = Array.isArray(payload?.candidates)\n  ? payload.candidates\n      .map(candidate => candidate?.finishReason ?? candidate?.finish_reason)\n      .filter(Boolean)\n  : [];\n\nconst incompleteReasons = finishReasons.filter(reason => reason !== 'STOP');\n\nif (incompleteReasons.length) {\n  throw new Error(\n    `TEXT_EXTRACTION_INCOMPLETE: finishReasons=${incompleteReasons.join(',')}`\n  );\n}\n\n\n\n// ==============================\n// DEBUG KHI KHÔNG CÓ TEXT\n// ==============================\nif (!raw) {\n  const candidate = payload?.candidates?.[0];\n\n  const finishReason =\n    candidate?.finishReason ??\n    candidate?.finish_reason ??\n    'unknown';\n\n  const parts = candidate?.content?.parts;\n\n  throw new Error(\n    `TEXT_EXTRACTION_EMPTY: ` +\n    `keys=${Object.keys(payload || {}).join(',')} ` +\n    `finishReason=${finishReason} ` +\n    `parts=${Array.isArray(parts) ? parts.length : 0}`\n  );\n}\n\n\n// ==============================\n// NORMALIZE\n// ==============================\nconst normalized = raw\n  .replace(/\\r\\n?/g, '\\n')\n  .replace(/[ \\t]+/g, ' ')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .split('\\n')\n  .map(line => line.trimEnd())\n  .join('\\n')\n  .trim();\n\n\n// ==============================\n// PRODUCT NAMES\n// ==============================\nconst sourceNames = [\n  ...new Set(\n    normalized.match(\n      /\\b(?:GstarCAD|CMS IntelliCAD|IntelliCAD|enjiCAD|ENJICAD)\\b/gi\n    ) || []\n  )\n];\n\n\n// ==============================\n// ENGINE\n// ==============================\nconst isOffice = [\n  'application/vnd.openxmlformats-officedocument.presentationml.presentation',\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'\n].includes(meta.mime_type);\n\nconst isGemini = Array.isArray(payload?.candidates);\n\nconst engine =\n  payload.engine ||\n  (\n    isGemini\n      ? 'gemini'\n      : isOffice\n        ? 'office-parser'\n        : 'PP-StructureV3'\n  );\n\n\n// ==============================\n// OUTPUT\n// ==============================\nreturn [\n  {\n    json: {\n      ...meta,\n\n      raw_text: raw,\n      normalized_text: normalized,\n\n      source_product_names: sourceNames,\n      normalized_product_name: 'ENJICAD',\n\n      extraction: {\n        engine,\n        used_ocr:\n          payload.used_ocr ??\n          (isGemini ? true : false),\n        pages: payload.pages || null,\n        batching: payload.ocr_batching || null,\n\n        model:\n          payload.modelVersion ??\n          response.modelVersion ??\n          null,\n\n        response_id:\n          payload.responseId ??\n          response.responseId ??\n          null\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        2208
+      ],
+      "id": "cb67317f-9802-41be-846a-0a7cd5e024b1",
+      "name": "Normalize Extracted Text1",
+      "notesInFlow": true,
+      "notes": "Rejects empty or truncated Gemini output before chunking and records the extraction engine."
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "knowledge_base_products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "knowledge_base_id",
+              "keyValue": "={{ $json.knowledge_base_id }}"
+            },
+            {
+              "keyName": "product_id",
+              "keyValue": "={{ $json.product_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        1616
+      ],
+      "id": "65b5d1b4-7b91-42c9-8be5-f0168bea47d8",
+      "name": "Get Product-KB Binding1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Resolve Product And KB1').item.json;\nconst found = $input.all().map(i=>i.json).find(r=>r?.knowledge_base_id && r?.product_id);\nreturn [{json:{...ctx,binding_exists:Boolean(found),binding_payload:{knowledge_base_id:ctx.knowledge_base_id,product_id:ctx.product_id}}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        1616
+      ],
+      "id": "5c781031-5b06-4fa5-b723-b11e75dd4d12",
+      "name": "Ensure Product-KB Binding1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "binding-exists",
+              "leftValue": "={{ $json.binding_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1376,
+        1616
+      ],
+      "id": "7c396bab-7d38-4979-aaa8-7be1bb86688a",
+      "name": "IF Binding Exists1"
+    },
+    {
+      "parameters": {
+        "tableId": "knowledge_base_products",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "knowledge_base_id",
+              "fieldValue": "={{ $json.binding_payload.knowledge_base_id }}"
+            },
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.binding_payload.product_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        1696
+      ],
+      "id": "cc0c80d8-6fa4-4f27-b240-73b1f913f5b5",
+      "name": "Create Product-KB Binding1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Ensure Product-KB Binding1').item.json;\nif (!ctx?.product_id || !ctx?.knowledge_base_id) throw new Error('INGESTION_CONTEXT_MISSING_PRODUCT_OR_KB');\nreturn [{json:{...ctx}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        1616
+      ],
+      "id": "75817081-abb9-4ede-88e9-894533daf1bc",
+      "name": "Resolve Ingestion Context1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "product_id",
+              "keyValue": "={{ $json.product_id }}"
+            },
+            {
+              "keyName": "source_url",
+              "keyValue": "={{ $json.source_url }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        1616
+      ],
+      "id": "cc5e3029-061f-4aba-81cd-a81619cf1b3b",
+      "name": "Get Existing Product Document1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "doc-exists",
+              "leftValue": "={{ $json.document_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        1616
+      ],
+      "id": "e9ead43c-f020-4430-bb21-646892937864",
+      "name": "IF Document Exists1"
+    },
+    {
+      "parameters": {
+        "tableId": "product_documents",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.product_id }}"
+            },
+            {
+              "fieldId": "document_type",
+              "fieldValue": "={{ $json.mime_type === 'application/vnd.google-apps.spreadsheet' ? 'faq' : 'technical_document' }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.file_name }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $json.language_code }}"
+            },
+            {
+              "fieldId": "source_type",
+              "fieldValue": "={{ $json.mime_type === 'application/vnd.google-apps.spreadsheet' ? 'google_sheets' : 'google_drive' }}"
+            },
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $json.source_url }}"
+            },
+            {
+              "fieldId": "file_name",
+              "fieldValue": "={{ $json.file_name }}"
+            },
+            {
+              "fieldId": "mime_type",
+              "fieldValue": "={{ $json.mime_type }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.source_hash }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "active"
+            },
+            {
+              "fieldId": "is_official",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        2416
+      ],
+      "id": "d1449039-3c74-4e65-9c04-497e974f7c51",
+      "name": "Create Product Document1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "keyValue": "={{ $json.document_id }}"
+            },
+            {
+              "keyName": "source_content_hash",
+              "keyValue": "={{ $json.source_hash }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2432,
+        2000
+      ],
+      "id": "79db5890-437c-406b-8980-4b98c1339dd4",
+      "name": "Get Existing Document Version1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "version-complete",
+              "leftValue": "={{ $json.ingestion_complete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        2000
+      ],
+      "id": "7d415cb9-83da-4b8c-a7f4-8593356adb18",
+      "name": "IF Version Exists1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx=$('Attach Extracted Context1').item.json; return [{json:{status:'skipped',reason:'same source hash already ingested',file_id:ctx.file_id,file_name:ctx.file_name,document_version_id:$json.id}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        1904
+      ],
+      "id": "7fad0d2b-479b-431b-b6ef-cdab8dfe6fe8",
+      "name": "Already Ingested1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_versions",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Version Lookup Context1').item.json.document_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3104,
+        2320
+      ],
+      "id": "ac9c9524-e6f6-457f-bdf6-831b49796d94",
+      "name": "Get All Document Versions1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_versions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_id",
+              "fieldValue": "={{ $json.document_id }}"
+            },
+            {
+              "fieldId": "version_number",
+              "fieldValue": "={{ $json.version_number }}"
+            },
+            {
+              "fieldId": "source_content_hash",
+              "fieldValue": "={{ $json.source_hash }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $json.raw_text }}"
+            },
+            {
+              "fieldId": "normalized_text",
+              "fieldValue": "={{ $json.normalized_text }}"
+            },
+            {
+              "fieldId": "parse_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "processing"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            },
+            {
+              "fieldId": "extraction_method",
+              "fieldValue": "={{ $json.mime_type === 'application/vnd.google-apps.spreadsheet' ? 'google_sheets_rows_to_string' : ['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.presentationml.presentation'].includes($json.mime_type) ? 'office-parser' : 'paddleocr_ppstructurev3' }}"
+            },
+            {
+              "fieldId": "extracted_fields",
+              "fieldValue": "={{ { source_product_names: $json.source_product_names, normalized_product_name: 'ENJICAD', extraction: $json.extraction } }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        2320
+      ],
+      "id": "04af46f8-db74-4fd2-bfbc-d20652f6b3e0",
+      "name": "Create Document Version1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Prepare New Version2').item.json;\nconst rows = $input.all().map(i=>i.json);\nconst row = rows.find(r=>r?.id) || (Array.isArray(rows[0]) ? rows[0][0] : null);\nif (!row?.id) throw new Error('DOCUMENT_VERSION_CREATE_FAILED');\nreturn [{json:{...ctx,document_version_id:row.id}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3776,
+        2320
+      ],
+      "id": "2f8dc456-c080-4b51-a326-7095ba37c5c1",
+      "name": "Resolve Version ID1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json;\nconst text = String(ctx.normalized_text || '').trim();\nconst MAX = 4200;\nconst MIN = 500;\nif (!text) throw new Error('SEMANTIC_CHUNKING_INPUT_EMPTY');\n\nconst blocks = text\n  .split(/\\n(?=#{1,6}\\s|\\d+(?:\\.\\d+)*[.)]\\s|(?:FAQ|Error|Cause|Solution|Lỗi|Nguyên nhân|Giải pháp)\\b)/i)\n  .map(value => value.trim())\n  .filter(Boolean);\nconst chunks = [];\nlet buffer = '';\nfor (const block of blocks) {\n  if (buffer && buffer.length + 2 + block.length > MAX) {\n    chunks.push(buffer);\n    buffer = '';\n  }\n  if (block.length > MAX) {\n    if (buffer) {\n      chunks.push(buffer);\n      buffer = '';\n    }\n    for (let start = 0; start < block.length;) {\n      let end = Math.min(start + MAX, block.length);\n      if (end < block.length) {\n        const newline = block.lastIndexOf('\\n', end);\n        const sentence = block.lastIndexOf('. ', end);\n        const cut = Math.max(newline, sentence);\n        if (cut > start + MIN) end = cut + 1;\n      }\n      const content = block.slice(start, end).trim();\n      if (content) chunks.push(content);\n      start = end;\n    }\n  } else {\n    buffer = buffer ? `${buffer}\\n\\n${block}` : block;\n  }\n}\nif (buffer) chunks.push(buffer);\nif (!chunks.length) throw new Error('SEMANTIC_CHUNKING_EMPTY');\nif (chunks.some(chunk => chunk.length > MAX)) throw new Error('SEMANTIC_CHUNKING_MAX_LENGTH_VIOLATION');\n\nfunction hash(value) {\n  let result = 2166136261;\n  for (let index = 0; index < value.length; index++) {\n    result ^= value.charCodeAt(index);\n    result = Math.imul(result, 16777619);\n  }\n  return (result >>> 0).toString(16).padStart(8, '0');\n}\n\nreturn chunks.map((content, index) => ({\n  json: {\n    document_version_id: ctx.document_version_id,\n    product_id: ctx.product_id,\n    chunk_index: index,\n    section: (content.split('\\n')[0] || 'DOCUMENT').slice(0, 240),\n    title: `${ctx.file_name} - Chunk ${index + 1}`,\n    content,\n    language_code: ctx.language_code,\n    content_hash: hash(content),\n    metadata: {\n      knowledge_base_id: ctx.knowledge_base_id,\n      file_id: ctx.file_id,\n      source_url: ctx.source_url,\n      source_product_names: ctx.source_product_names,\n      normalized_product_name: 'ENJICAD',\n      chunking: 'semantic-v1'\n    }\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        2320
+      ],
+      "id": "9e35cddf-54f2-401d-aad6-abd55a0aa699",
+      "name": "Semantic Chunking1"
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_chunks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_version_id",
+              "fieldValue": "={{ $json.document_version_id }}"
+            },
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.product_id }}"
+            },
+            {
+              "fieldId": "chunk_index",
+              "fieldValue": "={{ $json.chunk_index }}"
+            },
+            {
+              "fieldId": "section",
+              "fieldValue": "={{ $json.section }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.content }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $json.language_code }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4224,
+        2320
+      ],
+      "id": "d73ea9f9-2e16-450a-9b7b-0db3100eb036",
+      "name": "Create Product Chunks1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().map(i=>i.json);\nreturn rows.map((row,i)=>{const r=Array.isArray(row)?row[0]:row;if(!r?.id)throw new Error(`CHUNK_CREATE_FAILED item=${i}`);return {json:{chunk_id:r.id,document_version_id:r.document_version_id,product_id:r.product_id,chunk_index:r.chunk_index,content:r.content,content_hash:r.content_hash,language_code:r.language_code,metadata:r.metadata}};});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4448,
+        2320
+      ],
+      "id": "750889fb-3cf3-4ff4-a4f6-20ab8f90ab73",
+      "name": "Prepare Embedding Input2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-api.cic.com.vn:9443/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: $json.content } }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4672,
+        2320
+      ],
+      "id": "a61400c2-9bcb-497a-a9e3-564b50dd007c",
+      "name": "Embedding API ",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notesInFlow": true,
+      "notes": "Retries transient CIC embedding capacity/timeouts. Source vector is validated as 4096 dimensions downstream."
+    },
+    {
+      "parameters": {
+        "jsCode": "const SOURCE_DIMENSION=4096;\nconst STORAGE_DIMENSION=1024;\nconst responses=$input.all();\nconst src=$('Prepare Embedding Input2').all();\nif(responses.length!==src.length)throw new Error(`EMBEDDING_RESPONSE_COUNT_MISMATCH ${responses.length}/${src.length}`);\nreturn responses.map((item,i)=>{\n  const r=item.json||{};\n  const e=r?.data?.[0]?.embedding??r.embedding;\n  const model=String(r.model||'qwen3-embedding-8b').toLowerCase();\n  if(model!=='qwen3-embedding-8b')throw new Error(`WRONG_EMBEDDING_MODEL item=${i} model=${model}`);\n  if(!Array.isArray(e)||e.length!==SOURCE_DIMENSION)throw new Error(`WRONG_EMBEDDING_DIMENSION item=${i} expected=${SOURCE_DIMENSION} actual=${Array.isArray(e)?e.length:'invalid'}`);\n  const truncated=e.slice(0,STORAGE_DIMENSION).map(Number);\n  if(truncated.some(v=>!Number.isFinite(v)))throw new Error(`INVALID_EMBEDDING_VALUE item=${i}`);\n  const norm=Math.sqrt(truncated.reduce((s,v)=>s+v*v,0));\n  if(!Number.isFinite(norm)||norm<=1e-12)throw new Error(`INVALID_EMBEDDING_NORM item=${i}`);\n  const normalized=truncated.map(v=>v/norm);\n  return {json:{...src[i].json,embedding:normalized,dimension:STORAGE_DIMENSION,source_dimension:SOURCE_DIMENSION,embedding_model_name:model}};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4896,
+        2320
+      ],
+      "id": "2596fc4e-6d65-4862-b200-ff5765f19b95",
+      "name": "Validate 1024 Embedding1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5120,
+        2320
+      ],
+      "id": "8516c07f-b041-48be-acec-cf25ae6628fe",
+      "name": "Get Active Embedding Model1",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "model-exists",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5344,
+        2320
+      ],
+      "id": "c38a8444-6006-42d8-8450-9a69c267049b",
+      "name": "IF Embedding Model Exists1"
+    },
+    {
+      "parameters": {
+        "tableId": "embedding_models",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "model_name",
+              "fieldValue": "qwen3-embedding-8b"
+            },
+            {
+              "fieldId": "model_version",
+              "fieldValue": "cic-ai-api"
+            },
+            {
+              "fieldId": "dimension",
+              "fieldValue": "1024"
+            },
+            {
+              "fieldId": "provider",
+              "fieldValue": "cic-ai-api"
+            },
+            {
+              "fieldId": "distance_metric",
+              "fieldValue": "cosine"
+            },
+            {
+              "fieldId": "normalization",
+              "fieldValue": "l2"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "={{ true }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ { requested_dimension: 1024, response_format: 'openai-compatible' } }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5568,
+        2624
+      ],
+      "id": "ad27b777-a420-4fc3-9f05-eb8d76c376e4",
+      "name": "Create Embedding Model1",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "product_chunk_embeddings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_id",
+              "fieldValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "fieldId": "embedding_model_id",
+              "fieldValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "fieldId": "embedding",
+              "fieldValue": "={{ JSON.stringify($json.embedding) }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "is_retrievable",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ { product_id: $json.product_id, document_version_id: $json.document_version_id, chunk_index: $json.chunk_index, embedding_model: 'qwen3-embedding-8b', embedding_dimension: 1024, normalization: 'l2', provider: 'cic-ai-api' } }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6016,
+        2320
+      ],
+      "id": "c637a5fc-211c-4b75-8414-83284b25cde1",
+      "name": "Upsert Chunk Embeddings1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_chunks",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_version_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Version ID1').item.json.document_version_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6240,
+        2320
+      ],
+      "id": "8ee82f32-eb30-4405-a61a-09fa7a7584b5",
+      "name": "Supabase - Get Version Chunks1",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const versionId=$('Resolve Version ID1').item.json.document_version_id;\nconst rawChunks=$('Supabase - Get Version Chunks1').all().map(i=>i.json).filter(r=>r?.id);\nconst chunkMap=new Map(rawChunks.map(r=>[String(r.id),r]));\nconst chunks=[...chunkMap.values()];\nconst embeddingRows=$input.all().map(i=>i.json).filter(r=>r?.id&&r?.chunk_id);\nconst embeddedChunkIds=new Set(embeddingRows.map(r=>String(r.chunk_id)));\nconst totalChunks=chunks.length;\nconst embedded=chunks.filter(c=>embeddedChunkIds.has(String(c.id))).length;\nconst failed=totalChunks-embedded;\nif(!totalChunks)throw new Error('VALIDATION_NO_CHUNKS');\nreturn [{json:{document_version_id:versionId,total_chunks:totalChunks,total_embeddings:embedded,failed_embeddings:failed,rag_complete:failed===0}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6688,
+        2320
+      ],
+      "id": "890d3339-055a-4aff-bf8b-470ede3ec445",
+      "name": "Validate RAG Ingestion1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rag-complete",
+              "leftValue": "={{ $json.rag_complete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6912,
+        2320
+      ],
+      "id": "55ad3be3-8c86-4fd9-9921-9a89f04545b4",
+      "name": "IF RAG Complete1"
+    },
+    {
+      "parameters": {
+        "jsCode": "throw new Error(`INGESTION_PARTIAL chunks=${$json.total_chunks} embeddings=${$json.total_embeddings} failed=${$json.failed_embeddings}`);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7136,
+        2624
+      ],
+      "id": "5b2b8ad7-c553-4ec3-b4f5-6782241af054",
+      "name": "Fail Partial Ingestion1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.data ?? $json;\n\n// Nếu OpenAPI schema đang là string thì parse thành object\nconst spec = typeof raw === 'string'\n  ? JSON.parse(raw)\n  : raw;\n\nconst allowed = [\n  'product_features',\n  'product_attributes',\n  'product_file_formats',\n  'product_system_requirements',\n  'product_applications',\n  'product_faqs',\n  'product_relations',\n  'product_versions',\n  'product_fact_sources'\n];\n\nconst defs =\n  spec.definitions ||\n  spec.components?.schemas ||\n  {};\n\nconst contract = {};\n\nfor (const table of allowed) {\n  const d = defs[table];\n\n  if (!d) {\n    throw new Error(`SCHEMA_NOT_EXPOSED: ${table}`);\n  }\n\n  contract[table] = {\n    required: d.required || [],\n    properties: Object.fromEntries(\n      Object.entries(d.properties || {}).map(([k, v]) => [\n        k,\n        {\n          type: v.type || v.format || null,\n          format: v.format || null,\n          default: v.default ?? null,\n          description: v.description || ''\n        }\n      ])\n    )\n  };\n}\n\nreturn [\n  {\n    json: {\n      schema_contract: contract\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7360,
+        2240
+      ],
+      "id": "626363be-67ae-4776-8227-78c8fdd6e212",
+      "name": "Prepare Structured Schema Contract1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-api.cic.com.vn:9443/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  model:'qwen3-vl-30b',\n  temperature:0,\n  max_tokens:8192,\n  response_format:{type:'json_object'},\n  messages:[\n    {role:'system',content:'Extract only facts explicitly supported by this source batch. Never invent facts. Preserve technical names, paths, services and executables. Normalize product scope to ENJICAD. Return ONLY valid JSON without Markdown: {writes:[{table,payload,dedupe,source_text,confidence}]}. Return at most 6 highest-value writes for this batch. Keep every payload concise and include only columns materially supported by the source. dedupe MUST be a JSON object containing stable natural-key columns, never a string. Never include id, created_at or updated_at in payload or dedupe; the database manages them. Keep source_text at most 240 characters and escape JSON characters correctly. table must be one of product_features, product_attributes, product_file_formats, product_system_requirements, product_applications, product_faqs, product_relations, product_versions. payload and dedupe keys must exist in the schema. Empty batch means {writes:[]}.'},\n    {role:'user',content:'BATCH '+($json.batch_index+1)+'/'+$json.batch_count+'\\nPRODUCT_ID: '+$json.product_id+'\\nSCHEMA:\\n'+JSON.stringify($json.schema_contract)+'\\nSOURCE:\\n'+$json.batch_text}\n  ]\n}) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8032,
+        2432
+      ],
+      "id": "7b131a66-da29-43c2-870e-0a0654520183",
+      "name": "Structured Extraction Qwen1",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notesInFlow": true,
+      "notes": "Primary structured extraction: max_tokens=8192, at most 6 concise writes. Transport retries 3 times; parser truncation routes to split fallback."
+    },
+    {
+      "parameters": {
+        "jsCode": "const batches=$input.all().map(item=>item.json);\nconst schema=batches[0]?.schema_contract??$('Prepare Structured Schema Contract1').item.json.schema_contract;\nconst version=$('Resolve Version ID1').item.json;\nconst allowed=new Set(Object.keys(schema).filter(table=>table!=='product_fact_sources'));\nconst rawEntries=batches.flatMap(batch=>(Array.isArray(batch.writes)?batch.writes:[]).map(write=>({write,source_batch_index:batch.batch_index})));\nconst malformedEntries=rawEntries.filter(entry=>!entry.write||typeof entry.write!=='object'||Array.isArray(entry.write)||typeof entry.write.table!=='string'||!entry.write.payload||typeof entry.write.payload!=='object'||Array.isArray(entry.write.payload));\nconst structurallyValid=rawEntries.filter(entry=>!malformedEntries.includes(entry)).map(entry=>({...entry.write,source_batch_index:entry.source_batch_index}));\nfor(const write of structurallyValid){if(write.table==='product_file_formats'){const direction=String(write.payload?.direction||'').toLowerCase();const normalized=direction==='input'?'import':direction==='output'?'export':direction;if(write.payload)write.payload.direction=normalized;if(write.dedupe&&typeof write.dedupe==='object')write.dedupe.direction=normalized;const rawExtension=String(write.payload?.extension||'').trim().toLowerCase();if(rawExtension){const extension=rawExtension.startsWith('.')?rawExtension:'.'+rawExtension;write.payload.extension=extension;if(write.dedupe&&typeof write.dedupe==='object')write.dedupe.extension=extension;}}}\nconst semanticInvalidEntries=structurallyValid.filter(write=>write.table==='product_file_formats'&&!['import','export','both'].includes(String(write.payload?.direction||'').toLowerCase()));\nconst invalidEntries=[...malformedEntries,...semanticInvalidEntries];\nconst rawWrites=structurallyValid.filter(write=>!semanticInvalidEntries.includes(write));\nconst unique=new Map();\nfor(let i=0;i<rawWrites.length;i++){\n  const write=rawWrites[i];\n  if(!allowed.has(write.table))throw new Error('STRUCTURED_TABLE_NOT_ALLOWED item='+i+' table='+write.table);\n  const def=schema[write.table];const props=def.properties||{};\n  const payload={};\n  const managed=new Set(['id','created_at','updated_at']);\n  for(const [key,value] of Object.entries(write.payload||{}))if(key in props&&!managed.has(key))payload[key]=value;\n  let dedupe=write.dedupe&&typeof write.dedupe==='object'&&!Array.isArray(write.dedupe)?{...write.dedupe}:{};\n  dedupe=Object.fromEntries(Object.entries(dedupe).filter(([key,value])=>key in props&&!managed.has(key)&&value!==null&&value!==undefined&&String(value)!==''));\n  if('product_id'in props){payload.product_id=version.product_id;dedupe.product_id=version.product_id;}\n  if(Object.keys(dedupe).filter(key=>key!=='product_id').length===0){\n    const strong=['feature_key','attribute_key','format_key','requirement_key','application_key','faq_key','relation_key','version_key','code','slug','version','extension','mime_type','relation_type','source_product_id','target_product_id'];\n    for(const key of strong){const value=payload[key];if(key in props&&value!==null&&value!==undefined&&String(value)!=='')dedupe[key]=value;}\n    if(Object.keys(dedupe).filter(key=>key!=='product_id').length&&'language_code'in props&&payload.language_code)dedupe.language_code=payload.language_code;\n  }\n  if(Object.keys(dedupe).filter(key=>key!=='product_id').length===0){\n    const names=['question','name','title','feature_name','attribute_name','format_name','requirement_name','application_name'];\n    const key=names.find(candidate=>candidate in props&&payload[candidate]!==null&&payload[candidate]!==undefined&&String(payload[candidate])!=='');\n    if(key)dedupe[key]=payload[key];\n    if(key&&'language_code'in props&&payload.language_code)dedupe.language_code=payload.language_code;\n  }\n  if(Object.keys(dedupe).filter(key=>key!=='product_id').length===0){\n    const fallback=Object.keys(payload).find(key=>key!=='product_id'&&!managed.has(key)&&['string','number','boolean'].includes(typeof payload[key])&&String(payload[key]).length<=240);\n    if(fallback)dedupe[fallback]=payload[fallback];\n  }\n  const identityKeysByTable={\n    product_features:['feature_key','language_code'],\n    product_attributes:['attribute_key','language_code'],\n    product_file_formats:['direction','extension','language_code'],\n    product_system_requirements:['requirement_key','language_code'],\n    product_applications:['application','language_code'],\n    product_faqs:['faq_key','language_code'],\n    product_relations:['source_product_id','target_product_id','relation_type'],\n    product_versions:['version_key','language_code']\n  };\n  const identityKeys=identityKeysByTable[write.table]||[];\n  if(identityKeys.length){\n    const canonical={};\n    if('product_id'in props)canonical.product_id=version.product_id;\n    for(const key of identityKeys){\n      const value=payload[key];\n      if(key in props&&value!==null&&value!==undefined&&String(value)!=='')canonical[key]=value;\n    }\n    if(Object.keys(canonical).some(key=>key!=='product_id'))dedupe=canonical;\n  }\n  for(const key of def.required||[]){const property=props[key]||{};if(!(key in payload)&&property.default==null&&!['id','created_at','updated_at'].includes(key))throw new Error('MISSING_REQUIRED_COLUMN '+write.table+'.'+key);}\n  const entries=Object.entries(dedupe).filter(([,value])=>value!==null&&value!==undefined&&String(value)!=='');\n  if(!entries.length)throw new Error('MISSING_DEDUPE '+write.table);\n  const stable=entries.sort(([a],[b])=>a.localeCompare(b));\n  const caseInsensitiveIdentityKeys=new Set(['feature_key','attribute_key','format_key','requirement_key','application_key','faq_key','relation_key','version_key','code','slug','extension','mime_type','relation_type','application']);\n  const identityStable=stable.map(([key,value])=>[key,caseInsensitiveIdentityKeys.has(key)&&typeof value==='string'?value.toLowerCase():value]);\n  const identity=write.table+'|'+JSON.stringify(identityStable);\n  const confidenceNumber=Number(write.confidence);const confidence=Number.isFinite(confidenceNumber)?Math.min(1,Math.max(0,confidenceNumber)):0;\n  const normalized={table:write.table,payload,dedupe:Object.fromEntries(stable),source_text:String(write.source_text||'').slice(0,240),confidence,source_batch_indexes:[write.source_batch_index]};\n  if(unique.has(identity)){\n    const current=unique.get(identity);current.confidence=Math.max(current.confidence,confidence);current.source_batch_indexes=[...new Set([...current.source_batch_indexes,write.source_batch_index])];\n    if(normalized.source_text.length>current.source_text.length)current.source_text=normalized.source_text;\n  }else unique.set(identity,normalized);\n}\nconst writes=[...unique.values()];\nif(!writes.length)return [{json:{document_version_id:version.document_version_id,product_id:version.product_id,schema_contract:schema,noop:true,write_index:0,structured_write_count:0,structured_batch_count:batches.length,structured_invalid_write_count:invalidEntries.length}}];\nreturn writes.map((write,write_index)=>{\n  const caseInsensitiveKeys=new Set(['feature_key','attribute_key','format_key','requirement_key','application_key','faq_key','relation_key','version_key','code','slug','extension','mime_type','relation_type']);const filters=Object.entries(write.dedupe).map(([key,value])=>{const operator=caseInsensitiveKeys.has(key)&&typeof value==='string'?'ilike':'eq';return encodeURIComponent(key)+'='+operator+'.'+encodeURIComponent(String(value));}).join('&');\n  return {json:{...write,document_version_id:version.document_version_id,product_id:version.product_id,source_product_names:version.source_product_names||[],schema_contract:schema,noop:false,write_index,structured_write_count:writes.length,structured_batch_count:batches.length,structured_invalid_write_count:invalidEntries.length,lookup_url:$env.SUPABASE_URL.replace(/\\/$/,'')+'/rest/v1/'+write.table+'?select=*&'+filters+'&limit=1'}};\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8032,
+        2144
+      ],
+      "id": "9cbfd6bf-be39-4b36-aec1-fc10f7fb35b2",
+      "name": "Validate Structured Writes1",
+      "notesInFlow": true,
+      "notes": "Validates/deduplicates writes; skips malformed fragments, normalizes file-format directions and extensions, and rejects non-file directions such as install."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "structured-noop",
+              "leftValue": "={{ $json.noop }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8480,
+        2128
+      ],
+      "id": "8a48bf2b-4ec8-44b7-b380-79f8f175d016",
+      "name": "IF Structured No-op1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.lookup_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8704,
+        2128
+      ],
+      "id": "ba0b4583-4991-437d-837d-624fc10adc24",
+      "name": "Get Existing Structured Fact1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fact-exists",
+              "leftValue": "={{ $json.fact_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        9152,
+        2128
+      ],
+      "id": "f9b92041-9be0-47c6-a1e9-b388f11788b4",
+      "name": "IF Structured Fact Exists1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$('Normalize Existing Structured Fact1').item.json;\nconst raw=$json?.data??$json;\nconst created=Array.isArray(raw)?raw[0]:raw;\nconst row=ctx.fact_exists?ctx.existing_fact:created;\nif(!row?.id)throw new Error('STRUCTURED_FACT_ID_MISSING table='+ctx.table+' write_index='+ctx.write_index);\nreturn {json:{...ctx,fact_id:row.id,fact_created:!ctx.fact_exists}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9600,
+        2128
+      ],
+      "id": "2705d672-cdd3-4964-8732-5fbd0dbd50c4",
+      "name": "Resolve Structured Fact1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$json;\nconst def=ctx.schema_contract.product_fact_sources;const props=def.properties||{};\nlet fk=null;for(const [name,property] of Object.entries(props)){if(String(property.description||'').includes(\"table='\"+ctx.table+\"'\")){fk=name;break;}}\nif(!fk)return {json:{...ctx,skip_provenance:true}};\nconst payload={[fk]:ctx.fact_id};\nif('document_version_id'in props)payload.document_version_id=ctx.document_version_id;\nconst chunks=$('Create Product Chunks1').all().map(item=>item.json?.data??item.json).flatMap(row=>Array.isArray(row)?row:[row]).filter(row=>row?.id);\nconst needle=ctx.source_text.slice(0,120).trim();const chunk=needle?chunks.find(row=>String(row.content||'').includes(needle)):null;\nif(chunk&&'chunk_id'in props)payload.chunk_id=chunk.id;\nif(chunk?.page_number!=null&&'page_number'in props)payload.page_number=chunk.page_number;\nif('source_excerpt'in props)payload.source_excerpt=ctx.source_text;else if('source_text'in props)payload.source_text=ctx.source_text;else if('evidence_text'in props)payload.evidence_text=ctx.source_text;\nif('confidence'in props)payload.confidence=ctx.confidence;else if('confidence_score'in props)payload.confidence_score=ctx.confidence;\nif('extraction_method'in props)payload.extraction_method='qwen3-vl-30b-batched';\nif('metadata'in props)payload.metadata={source_product_names:ctx.source_product_names,normalized_product_name:'ENJICAD',source_batch_indexes:ctx.source_batch_indexes};\nfor(const key of def.required||[]){const property=props[key]||{};if(!(key in payload)&&property.default==null&&!['id','created_at','updated_at'].includes(key))throw new Error('PROVENANCE_MISSING_REQUIRED '+key);}\nconst keys=[fk,'document_version_id','chunk_id'].filter(key=>key in payload);\nconst filters=keys.map(key=>encodeURIComponent(key)+'=eq.'+encodeURIComponent(String(payload[key]))).join('&');\nreturn {json:{...ctx,skip_provenance:false,provenance_payload:payload,provenance_lookup_url:$env.SUPABASE_URL.replace(/\\/$/,'')+'/rest/v1/product_fact_sources?select=*&'+filters+'&limit=1'}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9824,
+        2128
+      ],
+      "id": "4d7df122-4528-4a00-b08a-59a7d264decc",
+      "name": "Prepare Provenance1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "prov-supported",
+              "leftValue": "={{ $json.skip_provenance }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        10048,
+        2192
+      ],
+      "id": "cf461937-32c0-431f-9cb1-de423def4619",
+      "name": "IF Provenance Supported1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_fact_sources' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.provenance_payload) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        10944,
+        2192
+      ],
+      "id": "3bce3946-ee0c-442e-9985-2c3095103a5b",
+      "name": "Create Product Fact Source1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const validation=$('Validate RAG Ingestion1').first().json;\nif(!validation.rag_complete)throw new Error('FINALIZE_BLOCKED_RAG_INCOMPLETE');\nconst writes=$('Validate Structured Writes1').all().map(item=>item.json);\nconst structured=writes.filter(write=>!write.noop);\nreturn [{json:{...validation,status:'completed',structured_batch_count:writes[0]?.structured_batch_count??0,structured_write_count:structured.length,structured_fact_count:structured.length,structured_noop:structured.length===0,completed_at:new Date().toISOString()}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8480,
+        1936
+      ],
+      "id": "0ff361df-879c-4118-b3c2-5eeb1ec36a0b",
+      "name": "Finalize Version1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Version ID1').first().json.document_version_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8928,
+        1936
+      ],
+      "id": "7fa2980a-95a6-4bd6-8659-000625ae1801",
+      "name": "Mark Version Completed1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const v=$('Finalize Version1').first().json;\nconst ctx=$('Attach Extracted Context1').first().json;\nreturn [{json:{status:'completed',file_id:ctx.file_id,file_name:ctx.file_name,document_version_id:v.document_version_id,total_chunks:v.total_chunks,total_embeddings:v.total_embeddings,failed_embeddings:v.failed_embeddings,structured_fact_count:v.structured_fact_count,embedding_dimension:1024,source_type:ctx.mime_type === 'application/vnd.google-apps.spreadsheet' ? 'google_sheets' : 'google_drive'}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9152,
+        1936
+      ],
+      "id": "8733455c-9b2c-41e2-82c3-a6984c303daf",
+      "name": "Ingestion Summary1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Attach Extracted Context1').item.json;\nconst rows = $input.all().map(i=>i.json).filter(Boolean);\nconst row = rows.find(r=>r?.id) || (Array.isArray(rows[0]) ? rows[0][0] : null);\nif (!row?.id) throw new Error('DOCUMENT_ID_RESOLUTION_FAILED');\nreturn [{json:{...ctx,document_id:row.id}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        2416
+      ],
+      "id": "4834999c-d348-4953-9d64-ea3b5762a117",
+      "name": "Resolve Document ID2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Version Lookup Context1').item.json;\nconst rows = $input.all().map(i=>i.json).filter(r=>r && Number.isFinite(Number(r.version_number)));\nconst maxVersion = rows.reduce((m,r)=>Math.max(m,Number(r.version_number)),0);\nreturn [{json:{...ctx,version_number:maxVersion+1}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3328,
+        2320
+      ],
+      "id": "d8b46c03-f30c-4c2e-8ecc-b92b47c637ce",
+      "name": "Prepare New Version2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().map(i=>i.json).filter(Boolean);const row=rows.find(r=>r?.id)||(Array.isArray(rows[0])?rows[0][0]:null);\nif(!row?.id)throw new Error('EMBEDDING_MODEL_RESOLUTION_FAILED');\nconst embeddings=$('Validate 1024 Embedding1').all();\nreturn embeddings.map(i=>({json:{...i.json,embedding_model_id:row.id}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5792,
+        2320
+      ],
+      "id": "8fa02a8a-d71a-4176-abfb-995686d7987e",
+      "name": "Resolve Embedding Model2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2944,
+        2176
+      ],
+      "id": "e32f8ac3-d734-42dc-a286-e4844d947124",
+      "name": "Loop Over Files1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{status:'all_files_completed',files_received:$input.all().length,finished_at:new Date().toISOString()}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2832,
+        1408
+      ],
+      "id": "b47a1e2c-c272-4fbb-8509-d9b59698156c",
+      "name": "All Files Completed1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx=$('Resolve Ingestion Context1').item.json;\nconst incoming=$json||{};\nreturn [{json:{...ctx,...incoming}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        1952
+      ],
+      "id": "62390892-2f12-4048-85de-925d13a054b8",
+      "name": "Restore File Context1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-sheet",
+              "leftValue": "={{ $json.mime_type }}",
+              "rightValue": "application/vnd.google-apps.spreadsheet",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        192,
+        1952
+      ],
+      "id": "806862da-5583-4193-a46a-f5419e12020b",
+      "name": "IF Google Sheet1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Restore File Context1').item.json.file_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $env.ENJICAD_SHEET_GID || 1620486330 }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        640,
+        1808
+      ],
+      "id": "5f82a1a4-1ed8-4998-a0a0-3982b33dd88f",
+      "name": "Get All Sheet Rows1",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 15000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().map(i=>i.json);\nif(!rows.length)throw new Error('GOOGLE_SHEET_EMPTY');\nconst preferred=['Phiên bản sử dụng','Nội dung cần hỗ trợ','Loại lỗi','Hướng giải quyết','Mức độ'];\nconst blocks=rows.map((row,index)=>{const hasPreferred=preferred.some(k=>row[k]!==undefined&&String(row[k]).trim());const keys=hasPreferred?preferred:Object.keys(row).filter(k=>!k.startsWith('_'));return [`FAQ ${index+1}`,...keys.map(k=>`${k}: ${row[k]??''}`)].join('\\n');});\nconst content=blocks.join('\\n\\n---\\n\\n').trim();\nif(!content)throw new Error('GOOGLE_SHEET_TEXT_EMPTY');\nreturn [{json:{content,row_count:rows.length},pairedItem:{item:0}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        1792
+      ],
+      "id": "2f83f057-2c46-4b9e-a3f0-a8924bc104c7",
+      "name": "Sheet Rows To One String1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const meta=$('Prepare Source Metadata1').item.json;\nconst raw=String($json.content||'').trim();\nif(!raw)throw new Error('SHEET_TEXT_EMPTY');\nconst normalized=raw.replace(/\\r\\n?/g,'\\n').replace(/[ \\t]+/g,' ').replace(/\\n{3,}/g,'\\n\\n').trim();\nconst sourceNames=[...new Set((normalized.match(/\\b(?:GstarCAD|CMS IntelliCAD|IntelliCAD|enjiCAD|ENJICAD)\\b/gi)||[]))];\nreturn [{json:{...meta,raw_text:raw,normalized_text:normalized,source_product_names:sourceNames,normalized_product_name:'ENJICAD',extraction:{engine:'google_sheets_rows_to_string',used_ocr:false,rows:Number($json.row_count||0)}}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        1792
+      ],
+      "id": "c3ff6a40-4554-4f72-9f81-e4c1bd55a0d4",
+      "name": "Normalize Sheet Text1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const restored=$('Restore File Context1').item.json;\nconst extracted=$json;\nif(!String(extracted.normalized_text||'').trim())throw new Error('EXTRACTED_TEXT_MISSING');\nreturn [{json:{...restored,...extracted,product_id:restored.product_id,knowledge_base_id:restored.knowledge_base_id}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        2016
+      ],
+      "id": "b38ae93a-1e26-4fb2-a0fd-570908f04c10",
+      "name": "Attach Extracted Context1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_chunk_embeddings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chunk_id",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "embedding_model_id",
+              "keyValue": "={{ $('Resolve Embedding Model2').first().json.embedding_model_id }}"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6464,
+        2320
+      ],
+      "id": "913564e4-4a58-4c7c-86b5-29255a8732b5",
+      "name": "Supabase - Get Embedding For Chunk1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "1103"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2496,
+        1616
+      ],
+      "id": "352a335f-723f-4087-9991-87fe7c430e07",
+      "name": "Get ENJICAD Product1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "knowledge_bases",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "8f6c3a15-d84d-457b-8bc7-7b8d4df2313d"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2272,
+        1616
+      ],
+      "id": "aae82e7b-0fe6-43cf-a68f-cadad4d2561d",
+      "name": "Get COMPANY Knowledge Base1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Prepare Source Metadata1').item.json;\nconst productRows = $('Get ENJICAD Product1').all().map(i => i.json).filter(r => r?.id);\nconst kbRows = $input.all().map(i => i.json).filter(r => r?.id);\nconst product = productRows.find(r => Number(r.id) === 1103);\nconst knowledgeBase = kbRows.find(r => String(r.id) === '8f6c3a15-d84d-457b-8bc7-7b8d4df2313d');\nif (!product) throw new Error(`PRODUCT_RESOLUTION_FAILED: products.id=1103 not visible; visible=${productRows.map(r => `${r.id}:${r.code}`).join(', ') || 'none'}`);\nif (!knowledgeBase) throw new Error(`KB_RESOLUTION_FAILED: knowledge_bases.id=8f6c3a15-d84d-457b-8bc7-7b8d4df2313d not visible; visible=${kbRows.map(r => `${r.id}:${r.code ?? r.name}`).join(', ') || 'none'}`);\nreturn [{json:{...base,product_id:product.id,product_code:product.code,knowledge_base_id:knowledgeBase.id,knowledge_base_code:knowledgeBase.code ?? null,knowledge_base_name:knowledgeBase.name ?? null}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2048,
+        1616
+      ],
+      "id": "1b5485ba-c720-4603-83fe-9b19fc2304b0",
+      "name": "Resolve Product And KB1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "existing-document-after-parse",
+              "leftValue": "={{ $json.existing_document_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1536,
+        1968
+      ],
+      "id": "7c194e2d-f028-46cf-bcb3-d8f17c83cb0d",
+      "name": "IF Existing Document After Parse1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx=$json;\nif(!ctx?.existing_document_id)throw new Error('EXISTING_DOCUMENT_ID_MISSING_AFTER_PARSE');\nreturn [{json:{...ctx,document_id:ctx.existing_document_id}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        1792
+      ],
+      "id": "54c166ee-1a0f-4cc8-8988-21c3439919bd",
+      "name": "Use Existing Document ID1"
+    },
+    {
+      "parameters": {
+        "jsCode": "if(!$json?.document_id)throw new Error('VERSION_LOOKUP_DOCUMENT_ID_MISSING');\nif(!$json?.source_hash)throw new Error('VERSION_LOOKUP_SOURCE_HASH_MISSING');\nreturn [{json:{...$json}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        2000
+      ],
+      "id": "b4f735df-3847-43e8-87a3-b84d158d8942",
+      "name": "Version Lookup Context1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().map(i=>i.json).filter(r=>r?.id);\nif(!rows.length)return [{json:{matching_version:false,ingestion_complete:false}}];\nrows.sort((a,b)=>Number(b.version_number||0)-Number(a.version_number||0)||String(b.created_at||'').localeCompare(String(a.created_at||'')));\nconst latest=rows[0];\nconst completed=['parse_status','chunk_status','embedding_status','index_status'].every(k=>String(latest[k]||'').toLowerCase()==='completed');\nreturn [{json:{...latest,matching_version:true,ingestion_complete:completed&&latest.is_current===true}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        2000
+      ],
+      "id": "a6d49ea0-0554-4992-b1ee-cc309b7c2988",
+      "name": "Select Latest Matching Version1"
+    },
+    {
+      "parameters": {
+        "url": "https://udclkphulebnknvtmpxx.supabase.co/rest/v1/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/openapi+json"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7136,
+        2240
+      ],
+      "id": "27fb3f55-a168-4fab-949c-b8acee131192",
+      "name": "Get Supabase OpenAPI Schema1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const version=$('Resolve Version ID1').item.json;\nconst schema=$json.schema_contract;\nconst source=String(version.normalized_text||'').trim();\nif(!schema||typeof schema!=='object')throw new Error('STRUCTURED_BATCH_SCHEMA_MISSING');\nconst MAX_CHARS=8000;\nconst MIN_CUT=4000;\nconst parts=[];\nif(!source)parts.push('');\nfor(let start=0;start<source.length;){\n  let end=Math.min(start+MAX_CHARS,source.length);\n  if(end<source.length){\n    const newline=source.lastIndexOf('\\n',end);\n    const sentence=source.lastIndexOf('. ',end);\n    const cut=Math.max(newline,sentence);\n    if(cut>=start+MIN_CUT)end=cut+(cut===sentence?1:0);\n  }\n  const text=source.slice(start,end).trim();\n  if(text)parts.push(text);\n  start=Math.max(end,start+1);\n}\nreturn parts.map((batch_text,batch_index)=>({json:{\n  document_version_id:version.document_version_id,\n  product_id:version.product_id,\n  source_product_names:version.source_product_names||[],\n  schema_contract:schema,\n  batch_index,\n  batch_count:parts.length,\n  batch_text,\n  batch_char_count:batch_text.length\n}}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7584,
+        2240
+      ],
+      "id": "b4df92c6-aaba-43f1-b3aa-fcdd44356110",
+      "name": "Prepare Structured Extraction Batches1",
+      "notesInFlow": true,
+      "notes": "INPUT: schema_contract + normalized_text. OUTPUT: các batch tuần tự tối đa 8.000 ký tự, kèm batch_index/batch_count."
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        7808,
+        2240
+      ],
+      "id": "eec7b222-61b1-49ba-9ffc-18effcf02eaa",
+      "name": "Loop Over Structured Batches1",
+      "notesInFlow": true,
+      "notes": "Xử lý từng batch AI tuần tự để tránh quá tải và output truncation."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$('Loop Over Structured Batches1').item.json;\nconst response=$json?.data??$json;\nconst choice=response?.choices?.[0]||{};\nconst finishReason=choice.finish_reason??null;\nconst raw=choice?.message?.content??response?.output_text??'';\nfunction firstObject(value){\n  const text=String(value??'').replace(/^\\uFEFF/,'').replace(/<think>[\\s\\S]*?<\\/think>/gi,'').trim();\n  let start=-1,depth=0,inString=false,escaped=false;\n  for(let i=0;i<text.length;i++){\n    const ch=text[i];\n    if(start<0){if(ch==='{'){start=i;depth=1;}continue;}\n    if(inString){if(escaped){escaped=false;continue;}if(ch==='\\\\'){escaped=true;continue;}if(ch==='\"')inString=false;continue;}\n    if(ch==='\"'){inString=true;continue;}if(ch==='{')depth++;else if(ch==='}'&&--depth===0)return {text:text.slice(start,i+1),balanced:true};\n  }\n  return {text:start>=0?text.slice(start):text,balanced:false};\n}\nfunction sanitize(value){\n  let out='',inString=false,escaped=false;\n  for(let i=0;i<value.length;i++){\n    const ch=value[i];\n    if(inString){\n      if(escaped){out+=ch;escaped=false;continue;}\n      if(ch==='\\\\'){out+=ch;escaped=true;continue;}\n      if(ch==='\"'){out+=ch;inString=false;continue;}\n      const code=ch.charCodeAt(0);\n      if(code<32){out+=ch==='\\n'?'\\\\n':ch==='\\r'?'\\\\r':ch==='\\t'?'\\\\t':'\\\\u'+code.toString(16).padStart(4,'0');continue;}\n      out+=ch;continue;\n    }\n    if(ch==='\"'){inString=true;out+=ch;continue;}\n    if(ch===','){\n      let j=i+1;while(j<value.length&&/\\s/.test(value[j]))j++;\n      if(value[j]==='}'||value[j]===']')continue;\n    }\n    out+=ch;\n  }\n  return out;\n}\nif(typeof raw!=='string'&&(!raw||typeof raw!=='object'))throw new Error('STRUCTURED_BATCH_RESPONSE_MISSING batch='+ctx.batch_index);\nlet parsed;\nif(typeof raw==='object')parsed=raw;\nelse{\n  const extracted=firstObject(raw);\n  if(finishReason==='length'||!extracted.balanced)throw new Error('STRUCTURED_BATCH_TRUNCATED batch='+ctx.batch_index+' chars='+raw.length+' finish_reason='+(finishReason??'unknown'));\n  try{parsed=JSON.parse(extracted.text);}catch(firstError){\n    try{parsed=JSON.parse(sanitize(extracted.text));}catch(secondError){throw new Error('STRUCTURED_BATCH_JSON_INVALID batch='+ctx.batch_index+' chars='+raw.length+': '+secondError.message);}\n  }\n}\nconst writes=Array.isArray(parsed?.writes)?parsed.writes:[];\nreturn {json:{...ctx,writes,write_count:writes.length,finish_reason:finishReason}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8256,
+        2512
+      ],
+      "id": "a88c048d-4a37-4d62-bcd9-3a45dbc47861",
+      "name": "Parse Structured Batch1",
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Parses complete JSON. Truncated output is routed to automatic two-half fallback instead of terminating the ingestion."
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        8256,
+        2144
+      ],
+      "id": "3f99198e-f68d-4421-ada7-c392a14b0c57",
+      "name": "Loop Over Structured Writes1",
+      "notesInFlow": true,
+      "notes": "Ghi từng structured fact/provenance tuần tự; output done mới được finalize."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$('Loop Over Structured Writes1').item.json;\nconst raw=$json?.data??$json;\nconst rows=Array.isArray(raw)?raw:(raw?.id?[raw]:[]);\nconst existing=rows[0]||null;\nreturn {json:{...ctx,fact_exists:Boolean(existing?.id),existing_fact:existing}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8928,
+        2128
+      ],
+      "id": "3ca8b590-4eea-4fc1-b91d-69deef628b16",
+      "name": "Normalize Existing Structured Fact1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.provenance_lookup_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        10272,
+        2192
+      ],
+      "id": "5efe0229-a602-4a04-93e5-e3db3c3add50",
+      "name": "Get Existing Product Fact Source1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$('Prepare Provenance1').item.json;\nconst raw=$json?.data??$json;\nconst rows=Array.isArray(raw)?raw:(raw?.id?[raw]:[]);\nconst existing=rows[0]||null;\nreturn {json:{...ctx,provenance_exists:Boolean(existing?.id),existing_provenance:existing}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10496,
+        2192
+      ],
+      "id": "430a974b-faa6-4311-b8ee-0a85cce4248f",
+      "name": "Normalize Product Fact Source Lookup1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fact-source-exists",
+              "leftValue": "={{ $json.provenance_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        10720,
+        2192
+      ],
+      "id": "33add1b7-5c8e-4675-8c9c-31900326c5dd",
+      "name": "IF Product Fact Source Exists1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Version ID1').first().json.document_id }}"
+            },
+            {
+              "keyName": "is_current",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8704,
+        1936
+      ],
+      "id": "05acb507-f332-4678-8119-c044f7fd3c2b",
+      "name": "Unset Previous Current Version1",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1_1xi-ClZbc8_jJmr_JlHl6pfqpRc3hnI",
+            "mode": "list",
+            "cachedResultName": "EnjiCad",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1_1xi-ClZbc8_jJmr_JlHl6pfqpRc3hnI"
+          },
+          "whatToSearch": "files",
+          "fileTypes": [
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/vnd.google-apps.spreadsheet"
+          ],
+          "includeTrashed": false
+        },
+        "options": {
+          "fields": [
+            "*"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -3392,
+        2176
+      ],
+      "id": "4ecb22ca-c109-45f1-9c5f-6944ad8c66de",
+      "name": "List Drive Folder Files1",
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "notesInFlow": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "notes": "INPUT: sự kiện fileCreated. OUTPUT: toàn bộ file được hỗ trợ trong folder để Loop Over Files xử lý tuần tự."
+    },
+    {
+      "parameters": {
+        "jsCode": "const allowed=new Set([\n  'application/pdf',\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',\n  'application/vnd.openxmlformats-officedocument.presentationml.presentation',\n  'application/vnd.google-apps.spreadsheet'\n]);\nconst unique=new Map();\nfor(const item of $input.all()){\n  const row=item.json?.data??item.json;\n  for(const file of Array.isArray(row)?row:[row]){\n    if(file?.id&&allowed.has(file.mimeType)&&!file.trashed)unique.set(String(file.id),file);\n  }\n}\nconst files=[...unique.values()].sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'vi'));\nreturn files.map(file=>({json:file}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3168,
+        2176
+      ],
+      "id": "05dc6d06-f700-4274-a1c9-5540c2ba42bc",
+      "name": "Normalize Drive Folder Files1",
+      "notesInFlow": true,
+      "notes": "Loại file không hỗ trợ, loại trùng theo Google Drive file ID và sắp xếp ổn định trước khi vào loop."
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx=$('Resolve Ingestion Context1').item.json;\nconst rows=$input.all().map(item=>item.json?.data??item.json).flatMap(row=>Array.isArray(row)?row:[row]).filter(row=>row?.id);\nrows.sort((a,b)=>String(b.updated_at||b.created_at||'').localeCompare(String(a.updated_at||a.created_at||'')));\nconst existing=rows[0]||null;\nreturn [{json:{...ctx,document_exists:Boolean(existing?.id),existing_document:existing,existing_document_id:existing?.id||null}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        1616
+      ],
+      "id": "cc3bd568-96dc-4aba-aae3-7f39ec066762",
+      "name": "Normalize Product Document Lookup1",
+      "notesInFlow": true,
+      "notes": "INPUT: kết quả lookup product_documents. OUTPUT: đúng một item với document_exists và existing_document_id."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$json;\nif(!ctx.document_exists||!ctx.existing_document_id)throw new Error('DOCUMENT_SKIP_CONTEXT_INVALID');\nreturn {json:{status:'skipped',reason:'document already exists in product_documents',file_id:ctx.file_id,file_name:ctx.file_name,document_id:ctx.existing_document_id,source_url:ctx.source_url,database_check:'product_id+source_url'}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        1696
+      ],
+      "id": "264b92e5-f37e-4652-9f99-931db1a5f50b",
+      "name": "Document Already Exists1",
+      "notesInFlow": true,
+      "notes": "Document đã tồn tại: không parse, không tạo version/chunk/embedding; trả về Loop Over Files để lấy file tiếp theo."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx=$('Restore File Context1').item.json;\nconst error=$json?.error??$json;\nconst message=String(error?.message??error?.description??error?.detail??'unknown file processing error').slice(0,500);\nreturn {json:{status:'failed',reason:'file processing failed; continued to next document',file_id:ctx.file_id,file_name:ctx.file_name,source_url:ctx.source_url,error_message:message}};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        2288
+      ],
+      "id": "670eaaca-4bc3-489a-8989-f3bb33a5ab46",
+      "name": "File Processing Failed1",
+      "notesInFlow": true,
+      "notes": "Một file lỗi download/parser sẽ được ghi nhận failed rồi trả về Loop Over Files, không dừng cả folder."
+    },
+    {
+      "parameters": {
+        "jsCode": "const JSZip = require('jszip');\n\nconst items = $input.all();\nif (items.length !== 1) throw new Error(`OFFICE_BATCH_EXPECTED_ONE_FILE received=${items.length}`);\n\nconst source = items[0];\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst meta = $('Prepare Source Metadata1').item.json;\nconst mimeType = source.binary?.data?.mimeType || meta.mime_type;\nconst fileName = source.binary?.data?.fileName || meta.file_name || 'office-document';\nconst DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';\nconst PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';\nif (![DOCX, PPTX].includes(mimeType)) throw new Error(`OFFICE_BATCH_INVALID_MIME ${mimeType}`);\n\nconst sizeBytes = buffer.length;\nconst sizeMb = sizeBytes / (1024 * 1024);\nconst xmlText = async (zip, name, required = true) => {\n  const entry = zip.file(name);\n  if (!entry) {\n    if (required) throw new Error(`OOXML_REQUIRED_PART_MISSING ${name}`);\n    return null;\n  }\n  return entry.async('string');\n};\n\nfunction normalizePart(path) {\n  const out = [];\n  for (const segment of String(path).replace(/\\\\/g, '/').split('/')) {\n    if (!segment || segment === '.') continue;\n    if (segment === '..') out.pop();\n    else out.push(segment);\n  }\n  return out.join('/');\n}\n\nfunction resolveTarget(sourcePart, target) {\n  if (String(target).startsWith('/')) return normalizePart(String(target).slice(1));\n  const slash = sourcePart.lastIndexOf('/');\n  const dir = slash >= 0 ? sourcePart.slice(0, slash + 1) : '';\n  return normalizePart(dir + target);\n}\n\nfunction relsPathForPart(part) {\n  if (!part) return '_rels/.rels';\n  const slash = part.lastIndexOf('/');\n  const dir = slash >= 0 ? part.slice(0, slash + 1) : '';\n  const base = slash >= 0 ? part.slice(slash + 1) : part;\n  return `${dir}_rels/${base}.rels`;\n}\n\nfunction attr(tag, name) {\n  const match = tag.match(new RegExp(`\\\\b${name}=\"([^\"]*)\"`));\n  return match ? match[1] : null;\n}\n\nfunction relationshipTags(xml) {\n  return String(xml || '').match(/<Relationship\\b[^>]*\\/?\\s*>/g) || [];\n}\n\nfunction replaceRelationshipTags(xml, tags) {\n  const open = xml.match(/<Relationships\\b[^>]*>/);\n  if (!open) throw new Error('OOXML_RELATIONSHIPS_ROOT_INVALID');\n  const closeAt = xml.lastIndexOf('</Relationships>');\n  if (closeAt < 0) throw new Error('OOXML_RELATIONSHIPS_CLOSE_MISSING');\n  return xml.slice(0, open.index + open[0].length) + tags.join('') + xml.slice(closeAt);\n}\n\nasync function pruneToReachable(zip) {\n  const keep = new Set(['[Content_Types].xml', '_rels/.rels']);\n  const queue = [''];\n  const seen = new Set();\n  while (queue.length) {\n    const part = queue.shift();\n    if (seen.has(part)) continue;\n    seen.add(part);\n    if (part) keep.add(part);\n    const relsPath = relsPathForPart(part);\n    const relsEntry = zip.file(relsPath);\n    if (!relsEntry) continue;\n    keep.add(relsPath);\n    const relsXml = await relsEntry.async('string');\n    for (const tag of relationshipTags(relsXml)) {\n      if (String(attr(tag, 'TargetMode') || '').toLowerCase() === 'external') continue;\n      const target = attr(tag, 'Target');\n      if (!target) continue;\n      const resolved = resolveTarget(part, target);\n      if (zip.file(resolved) && !seen.has(resolved)) queue.push(resolved);\n    }\n  }\n\n  const contentTypes = await xmlText(zip, '[Content_Types].xml');\n  const cleanedContentTypes = contentTypes.replace(/<Override\\b[^>]*\\/?\\s*>/g, tag => {\n    const partName = attr(tag, 'PartName');\n    if (!partName) return tag;\n    return keep.has(normalizePart(partName.replace(/^\\//, ''))) ? tag : '';\n  });\n  zip.file('[Content_Types].xml', cleanedContentTypes);\n\n  for (const name of Object.keys(zip.files)) {\n    if (zip.files[name].dir) continue;\n    if (!keep.has(name)) zip.remove(name);\n  }\n}\n\nasync function generatePrunedPackage(changes) {\n  const zip = await JSZip.loadAsync(buffer);\n  const rootRelsPath = '_rels/.rels';\n  const rootRelsXml = await xmlText(zip, rootRelsPath);\n  const rootRelsWithoutThumbnail = replaceRelationshipTags(\n    rootRelsXml,\n    relationshipTags(rootRelsXml).filter(tag => !String(attr(tag, 'Type') || '').endsWith('/thumbnail'))\n  );\n  zip.file(rootRelsPath, rootRelsWithoutThumbnail);\n  for (const [name, value] of Object.entries(changes)) zip.file(name, value);\n  await pruneToReachable(zip);\n  return Buffer.from(await zip.generateAsync({\n    type: 'nodebuffer',\n    compression: 'DEFLATE',\n    compressionOptions: { level: 6 },\n    platform: 'UNIX'\n  }));\n}\n\nfunction splitTopLevelBodyChildren(innerXml) {\n  const blocks = [];\n  const tagRe = /<!--[\\s\\S]*?-->|<\\?[\\s\\S]*?\\?>|<!\\[CDATA\\[[\\s\\S]*?\\]\\]>|<[^>]+>/g;\n  let depth = 0;\n  let start = null;\n  let match;\n  while ((match = tagRe.exec(innerXml))) {\n    const tag = match[0];\n    if (tag.startsWith('<!--') || tag.startsWith('<?') || tag.startsWith('<![CDATA[')) continue;\n    const closing = /^<\\//.test(tag);\n    const selfClosing = /\\/\\s*>$/.test(tag);\n    if (!closing) {\n      if (depth === 0) start = match.index;\n      if (selfClosing) {\n        if (depth === 0 && start !== null) {\n          blocks.push(innerXml.slice(start, tagRe.lastIndex));\n          start = null;\n        }\n      } else {\n        depth += 1;\n      }\n    } else {\n      depth -= 1;\n      if (depth < 0) throw new Error('DOCX_BODY_XML_DEPTH_INVALID');\n      if (depth === 0 && start !== null) {\n        blocks.push(innerXml.slice(start, tagRe.lastIndex));\n        start = null;\n      }\n    }\n  }\n  if (depth !== 0) throw new Error(`DOCX_BODY_XML_UNBALANCED depth=${depth}`);\n  return blocks.filter(block => block.trim());\n}\n\nfunction referencedRelationshipIds(xml) {\n  const ids = new Set();\n  const re = /\\br:(?:id|embed|link)=\"([^\"]+)\"/g;\n  let match;\n  while ((match = re.exec(xml))) ids.add(match[1]);\n  return ids;\n}\n\nfunction compressedEntrySize(zip, name) {\n  const entry = zip.file(name);\n  return Number(entry?._data?.compressedSize || entry?._data?.uncompressedSize || 0);\n}\n\nfunction greedyRanges(weights, targetBytes) {\n  const ranges = [];\n  let start = 0;\n  let current = 0;\n  for (let i = 0; i < weights.length; i++) {\n    const weight = Math.max(1, Number(weights[i]) || 0);\n    if (i > start && current + weight > targetBytes) {\n      ranges.push([start, i]);\n      start = i;\n      current = 0;\n    }\n    current += weight;\n  }\n  if (start < weights.length) ranges.push([start, weights.length]);\n  return ranges;\n}\n\nasync function buildDocxBatches() {\n  const sourceZip = await JSZip.loadAsync(buffer);\n  const documentPath = 'word/document.xml';\n  const relsPath = 'word/_rels/document.xml.rels';\n  const documentXml = await xmlText(sourceZip, documentPath);\n  const relsXml = await xmlText(sourceZip, relsPath);\n  const bodyOpen = documentXml.match(/<w:body\\b[^>]*>/);\n  const bodyCloseAt = documentXml.lastIndexOf('</w:body>');\n  if (!bodyOpen || bodyCloseAt < 0) throw new Error('DOCX_BODY_NOT_FOUND');\n  const bodyStart = bodyOpen.index + bodyOpen[0].length;\n  const prefix = documentXml.slice(0, bodyStart);\n  const suffix = documentXml.slice(bodyCloseAt);\n  const allBlocks = splitTopLevelBodyChildren(documentXml.slice(bodyStart, bodyCloseAt));\n  if (!allBlocks.length) throw new Error('DOCX_BODY_EMPTY');\n\n  let finalSectPr = '';\n  if (/^<w:sectPr\\b/.test(allBlocks[allBlocks.length - 1].trim())) finalSectPr = allBlocks.pop();\n  if (!allBlocks.length) throw new Error('DOCX_CONTENT_BLOCKS_EMPTY');\n\n  const relTags = relationshipTags(relsXml);\n  const relById = new Map(relTags.map(tag => [attr(tag, 'Id'), tag]));\n  const weights = allBlocks.map(block => {\n    let weight = Buffer.byteLength(block, 'utf8');\n    const targets = new Set();\n    for (const id of referencedRelationshipIds(block)) {\n      const tag = relById.get(id);\n      const target = tag && attr(tag, 'Target');\n      if (target && String(attr(tag, 'TargetMode') || '').toLowerCase() !== 'external') {\n        targets.add(resolveTarget(documentPath, target));\n      }\n    }\n    for (const target of targets) weight += compressedEntrySize(sourceZip, target);\n    return weight;\n  });\n\n  let targetMb;\n  let strategy;\n  if (sizeMb <= 10) {\n    targetMb = Infinity;\n    strategy = 'docx_whole_file_le_10mb';\n  } else if (sizeMb <= 20) {\n    targetMb = 8;\n    strategy = 'docx_10_to_20mb_logical_batches';\n  } else if (sizeMb <= 50) {\n    targetMb = 6;\n    strategy = 'docx_20_to_50mb_logical_batches';\n  } else {\n    targetMb = 4.5;\n    strategy = 'docx_over_50mb_logical_batches';\n  }\n  const initialRanges = Number.isFinite(targetMb)\n    ? greedyRanges(weights, targetMb * 1024 * 1024)\n    : [[0, allBlocks.length]];\n\n  async function renderRange(start, end) {\n    const selectedBlocks = allBlocks.slice(start, end);\n    const bodyXml = selectedBlocks.join('') + finalSectPr;\n    const selectedIds = referencedRelationshipIds(bodyXml);\n    const keptRels = relTags.filter(tag => {\n      const id = attr(tag, 'Id');\n      const type = attr(tag, 'Type') || '';\n      const target = attr(tag, 'Target') || '';\n      if (selectedIds.has(id)) return true;\n      if (String(attr(tag, 'TargetMode') || '').toLowerCase() === 'external') return false;\n      const removablePayload = /\\/(?:image|chart|diagramData|diagramLayout|diagramColors|diagramQuickStyle|oleObject|package|header|footer)$/.test(type)\n        || /(?:^|\\/)(?:media|embeddings|charts|diagrams|header\\d+\\.xml|footer\\d+\\.xml)(?:\\/|$)/i.test(target);\n      return !removablePayload;\n    });\n    const bytes = await generatePrunedPackage({\n      [documentPath]: prefix + bodyXml + suffix,\n      [relsPath]: replaceRelationshipTags(relsXml, keptRels)\n    });\n    return { start, end, bytes };\n  }\n\n  const rendered = [];\n  async function renderSafely(start, end) {\n    const batch = await renderRange(start, end);\n    const maxBytes = 9 * 1024 * 1024;\n    if (sizeMb > 10 && batch.bytes.length > maxBytes && end - start > 1) {\n      const mid = start + Math.floor((end - start) / 2);\n      await renderSafely(start, mid);\n      await renderSafely(mid, end);\n    } else {\n      rendered.push(batch);\n    }\n  }\n  for (const [start, end] of initialRanges) await renderSafely(start, end);\n  return rendered.map(batch => ({\n    ...batch,\n    pageStart: null,\n    pageEnd: null,\n    pageCount: null,\n    unitsInBatch: batch.end - batch.start,\n    unitName: 'document_blocks',\n    strategy\n  }));\n}\n\nasync function buildPptxBatches() {\n  const sourceZip = await JSZip.loadAsync(buffer);\n  const presentationPath = 'ppt/presentation.xml';\n  const relsPath = 'ppt/_rels/presentation.xml.rels';\n  const presentationXml = await xmlText(sourceZip, presentationPath);\n  const relsXml = await xmlText(sourceZip, relsPath);\n  const listMatch = presentationXml.match(/<p:sldIdLst\\b[^>]*>([\\s\\S]*?)<\\/p:sldIdLst>/);\n  if (!listMatch) throw new Error('PPTX_SLIDE_LIST_NOT_FOUND');\n  const slideTags = listMatch[1].match(/<p:sldId\\b[^>]*\\/?\\s*>/g) || [];\n  if (!slideTags.length) throw new Error('PPTX_SLIDE_LIST_EMPTY');\n  const slideRids = slideTags.map(tag => attr(tag, 'r:id'));\n  if (slideRids.some(id => !id)) throw new Error('PPTX_SLIDE_RELATIONSHIP_ID_MISSING');\n  const relTags = relationshipTags(relsXml);\n\n  let slidesPerBatch;\n  let strategy;\n  if (sizeMb <= 10 && slideTags.length <= 50) {\n    slidesPerBatch = slideTags.length;\n    strategy = 'pptx_whole_file_le_10mb_le_50_slides';\n  } else if (sizeMb <= 20) {\n    slidesPerBatch = 20;\n    strategy = sizeMb <= 10 ? 'pptx_over_50_slides_20_per_batch' : 'pptx_10_to_20mb_20_slides_per_batch';\n  } else if (sizeMb <= 50) {\n    slidesPerBatch = 10;\n    strategy = 'pptx_20_to_50mb_10_slides_per_batch';\n  } else {\n    slidesPerBatch = 5;\n    strategy = 'pptx_over_50mb_5_slides_per_batch';\n  }\n\n  async function renderRange(start, end) {\n    const keepRids = new Set(slideRids.slice(start, end));\n    const keptSlideTags = slideTags.slice(start, end);\n    const newPresentation = presentationXml.replace(listMatch[0], listMatch[0].replace(listMatch[1], keptSlideTags.join('')));\n    const newRels = replaceRelationshipTags(relsXml, relTags.filter(tag => {\n      const type = attr(tag, 'Type') || '';\n      return !type.endsWith('/slide') || keepRids.has(attr(tag, 'Id'));\n    }));\n    const bytes = await generatePrunedPackage({\n      [presentationPath]: newPresentation,\n      [relsPath]: newRels\n    });\n    return { start, end, bytes };\n  }\n\n  const rendered = [];\n  async function renderSafely(start, end) {\n    const batch = await renderRange(start, end);\n    const maxBytes = 9 * 1024 * 1024;\n    if (sizeMb > 10 && batch.bytes.length > maxBytes && end - start > 1) {\n      const mid = start + Math.floor((end - start) / 2);\n      await renderSafely(start, mid);\n      await renderSafely(mid, end);\n    } else {\n      rendered.push(batch);\n    }\n  }\n  for (let start = 0; start < slideTags.length; start += slidesPerBatch) {\n    await renderSafely(start, Math.min(start + slidesPerBatch, slideTags.length));\n  }\n  return rendered.map(batch => ({\n    ...batch,\n    pageStart: batch.start + 1,\n    pageEnd: batch.end,\n    pageCount: slideTags.length,\n    unitsInBatch: batch.end - batch.start,\n    unitName: 'slides',\n    strategy\n  }));\n}\n\nlet batches;\ntry {\n  batches = mimeType === DOCX ? await buildDocxBatches() : await buildPptxBatches();\n} catch (error) {\n  throw new Error(`OFFICE_BATCH_BUILD_FAILED file=${fileName} size_mb=${sizeMb.toFixed(3)} reason=${error.message}`);\n}\nif (!batches.length) throw new Error('OFFICE_BATCH_BUILD_EMPTY');\n\nconst outputs = [];\nfor (let index = 0; index < batches.length; index++) {\n  const batch = batches[index];\n  const extension = mimeType === DOCX ? 'docx' : 'pptx';\n  const batchName = `${String(fileName).replace(/\\.[^.]+$/, '')}.ocr-batch-${String(index + 1).padStart(3, '0')}.${extension}`;\n  const binaryData = await this.helpers.prepareBinaryData(batch.bytes, batchName, mimeType);\n  outputs.push({\n    json: {\n      batch_index: index,\n      batch_count: batches.length,\n      page_start: batch.pageStart,\n      page_end: batch.pageEnd,\n      page_count: batch.pageCount,\n      pages_in_batch: batch.pageCount ? batch.unitsInBatch : null,\n      logical_start: batch.start + 1,\n      logical_end: batch.end,\n      logical_units_in_batch: batch.unitsInBatch,\n      logical_unit_name: batch.unitName,\n      source_size_bytes: sizeBytes,\n      source_size_mb: Number(sizeMb.toFixed(3)),\n      batch_size_bytes: batch.bytes.length,\n      ocr_batch_strategy: batch.strategy,\n      pdf_mime: mimeType,\n      pdf_file_name: batchName\n    },\n    binary: { data: binaryData },\n    pairedItem: { item: 0 }\n  });\n}\nreturn outputs;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        2144
+      ],
+      "id": "927791a7-0795-46ee-95ae-1aea67dbdb5d",
+      "name": "Prepare Whole Office OCR Batch",
+      "notesInFlow": true,
+      "notes": "Splits DOCX by logical OOXML body blocks and PPTX by slides before Gemini OCR; prunes unreachable package assets and caps oversized batches."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-goog-api-key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  contents: [{\n    parts: [\n      { inline_data: { mime_type: $json.pdf_mime, data: $json.pdf_base64 } },\n      { text: `OCR toàn bộ nội dung trong batch ${$json.batch_index + 1}/${$json.batch_count}${$json.page_count ? `, tương ứng trang gốc ${$json.page_start}-${$json.page_end}` : ''}. Trả về Markdown theo đúng thứ tự đọc. Giữ nguyên tiêu đề, heading, bảng biểu, số hiệu, ngày tháng, điều khoản, danh sách, ghi chú và cấu trúc tài liệu. Đọc cả chữ trong hình ảnh, sơ đồ, biểu đồ và ảnh chụp màn hình. Không tóm tắt, không suy diễn, không bỏ sót và không giải thích thêm.` }\n    ]\n  }],\n  generationConfig: { temperature: 0 }\n}) }}",
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1232,
+        2640
+      ],
+      "id": "759b03dc-ffbc-4477-addf-619975d7bd08",
+      "name": "Gemini 3.5 Flash OCR1",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "One Gemini request per page batch; each batch retries independently up to four attempts."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/' + $json.table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify((() => {\n  const table = $json.table;\n  const payload = $json.payload;\n\n  if (table !== 'product_system_requirements') {\n    return payload;\n  }\n\n  const fixRow = (row) => {\n    const data = { ...row };\n\n    const clean = (v) => {\n      if (v === undefined || v === null) return null;\n      if (typeof v === 'string' && !v.trim()) return null;\n      return v;\n    };\n\n    data.minimum_value = clean(data.minimum_value);\n    data.recommended_value = clean(data.recommended_value);\n\n    if (\n      data.minimum_value === null &&\n      data.recommended_value === null\n    ) {\n      const fallback = clean(\n        data.value ??\n        data.requirement_value\n      );\n\n      if (fallback !== null) {\n        data.minimum_value = fallback;\n      }\n    }\n\n    if (\n      data.minimum_value === null &&\n      data.recommended_value === null\n    ) {\n      throw new Error(\n        `SYSTEM_REQUIREMENT_EMPTY: requirement_type=${data.requirement_type ?? data.type ?? 'unknown'}`\n      );\n    }\n\n    return data;\n  };\n\n  return Array.isArray(payload)\n    ? payload.map(fixRow)\n    : fixRow(payload);\n})()) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        9392,
+        2208
+      ],
+      "id": "929e84b4-4ace-4e40-b449-c1316a2af158",
+      "name": "Create Structured Fact",
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const { PDFDocument } = require('pdf-lib');\nconst items = $input.all();\nif (items.length !== 1) throw new Error(`PDF_BATCH_EXPECTED_ONE_FILE received=${items.length}`);\n\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst mimeType = items[0].binary?.data?.mimeType || $('Prepare Source Metadata1').item.json.mime_type;\nconst fileName = items[0].binary?.data?.fileName || $('Prepare Source Metadata1').item.json.file_name || 'document.pdf';\nif (mimeType !== 'application/pdf') throw new Error(`PDF_BATCH_INVALID_MIME ${mimeType}`);\n\nconst sizeBytes = buffer.length;\nconst sizeMb = sizeBytes / (1024 * 1024);\nlet sourcePdf;\ntry {\n  sourcePdf = await PDFDocument.load(buffer, { updateMetadata: false });\n} catch (error) {\n  throw new Error(`PDF_BATCH_LOAD_FAILED file=${fileName} reason=${error.message}`);\n}\nconst pageCount = sourcePdf.getPageCount();\nif (!Number.isInteger(pageCount) || pageCount < 1) throw new Error('PDF_BATCH_PAGE_COUNT_INVALID');\n\nconst wholeFile = sizeMb <= 10 && pageCount <= 50;\nlet pagesPerBatch;\nlet strategy;\nif (wholeFile) {\n  pagesPerBatch = pageCount;\n  strategy = 'whole_file_le_10mb_le_50_pages';\n} else if (sizeMb <= 20) {\n  pagesPerBatch = 20;\n  strategy = sizeMb <= 10 ? 'over_50_pages_20_pages_per_batch' : '10_to_20mb_20_pages_per_batch';\n} else if (sizeMb <= 50) {\n  pagesPerBatch = 10;\n  strategy = '20_to_50mb_10_pages_per_batch';\n} else {\n  pagesPerBatch = 5;\n  strategy = 'over_50mb_5_pages_per_batch';\n}\n\nconst plans = [];\nfor (let start = 0; start < pageCount; start += pagesPerBatch) {\n  plans.push({ start, end: Math.min(start + pagesPerBatch, pageCount) });\n}\n\nconst outputs = [];\nfor (let batchIndex = 0; batchIndex < plans.length; batchIndex++) {\n  const plan = plans[batchIndex];\n  let batchBytes;\n  if (wholeFile) {\n    batchBytes = buffer;\n  } else {\n    const batchPdf = await PDFDocument.create();\n    const pageIndices = sourcePdf.getPageIndices().slice(plan.start, plan.end);\n    const copiedPages = await batchPdf.copyPages(sourcePdf, pageIndices);\n    for (const page of copiedPages) batchPdf.addPage(page);\n    batchBytes = Buffer.from(await batchPdf.save({ useObjectStreams: true, objectsPerTick: 50 }));\n  }\n  outputs.push({\n    json: {\n      batch_index: batchIndex,\n      batch_count: plans.length,\n      page_start: plan.start + 1,\n      page_end: plan.end,\n      page_count: pageCount,\n      pages_in_batch: plan.end - plan.start,\n      source_size_bytes: sizeBytes,\n      source_size_mb: Number(sizeMb.toFixed(3)),\n      batch_size_bytes: batchBytes.length,\n      ocr_batch_strategy: strategy,\n      pdf_mime: 'application/pdf',\n      pdf_file_name: fileName,\n      pdf_base64: batchBytes.toString('base64')\n    },\n    pairedItem: { item: 0 }\n  });\n}\nreturn outputs;"
+      },
+      "id": "7f44f37c-ce78-496f-87c4-380fa608ab85",
+      "name": "Prepare PDF OCR Page Batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5819366d-b4a9-424d-b934-30da823d98b3",
+      "name": "Loop Over Gemini OCR Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        752,
+        2624
+      ],
+      "notesInFlow": true,
+      "notes": "Runs one page batch at a time so Gemini retries are independent per batch."
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json || {};\nconst batch = $('Encode Current OCR Batch').item.json;\nconst payload = response.data && typeof response.data === 'object' && !Array.isArray(response.data)\n  ? response.data\n  : response;\n\nconst apiError = payload?.details?.description\n  ?? response?.details?.description\n  ?? payload?.error?.description\n  ?? response?.error?.description\n  ?? payload?.error?.message\n  ?? payload?.error?.status\n  ?? payload?.details?.message\n  ?? response?.error?.message\n  ?? response?.details?.message\n  ?? (typeof payload?.error === 'string' ? payload.error : null);\nif (apiError) {\n  const httpCode = payload?.details?.httpCode ?? response?.details?.httpCode ?? payload?.statusCode ?? response?.statusCode ?? 'unknown';\n  throw new Error(\n    `OCR_BATCH_API_ERROR batch=${batch.batch_index + 1}/${batch.batch_count} ` +\n    `pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} ` +\n    `http=${httpCode} ` +\n    `message=${String(apiError).slice(0, 500)}`\n  );\n}\n\nconst candidates = Array.isArray(payload.candidates) ? payload.candidates : [];\nconst finishReasons = candidates.map(candidate => candidate?.finishReason ?? candidate?.finish_reason).filter(Boolean);\nconst incomplete = finishReasons.filter(reason => reason !== 'STOP');\nif (incomplete.length) throw new Error(`OCR_BATCH_INCOMPLETE batch=${batch.batch_index + 1}/${batch.batch_count} pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} reasons=${incomplete.join(',')}`);\n\nconst texts = [];\nfor (const candidate of candidates) {\n  const parts = candidate?.content?.parts;\n  if (!Array.isArray(parts)) continue;\n  for (const part of parts) {\n    if (part?.thought === true) continue;\n    if (typeof part?.text === 'string' && part.text.trim()) texts.push(part.text.trim());\n  }\n}\nconst text = texts.join('\\n').trim();\nif (!text) throw new Error(`OCR_BATCH_EMPTY batch=${batch.batch_index + 1}/${batch.batch_count} pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} response_keys=${Object.keys(payload).join(',')}`);\n\nreturn [{json:{\n  batch_index: batch.batch_index,\n  batch_count: batch.batch_count,\n  page_start: batch.page_start,\n  page_end: batch.page_end,\n  page_count: batch.page_count,\n  pages_in_batch: batch.pages_in_batch,\n  logical_start: batch.logical_start ?? null,\n  logical_end: batch.logical_end ?? null,\n  logical_units_in_batch: batch.logical_units_in_batch ?? null,\n  logical_unit_name: batch.logical_unit_name ?? null,\n  source_size_bytes: batch.source_size_bytes,\n  source_size_mb: batch.source_size_mb,\n  batch_size_bytes: batch.batch_size_bytes,\n  ocr_batch_strategy: batch.ocr_batch_strategy,\n  text,\n  modelVersion: payload.modelVersion ?? response.modelVersion ?? null,\n  responseId: payload.responseId ?? response.responseId ?? null\n}}];\n"
+      },
+      "id": "306d6b6b-6608-49ac-8a2f-1066697f3268",
+      "name": "Normalize Gemini OCR Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        2608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const batches = $input.all().map(item => item.json).sort((a, b) => Number(a.batch_index) - Number(b.batch_index));\nif (!batches.length) throw new Error('OCR_BATCH_MERGE_EMPTY');\nconst expectedCount = Number(batches[0].batch_count);\nif (batches.length !== expectedCount) throw new Error(`OCR_BATCH_MISSING expected=${expectedCount} actual=${batches.length}`);\nconst isPaginated = Number.isInteger(Number(batches[0].page_count)) && Number(batches[0].page_count) > 0;\n\nfor (let index = 0; index < batches.length; index++) {\n  const batch = batches[index];\n  if (Number(batch.batch_index) !== index) throw new Error(`OCR_BATCH_ORDER_INVALID expected=${index} actual=${batch.batch_index}`);\n  if (isPaginated && index === 0 && Number(batch.page_start) !== 1) throw new Error(`OCR_FIRST_PAGE_INVALID ${batch.page_start}`);\n  if (isPaginated && index > 0 && Number(batch.page_start) !== Number(batches[index - 1].page_end) + 1) {\n    throw new Error(`OCR_PAGE_GAP previous_end=${batches[index - 1].page_end} next_start=${batch.page_start}`);\n  }\n}\nconst last = batches[batches.length - 1];\nif (isPaginated && Number(last.page_end) !== Number(last.page_count)) throw new Error(`OCR_LAST_PAGE_INVALID end=${last.page_end} total=${last.page_count}`);\n\nconst text = batches.map(batch => `${isPaginated ? `<!-- ORIGINAL_PAGES ${batch.page_start}-${batch.page_end} -->\\n` : ''}${String(batch.text).trim()}`).join('\\n\\n').trim();\nreturn [{json:{\n  text,\n  engine: 'gemini-page-batched-ocr',\n  used_ocr: true,\n  pages: isPaginated ? Number(last.page_count) : null,\n  modelVersion: batches.find(batch => batch.modelVersion)?.modelVersion ?? null,\n  responseIds: batches.map(batch => batch.responseId).filter(Boolean),\n  ocr_batching: {\n    strategy: batches[0].ocr_batch_strategy,\n    source_size_bytes: Number(batches[0].source_size_bytes),\n    source_size_mb: Number(batches[0].source_size_mb),\n    page_count: isPaginated ? Number(last.page_count) : null,\n    batch_count: batches.length,\n    batches: batches.map(batch => ({\n      batch_index: Number(batch.batch_index),\n      page_start: isPaginated ? Number(batch.page_start) : null,\n      page_end: isPaginated ? Number(batch.page_end) : null,\n      pages: isPaginated ? Number(batch.pages_in_batch) : null,\n      batch_size_bytes: Number(batch.batch_size_bytes),\n      logical_start: batch.logical_start == null ? null : Number(batch.logical_start),\n      logical_end: batch.logical_end == null ? null : Number(batch.logical_end),\n      logical_units: batch.logical_units_in_batch == null ? null : Number(batch.logical_units_in_batch),\n      logical_unit_name: batch.logical_unit_name ?? null\n    }))\n  }\n}}];"
+      },
+      "id": "38d10865-0f59-4128-96b1-0657a25cfe5f",
+      "name": "Merge Gemini OCR Batches in Page Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        2352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nif (!item) throw new Error('OCR_BATCH_ENCODE_INPUT_EMPTY');\nif (typeof item.json?.pdf_base64 === 'string' && item.json.pdf_base64.length) return [item];\nif (!item.binary?.data) throw new Error(`OCR_BATCH_BINARY_MISSING batch=${Number(item.json?.batch_index) + 1}`);\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\nif (!buffer.length) throw new Error(`OCR_BATCH_BINARY_EMPTY batch=${Number(item.json?.batch_index) + 1}`);\nreturn [{\n  json: {\n    ...item.json,\n    batch_size_bytes: buffer.length,\n    pdf_base64: buffer.toString('base64')\n  },\n  pairedItem: { item: 0 }\n}];\n"
+      },
+      "id": "8e305c90-5261-42f3-a7bf-515d6c74fe72",
+      "name": "Encode Current OCR Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        2656
+      ],
+      "notesInFlow": true,
+      "notes": "Converts only the current loop batch to base64, avoiding whole-file base64 duplication in execution data."
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length) return [];\nawait new Promise(resolve => setTimeout(resolve, 5000));\nreturn items;\n"
+      },
+      "id": "c6de6655-1b25-410d-9d61-6af2ffceed77",
+      "name": "Throttle Gemini OCR Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        2608
+      ],
+      "notesInFlow": true,
+      "notes": "Waits five seconds between successful OCR batches to stay below Gemini free-tier request-rate limits."
+    },
+    {
+      "parameters": {
+        "jsCode": "const parent = $('Loop Over Structured Batches1').item.json;\nconst source = String(parent.batch_text || '');\nif (!source.trim()) throw new Error(`STRUCTURED_FALLBACK_SOURCE_EMPTY batch=${parent.batch_index}`);\nconst midpoint = Math.floor(source.length / 2);\nconst candidates = [\n  source.lastIndexOf('\\n', midpoint),\n  source.indexOf('\\n', midpoint),\n  source.lastIndexOf('. ', midpoint),\n  source.indexOf('. ', midpoint),\n].filter(position => position > Math.floor(source.length * 0.3) && position < Math.ceil(source.length * 0.7));\nconst cut = candidates.length\n  ? candidates.sort((a, b) => Math.abs(a - midpoint) - Math.abs(b - midpoint))[0] + 1\n  : midpoint;\nconst halves = [source.slice(0, cut).trim(), source.slice(cut).trim()].filter(Boolean);\nif (halves.length < 2) throw new Error(`STRUCTURED_FALLBACK_SPLIT_FAILED batch=${parent.batch_index}`);\nreturn halves.map((batch_text, fallback_index) => ({\n  json: {\n    ...parent,\n    parent_batch_index: parent.batch_index,\n    fallback_index,\n    fallback_count: halves.length,\n    batch_text,\n    batch_char_count: batch_text.length,\n    structured_fallback: true,\n  }\n}));\n"
+      },
+      "id": "cf8a3f1f-5670-4860-ad81-2c0c0b38e667",
+      "name": "Prepare Structured Fallback Halves1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8480,
+        2720
+      ],
+      "notesInFlow": true,
+      "notes": "Splits only the truncated parent batch into two balanced source halves."
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ccc29a18-454b-4068-af84-a6e179297da4",
+      "name": "Loop Over Structured Fallback Halves1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        8704,
+        2720
+      ],
+      "notesInFlow": true,
+      "notes": "Processes fallback halves sequentially."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-api.cic.com.vn:9443/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\n  model:'qwen3-vl-30b',\n  temperature:0,\n  max_tokens:8192,\n  response_format:{type:'json_object'},\n  messages:[\n    {role:'system',content:'Extract only facts explicitly supported by this source batch. Never invent facts. Preserve technical names, paths, services and executables. Normalize product scope to ENJICAD. Return ONLY valid JSON without Markdown: {writes:[{table,payload,dedupe,source_text,confidence}]}. Return at most 4 highest-value writes for this half-batch. Keep every payload concise and include only columns materially supported by the source. dedupe MUST be a JSON object containing stable natural-key columns, never a string. Never include id, created_at or updated_at in payload or dedupe; the database manages them. Keep source_text at most 240 characters and escape JSON characters correctly. table must be one of product_features, product_attributes, product_file_formats, product_system_requirements, product_applications, product_faqs, product_relations, product_versions. payload and dedupe keys must exist in the schema. Empty batch means {writes:[]}.'},\n    {role:'user',content:'FALLBACK HALF '+($json.fallback_index+1)+'/'+$json.fallback_count+' OF ORIGINAL BATCH '+($json.parent_batch_index+1)+'/'+$json.batch_count+'\\nPRODUCT_ID: '+$json.product_id+'\\nSCHEMA:\\n'+JSON.stringify($json.schema_contract)+'\\nSOURCE:\\n'+$json.batch_text}\n  ]\n}) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8928,
+        2720
+      ],
+      "id": "caba31ac-657b-490c-afa7-280fe42f7611",
+      "name": "Structured Extraction Qwen Fallback1",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notesInFlow": true,
+      "notes": "Fallback extraction on half-sized source; max_tokens=8192 and at most 4 concise writes."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ctx = $('Loop Over Structured Fallback Halves1').item.json;\nconst response = $json?.data ?? $json;\nconst choice = response?.choices?.[0] || {};\nconst finishReason = choice.finish_reason ?? null;\nconst raw = choice?.message?.content ?? response?.output_text ?? '';\nfunction firstObject(value) {\n  const text = String(value ?? '').replace(/^\\uFEFF/, '').replace(/<think>[\\s\\S]*?<\\/think>/gi, '').trim();\n  let start = -1, depth = 0, inString = false, escaped = false;\n  for (let index = 0; index < text.length; index++) {\n    const char = text[index];\n    if (start < 0) { if (char === '{') { start = index; depth = 1; } continue; }\n    if (inString) {\n      if (escaped) { escaped = false; continue; }\n      if (char === '\\\\') { escaped = true; continue; }\n      if (char === '\"') inString = false;\n      continue;\n    }\n    if (char === '\"') { inString = true; continue; }\n    if (char === '{') depth++;\n    else if (char === '}' && --depth === 0) return { text: text.slice(start, index + 1), balanced: true };\n  }\n  return { text: start >= 0 ? text.slice(start) : text, balanced: false };\n}\nfunction sanitize(value) {\n  let output = '', inString = false, escaped = false;\n  for (let index = 0; index < value.length; index++) {\n    const char = value[index];\n    if (inString) {\n      if (escaped) { output += char; escaped = false; continue; }\n      if (char === '\\\\') { output += char; escaped = true; continue; }\n      if (char === '\"') { output += char; inString = false; continue; }\n      const code = char.charCodeAt(0);\n      if (code < 32) { output += char === '\\n' ? '\\\\n' : char === '\\r' ? '\\\\r' : char === '\\t' ? '\\\\t' : '\\\\u' + code.toString(16).padStart(4, '0'); continue; }\n      output += char;\n      continue;\n    }\n    if (char === '\"') { inString = true; output += char; continue; }\n    if (char === ',') {\n      let cursor = index + 1;\n      while (cursor < value.length && /\\s/.test(value[cursor])) cursor++;\n      if (value[cursor] === '}' || value[cursor] === ']') continue;\n    }\n    output += char;\n  }\n  return output;\n}\nif (typeof raw !== 'string' && (!raw || typeof raw !== 'object')) throw new Error(`STRUCTURED_FALLBACK_RESPONSE_MISSING batch=${ctx.parent_batch_index}.${ctx.fallback_index}`);\nlet parsed;\nif (typeof raw === 'object') parsed = raw;\nelse {\n  const extracted = firstObject(raw);\n  if (finishReason === 'length' || !extracted.balanced) throw new Error(`STRUCTURED_FALLBACK_TRUNCATED batch=${ctx.parent_batch_index}.${ctx.fallback_index} chars=${raw.length} finish_reason=${finishReason ?? 'unknown'}`);\n  try { parsed = JSON.parse(extracted.text); }\n  catch (firstError) {\n    try { parsed = JSON.parse(sanitize(extracted.text)); }\n    catch (secondError) { throw new Error(`STRUCTURED_FALLBACK_JSON_INVALID batch=${ctx.parent_batch_index}.${ctx.fallback_index} chars=${raw.length}: ${secondError.message}`); }\n  }\n}\nconst writes = Array.isArray(parsed?.writes) ? parsed.writes : [];\nreturn { json: { ...ctx, writes, write_count: writes.length, finish_reason: finishReason } };\n"
+      },
+      "id": "89e45a37-4f2a-43b3-8780-be6c0c0f975c",
+      "name": "Parse Structured Fallback Half1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9152,
+        2720
+      ],
+      "notesInFlow": true,
+      "notes": "Strict parser for half-batch fallback; a second truncation reports the exact half."
+    },
+    {
+      "parameters": {
+        "jsCode": "const halves = $input.all().map(item => item.json).sort((a, b) => Number(a.fallback_index) - Number(b.fallback_index));\nif (!halves.length) throw new Error('STRUCTURED_FALLBACK_MERGE_EMPTY');\nconst expected = Number(halves[0].fallback_count);\nif (halves.length !== expected) throw new Error(`STRUCTURED_FALLBACK_MISSING expected=${expected} actual=${halves.length}`);\nfor (let index = 0; index < halves.length; index++) {\n  if (Number(halves[index].fallback_index) !== index) throw new Error(`STRUCTURED_FALLBACK_ORDER_INVALID expected=${index} actual=${halves[index].fallback_index}`);\n}\nconst parent = $('Loop Over Structured Batches1').item.json;\nconst writes = halves.flatMap(half => Array.isArray(half.writes) ? half.writes : []);\nreturn [{ json: { ...parent, writes, write_count: writes.length, finish_reason: 'fallback_split_complete', structured_fallback_used: true, fallback_count: halves.length } }];\n"
+      },
+      "id": "d918c8ac-8d85-4a24-bfd3-fbf20b5f17b2",
+      "name": "Merge Structured Fallback Halves1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8928,
+        2512
+      ],
+      "notesInFlow": true,
+      "notes": "Merges both fallback half results into one parent batch result and returns it to the original loop."
+    },
+    {
+      "parameters": {
+        "chatId": "6263462807",
+        "text": "=✅ Thêm tài liệu enjiCAD từ Drive hoàn tất\n\n📄 File: {{$json.file_name}}\n🆔 File ID: {{$json.file_id}}\n📥 Nguồn: {{$json.source_type}}\n\n🧩 Chunk đã tạo: {{$json.total_chunks}}\n🔢 Embedding đã tạo: {{$json.total_embeddings}}\n🧠 Dữ liệu có cấu trúc: {{$json.structured_fact_count}}\n📐 Kích thước embedding: {{$json.embedding_dimension}}\n\n📌 Version ID: {{$json.document_version_id}}\n📊 Trạng thái: {{$json.status}}\n\n🕐 Thời gian: {{$now.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss')}}\n⚙️ Execution ID: {{$execution.id}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        12384,
+        1056
+      ],
+      "id": "c878b5fa-8ea7-42df-9f42-4e8ae533bc25",
+      "name": "Send Telegram Drive Ingestion",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "webhookId": "92f5ed52-507b-4fdc-8f8b-53173b186456",
+      "credentials": {
+        "telegramApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "List Drive Folder Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Office File": {
+      "main": [
+        [
+          {
+            "node": "Prepare Whole Office OCR Batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare PDF OCR Page Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File1": {
+      "main": [
+        [
+          {
+            "node": "IF Office File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "File Processing Failed1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Source Metadata1": {
+      "main": [
+        [
+          {
+            "node": "Get ENJICAD Product1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Extracted Text1": {
+      "main": [
+        [
+          {
+            "node": "Attach Extracted Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Product-KB Binding1": {
+      "main": [
+        [
+          {
+            "node": "Ensure Product-KB Binding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Product-KB Binding1": {
+      "main": [
+        [
+          {
+            "node": "IF Binding Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Binding Exists1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Ingestion Context1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Product-KB Binding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Product-KB Binding1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Ingestion Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Ingestion Context1": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Product Document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Product Document1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Product Document Lookup1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Document Exists1": {
+      "main": [
+        [
+          {
+            "node": "Document Already Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Restore File Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Product Document1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Document ID2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Document Version1": {
+      "main": [
+        [
+          {
+            "node": "Select Latest Matching Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Version Exists1": {
+      "main": [
+        [
+          {
+            "node": "Already Ingested1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get All Document Versions1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Ingested1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Document Versions1": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Version2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Document Version1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Version ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Version ID1": {
+      "main": [
+        [
+          {
+            "node": "Semantic Chunking1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Semantic Chunking1": {
+      "main": [
+        [
+          {
+            "node": "Create Product Chunks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Product Chunks1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Input2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Input2": {
+      "main": [
+        [
+          {
+            "node": "Embedding API ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embedding API ": {
+      "main": [
+        [
+          {
+            "node": "Validate 1024 Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate 1024 Embedding1": {
+      "main": [
+        [
+          {
+            "node": "Get Active Embedding Model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Embedding Model1": {
+      "main": [
+        [
+          {
+            "node": "IF Embedding Model Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Embedding Model Exists1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Embedding Model2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Embedding Model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Embedding Model1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Embedding Model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Chunk Embeddings1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Version Chunks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Version Chunks1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Embedding For Chunk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate RAG Ingestion1": {
+      "main": [
+        [
+          {
+            "node": "IF RAG Complete1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF RAG Complete1": {
+      "main": [
+        [
+          {
+            "node": "Get Supabase OpenAPI Schema1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Partial Ingestion1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Structured Schema Contract1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Structured Extraction Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Extraction Qwen1": {
+      "main": [
+        [
+          {
+            "node": "Parse Structured Batch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Structured Writes1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Writes1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Structured No-op1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Writes1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Existing Structured Fact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Structured Fact1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Existing Structured Fact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Structured Fact Exists1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Structured Fact1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Structured Fact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Structured Fact1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Provenance1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Provenance1": {
+      "main": [
+        [
+          {
+            "node": "IF Provenance Supported1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Provenance Supported1": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Product Fact Source1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Structured Writes1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Product Fact Source1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Writes1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Version1": {
+      "main": [
+        [
+          {
+            "node": "Unset Previous Current Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Version Completed1": {
+      "main": [
+        [
+          {
+            "node": "Ingestion Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ingestion Summary1": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Drive Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Document ID2": {
+      "main": [
+        [
+          {
+            "node": "Version Lookup Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Version2": {
+      "main": [
+        [
+          {
+            "node": "Create Document Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Embedding Model2": {
+      "main": [
+        [
+          {
+            "node": "Upsert Chunk Embeddings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Files1": {
+      "main": [
+        [
+          {
+            "node": "All Files Completed1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Source Metadata1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore File Context1": {
+      "main": [
+        [
+          {
+            "node": "IF Google Sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Google Sheet1": {
+      "main": [
+        [
+          {
+            "node": "Get All Sheet Rows1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Sheet Rows1": {
+      "main": [
+        [
+          {
+            "node": "Sheet Rows To One String1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "File Processing Failed1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet Rows To One String1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Sheet Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Sheet Text1": {
+      "main": [
+        [
+          {
+            "node": "Attach Extracted Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Extracted Context1": {
+      "main": [
+        [
+          {
+            "node": "IF Existing Document After Parse1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Embedding For Chunk1": {
+      "main": [
+        [
+          {
+            "node": "Validate RAG Ingestion1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get ENJICAD Product1": {
+      "main": [
+        [
+          {
+            "node": "Get COMPANY Knowledge Base1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get COMPANY Knowledge Base1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Product And KB1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Product And KB1": {
+      "main": [
+        [
+          {
+            "node": "Get Product-KB Binding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Existing Document After Parse1": {
+      "main": [
+        [
+          {
+            "node": "Use Existing Document ID1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Product Document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Document ID1": {
+      "main": [
+        [
+          {
+            "node": "Version Lookup Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Version Lookup Context1": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Document Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Latest Matching Version1": {
+      "main": [
+        [
+          {
+            "node": "IF Version Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Supabase OpenAPI Schema1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Structured Schema Contract1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Structured Extraction Batches1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Structured Batches1": {
+      "main": [
+        [
+          {
+            "node": "Validate Structured Writes1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Structured Extraction Qwen1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Structured Batch1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Structured Fallback Halves1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Structured Writes1": {
+      "main": [
+        [
+          {
+            "node": "Finalize Version1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Structured No-op1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Existing Structured Fact1": {
+      "main": [
+        [
+          {
+            "node": "IF Structured Fact Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Product Fact Source1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Product Fact Source Lookup1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Product Fact Source Lookup1": {
+      "main": [
+        [
+          {
+            "node": "IF Product Fact Source Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Product Fact Source Exists1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Writes1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Product Fact Source1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unset Previous Current Version1": {
+      "main": [
+        [
+          {
+            "node": "Mark Version Completed1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Drive Folder Files1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Drive Folder Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Drive Folder Files1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Product Document Lookup1": {
+      "main": [
+        [
+          {
+            "node": "IF Document Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Already Exists1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Processing Failed1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 3.5 Flash OCR1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Gemini OCR Batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "File Processing Failed1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Structured Fact": {
+      "main": [
+        [
+          {
+            "node": "Resolve Structured Fact1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Whole Office OCR Batch": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Gemini OCR Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare PDF OCR Page Batches": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Gemini OCR Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Gemini OCR Batches": {
+      "main": [
+        [
+          {
+            "node": "Merge Gemini OCR Batches in Page Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Encode Current OCR Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Gemini OCR Batch": {
+      "main": [
+        [
+          {
+            "node": "Throttle Gemini OCR Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Gemini OCR Batches in Page Order": {
+      "main": [
+        [
+          {
+            "node": "Normalize Extracted Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encode Current OCR Batch": {
+      "main": [
+        [
+          {
+            "node": "Gemini 3.5 Flash OCR1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Throttle Gemini OCR Requests": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Gemini OCR Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Structured Fallback Halves1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Fallback Halves1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Structured Fallback Halves1": {
+      "main": [
+        [
+          {
+            "node": "Merge Structured Fallback Halves1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Structured Extraction Qwen Fallback1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Extraction Qwen Fallback1": {
+      "main": [
+        [
+          {
+            "node": "Parse Structured Fallback Half1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Structured Fallback Half1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Fallback Halves1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Structured Fallback Halves1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Structured Batches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Drive Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "2cefff1a-77fe-4d25-ae7f-72ab0c33765b",
+  "activeVersionId": null,
+  "versionCounter": 481,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-11T09:21:25.046Z",
+      "createdAt": "2026-08-11T09:21:25.046Z",
+      "role": "workflow:owner",
+      "workflowId": "TyBwz43jg84QeoOA",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

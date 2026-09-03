@@ -1,0 +1,12 @@
+[Unit]
+Description=Export, sanitize, and push n8n workflows to GitHub
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ADMIN
+WorkingDirectory=/home/ADMIN/n8n_cic_chatbot
+Environment=TZ=Asia/Ho_Chi_Minh
+ExecStart=/home/ADMIN/n8n_cic_chatbot/scripts/backup_and_push.sh

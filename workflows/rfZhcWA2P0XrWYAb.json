@@ -1,0 +1,3319 @@
+{
+  "updatedAt": "2026-08-25T03:13:42.688Z",
+  "createdAt": "2026-08-20T09:08:41.294Z",
+  "id": "rfZhcWA2P0XrWYAb",
+  "name": "thêm dữ liệu enjicad từ sheet",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Mỗi input item ở đây chính là 1 chunk.\nconst inputItems = $input.all();\n\nreturn inputItems.map((item, index) => {\n  const src = item.json ?? {};\n  const chunkIndex = Number(src.chunk_index);\n\n  if (!src.document_version_id) {\n    throw new Error(`Item ${index}: thiếu document_version_id.`);\n  }\n  if (!Number.isInteger(chunkIndex) || chunkIndex < 0) {\n    throw new Error(`Item ${index}: chunk_index không hợp lệ.`);\n  }\n  if (!String(src.content ?? '').trim()) {\n    throw new Error(`Item ${index}: content rỗng.`);\n  }\n\n  return {\n    json: {\n      document_version_id: src.document_version_id,\n      product_id: src.product_id,\n      chunk_index: chunkIndex,\n      section: src.section ?? 'FAQ_KY_THUAT',\n      title: src.title ?? `FAQ kỹ thuật enjiCAD - Chunk ${chunkIndex + 1}`,\n      content: String(src.content),\n      language_code: src.language_code ?? 'vi',\n      content_hash: src.content_hash,\n      metadata: src.metadata ?? { content_type: 'faq' }\n    }\n  };\n});"
+      },
+      "id": "dbf1724a-50be-4a0b-9444-b5bdcf7c5c06",
+      "name": "Prepare Chunk Insert1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chỉ dùng id thật do product_document_chunks trả về.\nconst rows = $input.all();\n\nreturn rows.map((item, index) => {\n  const row = item.json ?? {};\n\n  if (!row.id) {\n    throw new Error(`Item ${index}: Supabase không trả product_document_chunks.id.`);\n  }\n  if (!row.document_version_id) {\n    throw new Error(`Item ${index}: chunk đã tạo thiếu document_version_id.`);\n  }\n  if (!String(row.content ?? '').trim()) {\n    throw new Error(`Item ${index}: chunk đã tạo thiếu content.`);\n  }\n\n  return {\n    json: {\n      chunk_id: row.id,\n      document_version_id: row.document_version_id,\n      product_id: row.product_id,\n      chunk_index: Number(row.chunk_index),\n      content: String(row.content),\n      content_hash: row.content_hash,\n      language_code: row.language_code ?? 'vi',\n      metadata: row.metadata ?? { content_type: 'faq' }\n    }\n  };\n});"
+      },
+      "id": "09761ede-6c98-419e-90b5-d862480674b5",
+      "name": "Prepare Embedding Input1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json || {};\nconst src = $('Resolve Embedding Model').item.json;\nconst embedding = response?.data?.[0]?.embedding ?? response?.embedding ?? response?.vector;\nconst model = String(response?.model || 'qwen3-embedding-8b').toLowerCase();\n\nif (model !== 'qwen3-embedding-8b') {\n  throw new Error(`FAQ_WRONG_EMBEDDING_MODEL ${model}`);\n}\nif (!Array.isArray(embedding) || embedding.length !== 4096) {\n  throw new Error(`FAQ_WRONG_SOURCE_DIMENSION ${Array.isArray(embedding) ? embedding.length : 'invalid'}`);\n}\n\nconst truncated = embedding.slice(0, 1024).map(Number);\nif (truncated.some(value => !Number.isFinite(value))) {\n  throw new Error('FAQ_INVALID_EMBEDDING_VALUE');\n}\nconst norm = Math.sqrt(truncated.reduce((sum, value) => sum + value * value, 0));\nif (!Number.isFinite(norm) || norm <= 1e-12) {\n  throw new Error('FAQ_INVALID_EMBEDDING_NORM');\n}\n\nreturn [{\n  json: {\n    ...src,\n    embedding: truncated.map(value => value / norm),\n    dimension: 1024,\n    source_dimension: 4096,\n    embedding_model_name: model\n  }\n}];"
+      },
+      "id": "cd59d2e9-94ca-424e-ab60-8a82cc96ede3",
+      "name": "Normalize Embedding Response1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw",
+          "mode": "list",
+          "cachedResultName": "Xử lý kỹ thuật",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1620486330,
+          "mode": "list",
+          "cachedResultName": "Tổng hợp lỗi",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw/edit#gid=1620486330"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2240,
+        224
+      ],
+      "id": "dda4cdbb-2c85-4e4c-b305-06e504ca869f",
+      "name": "Get row(s) in sheet",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2dd3b746-2742-454c-b6b2-39d673714f52",
+              "name": "Phiên bản sử dụng",
+              "value": "={{ $json['Phiên bản sử dụng'] }}",
+              "type": "string"
+            },
+            {
+              "id": "4ce669e8-0b01-40ab-9994-19a09f638f88",
+              "name": "Nội dung cần hỗ trợ",
+              "value": "={{ $json['Nội dung cần hỗ trợ'] }}",
+              "type": "string"
+            },
+            {
+              "id": "90b17ec9-611a-48cc-a7a8-c06963be8ae7",
+              "name": "Loại lỗi",
+              "value": "={{ $json['Loại lỗi'] }}",
+              "type": "string"
+            },
+            {
+              "id": "e52ed33b-7f1b-4fbd-bdb2-030b8b033039",
+              "name": "Hướng giải quyết",
+              "value": "={{ $json['Hướng giải quyết'] }}",
+              "type": "string"
+            },
+            {
+              "id": "5d65749c-7abb-4b48-ab94-817055008cbf",
+              "name": "Mức độ",
+              "value": "={{ $json['Mức độ'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -2016,
+        224
+      ],
+      "id": "fb567568-9203-411f-b3f7-40ce21d37a71",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "product_id",
+              "keyValue": "={{ $('Attach FAQ Document Context1').item.json.product_id }}"
+            },
+            {
+              "keyName": "document_type",
+              "keyValue": "faq"
+            },
+            {
+              "keyName": "title",
+              "keyValue": "={{ $('Attach FAQ Document Context1').item.json.title }}"
+            },
+            {
+              "keyName": "source_type",
+              "keyValue": "google_sheets"
+            }
+          ]
+        }
+      },
+      "id": "c858e431-5954-488f-bbad-184c0cf841eb",
+      "name": "Supabase - Get FAQ Document",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1c684821-0c18-45b5-854a-02335ac50ea7",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b445c3b2-8ad2-4498-bb35-18f2f3b064fd",
+      "name": "IF - Document Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -896,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_documents",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.product_id }}"
+            },
+            {
+              "fieldId": "document_type",
+              "fieldValue": "faq"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.title }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.language_code }}"
+            },
+            {
+              "fieldId": "source_type",
+              "fieldValue": "google_sheets"
+            },
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.source_url }}"
+            },
+            {
+              "fieldId": "file_name",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.file_name }}"
+            },
+            {
+              "fieldId": "mime_type",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.mime_type }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $('Attach FAQ Document Context1').item.json.document_identity_hash }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "active"
+            },
+            {
+              "fieldId": "is_official",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "id": "046c3a98-a3a5-4259-b36d-b9b49280c319",
+      "name": "Supabase - Create FAQ Document",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -672,
+        416
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = $json.id;\n\nif (!id) {\n  throw new Error('Không lấy được product_documents.id');\n}\n\nconst ctx = $('Attach FAQ Document Context1').item.json;\n\nreturn [{\n  json: {\n    ...ctx,\n    document_id: id\n  }\n}];"
+      },
+      "id": "f34b51b5-145b-488b-829a-4ebbce2e4a47",
+      "name": "Resolve Document ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_versions",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Document ID').item.json.document_id }}"
+            }
+          ]
+        }
+      },
+      "id": "d6b328e9-3e56-41b6-a88c-b72416ce03bc",
+      "name": "Supabase - Get All Versions",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        592,
+        704
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json).filter(row => row?.id);\nconst ctx = $('Resolve Document ID').first().json;\nconst maxVersion = rows.reduce((max, row) => Math.max(max, Number.parseInt(row.version_number, 10) || 0), 0);\nreturn [{ json: { ...ctx, version_number: maxVersion + 1 } }];"
+      },
+      "id": "76446c3f-a45e-44b5-aa1a-01a2ee55939f",
+      "name": "Prepare New Version",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_versions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_id",
+              "fieldValue": "={{ $json.document_id }}"
+            },
+            {
+              "fieldId": "version_number",
+              "fieldValue": "={{ $json.version_number }}"
+            },
+            {
+              "fieldId": "source_content_hash",
+              "fieldValue": "={{ $json.sheet_content_hash }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $json.document_text }}"
+            },
+            {
+              "fieldId": "parse_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "processing"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            },
+            {
+              "fieldId": "extraction_method",
+              "fieldValue": "google_sheets"
+            },
+            {
+              "fieldId": "extracted_fields",
+              "fieldValue": "={{ {} }}"
+            }
+          ]
+        }
+      },
+      "id": "b46aa129-f8d5-46b2-a6b4-90fa8278256e",
+      "name": "Supabase - Create FAQ Version",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        960,
+        544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_chunks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_version_id",
+              "fieldValue": "={{ $json.document_version_id }}"
+            },
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.product_id }}"
+            },
+            {
+              "fieldId": "chunk_index",
+              "fieldValue": "={{ $json.chunk_index }}"
+            },
+            {
+              "fieldId": "section",
+              "fieldValue": "={{ $json.section }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.content }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $json.language_code }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "id": "f639c120-6325-455e-882d-4349dba4ae8d",
+      "name": "Supabase - Create FAQ Chunk",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sheet = $('Technical - Normalize + Deduplicate Rows').first().json;\nif (!Array.isArray(sheet.candidates) || !sheet.candidates.length) throw new Error('ENJICAD_TECHNICAL_NO_CANDIDATES');\nconst sourceUrl = 'https://docs.google.com/spreadsheets/d/121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw/edit#gid=1620486330';\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;\n  for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }\n  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');\n}\nreturn [{ json: {\n  ...sheet, product_id: 1103, product_code: 'enjiCAD',\n  title: 'FAQ xử lý kỹ thuật enjiCAD', document_type: 'faq', language_code: 'vi',\n  source_type: 'google_sheets', source_url: sourceUrl,\n  file_name: 'Xử lý kỹ thuật - Tổng hợp lỗi', mime_type: 'application/vnd.google-apps.spreadsheet',\n  document_identity_hash: hashText('1103|google_sheets|' + sourceUrl + '|technical_faq'),\n  metadata: { content_type: 'faq', source: 'technical_support_sheet', product: 'enjiCAD', product_code: 'enjiCAD', incremental: true },\n} }];"
+      },
+      "id": "e8caa143-898f-4aa2-bdaa-aac42f3de39d",
+      "name": "Attach FAQ Document Context1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1344,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-api.cic.com.vn:9443/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: $('Resolve Embedding Model').item.json.content } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "c5ae6ae4-32fa-4687-9b8f-630b5bc55635",
+      "name": "Embedding API1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3200,
+        672
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000
+    },
+    {
+      "parameters": {
+        "jsCode": "const modelRows = $input.all().map(item => item.json).filter(row => row?.id);\nconst modelId = modelRows[0]?.id;\nconst src = $('Loop Over FAQ Embeddings').item.json;\n\nif (!modelId) throw new Error('FAQ_EMBEDDING_MODEL_NOT_FOUND');\nif (!src?.chunk_id || !String(src.content || '').trim()) {\n  throw new Error('FAQ_EMBEDDING_LOOP_CONTEXT_INVALID');\n}\n\nreturn [{ json: { ...src, embedding_model_id: modelId } }];"
+      },
+      "id": "defd2565-7b59-4b96-abd9-fdf23e6e2f8d",
+      "name": "Resolve Embedding Model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_chunk_embeddings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chunk_id",
+              "keyValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "keyName": "embedding_model_id",
+              "keyValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "keyName": "content_hash",
+              "keyValue": "={{ $json.content_hash }}"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "true"
+            },
+            {
+              "keyName": "is_retrievable",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "d81e311d-70f4-470b-95ef-000661e426cd",
+      "name": "Supabase - Get Existing Embedding",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2752,
+        544
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c18b0583-28dc-4c0e-93f6-7d369ddfcef9",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "66bfe5b1-8d8d-4c84-b17f-2fe7eb7567e0",
+      "name": "IF - Embedding Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2976,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $json;\nif (!src?.chunk_id || !src?.embedding_model_id) {\n  throw new Error('FAQ_EMBEDDING_INSERT_CONTEXT_INVALID');\n}\nif (!Array.isArray(src.embedding) || src.embedding.length !== 1024) {\n  throw new Error('FAQ_EMBEDDING_STORAGE_DIMENSION_INVALID');\n}\n\nreturn [{\n  json: {\n    chunk_id: src.chunk_id,\n    embedding_model_id: src.embedding_model_id,\n    embedding: JSON.stringify(src.embedding),\n    content_hash: src.content_hash,\n    document_version_id: src.document_version_id,\n    is_active: true,\n    is_retrievable: true,\n    metadata: {\n      content_type: 'faq',\n      product_id: src.product_id,\n      document_version_id: src.document_version_id,\n      chunk_index: src.chunk_index,\n      language_code: src.language_code,\n      embedding_model: 'qwen3-embedding-8b',\n      source_dimension: 4096,\n      embedding_dimension: 1024,\n      dimension_reduction: 'mrl_prefix_l2_normalized',\n      embedding_provider: 'cic-ai-api'\n    }\n  }\n}];"
+      },
+      "id": "cb028e2d-fbd2-4781-9505-fd4106ba8d0e",
+      "name": "Prepare Embedding Insert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3648,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_chunk_embeddings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_id",
+              "fieldValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "fieldId": "embedding_model_id",
+              "fieldValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "fieldId": "embedding",
+              "fieldValue": "={{ $json.embedding }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "is_retrievable",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "id": "2e09b94e-e5df-4528-bfcc-51f28385be5e",
+      "name": "Supabase - Create Chunk Embedding",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3872,
+        672
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Validate FAQ Embedding Coverage').first().json.document_version_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "source_content_hash",
+              "fieldValue": "={{ $('Resolve Document ID').first().json.sheet_content_hash }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $('Resolve Document ID').first().json.document_text }}"
+            }
+          ]
+        }
+      },
+      "id": "3d324d10-9ce9-4b4c-9aaa-fab2474e573c",
+      "name": "Supabase - Mark Version Completed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        320
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "id": "af716221-e25d-4436-9100-8e14ae97f995",
+      "name": "Supabase - Get Active Embedding Model",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2304,
+        544
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Document ID').first().json.document_id }}"
+            },
+            {
+              "keyName": "is_current",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2704,
+        320
+      ],
+      "id": "8d39735a-e4b0-478b-b8c0-2a01316482bf",
+      "name": "Unset Previous FAQ Current Version1",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "id": "373768cc-2b1b-4121-a653-a8b4f442910b",
+      "name": "Get FAQ Audit Embedding Model",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "9777e993-77d0-42f1-a350-fbc61a7deb5d",
+      "name": "Loop Over FAQ Embeddings",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2080,
+        544
+      ],
+      "notesInFlow": true,
+      "notes": "Checks and creates exactly one FAQ embedding per iteration."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_document_chunks?select=id,chunk_index,content_hash,product_chunk_embeddings(id,embedding_model_id,content_hash,is_active,is_retrievable)&document_version_id=eq.' + $('Technical - Plan Incremental FAQ').first().json.document_version_id + '&order=chunk_index.asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "9870fca2-ab92-4ecb-9556-810a70f597fd",
+      "name": "Get FAQ Embedding Coverage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2256,
+        320
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all().map(item => item.json);\nconst rows = input.flatMap(value => Array.isArray(value) ? value : (Array.isArray(value?.data) ? value.data : (value?.id ? [value] : [])));\nconst modelId = $('Get FAQ Audit Embedding Model').first().json.id;\nconst planned = $('Technical - Plan Incremental FAQ').all().map(item => item.json);\nconst indexes = rows.map(row => Number(row.chunk_index)).sort((a, b) => a - b); const bad = [];\nfor (const row of rows) {\n  const embeddings = Array.isArray(row.product_chunk_embeddings) ? row.product_chunk_embeddings : [];\n  const valid = embeddings.filter(embedding => embedding.embedding_model_id === modelId && embedding.is_active === true && embedding.is_retrievable === true && embedding.content_hash === row.content_hash);\n  if (valid.length !== 1) bad.push({ chunk_index: row.chunk_index, valid_embeddings: valid.length });\n}\nconst contiguous = indexes.length > 0 && indexes.every((value, index) => value === index);\nif (!rows.length || !contiguous || bad.length) throw new Error('ENJICAD_TECHNICAL_COVERAGE_INCOMPLETE actual=' + rows.length + ' contiguous=' + contiguous + ' bad=' + JSON.stringify(bad));\nreturn [{ json: { document_version_id: planned.find(row => row.document_version_id)?.document_version_id, chunk_count: rows.length, embedding_count: rows.length, coverage_complete: true, work_count: planned.filter(row => row.has_work).length, new_faq_count: planned.filter(row => row.action === 'insert_chunk').length, repaired_embedding_count: planned.filter(row => row.action === 'embed_existing').length } }];"
+      },
+      "id": "57456685-a06b-47e6-9d8a-ff47bfa19aa8",
+      "name": "Validate FAQ Embedding Coverage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mỗi input item ở đây chính là 1 chunk.\nconst inputItems = $input.all();\n\nreturn inputItems.map((item, index) => {\n  const src = item.json ?? {};\n  const chunkIndex = Number(src.chunk_index);\n\n  if (!src.document_version_id) {\n    throw new Error(`Item ${index}: thiếu document_version_id.`);\n  }\n  if (!Number.isInteger(chunkIndex) || chunkIndex < 0) {\n    throw new Error(`Item ${index}: chunk_index không hợp lệ.`);\n  }\n  if (!String(src.content ?? '').trim()) {\n    throw new Error(`Item ${index}: content rỗng.`);\n  }\n\n  return {\n    json: {\n      document_version_id: src.document_version_id,\n      product_id: src.product_id,\n      chunk_index: chunkIndex,\n      section: src.section ?? 'FAQ_KY_THUAT',\n      title: src.title ?? `FAQ kỹ thuật enjiCAD - Chunk ${chunkIndex + 1}`,\n      content: String(src.content),\n      language_code: src.language_code ?? 'vi',\n      content_hash: src.content_hash,\n      metadata: src.metadata ?? { content_type: 'faq' }\n    }\n  };\n});"
+      },
+      "id": "4020dd5f-137d-4724-8805-cc5b1fc498cc",
+      "name": "Prepare Chunk Insert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chỉ dùng id thật do product_document_chunks trả về.\nconst rows = $input.all();\n\nreturn rows.map((item, index) => {\n  const row = item.json ?? {};\n\n  if (!row.id) {\n    throw new Error(`Item ${index}: Supabase không trả product_document_chunks.id.`);\n  }\n  if (!row.document_version_id) {\n    throw new Error(`Item ${index}: chunk đã tạo thiếu document_version_id.`);\n  }\n  if (!String(row.content ?? '').trim()) {\n    throw new Error(`Item ${index}: chunk đã tạo thiếu content.`);\n  }\n\n  return {\n    json: {\n      chunk_id: row.id,\n      document_version_id: row.document_version_id,\n      product_id: row.product_id,\n      chunk_index: Number(row.chunk_index),\n      content: String(row.content),\n      content_hash: row.content_hash,\n      language_code: row.language_code ?? 'vi',\n      metadata: row.metadata ?? { content_type: 'faq' }\n    }\n  };\n});"
+      },
+      "id": "21339b54-6b1d-4b82-a48e-1ef2eb873229",
+      "name": "Prepare Embedding Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        2160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json || {};\nconst src = $('Resolve Embedding Model1').item.json;\nconst embedding = response?.data?.[0]?.embedding ?? response?.embedding ?? response?.vector;\nconst model = String(response?.model || 'qwen3-embedding-8b').toLowerCase();\n\nif (model !== 'qwen3-embedding-8b') {\n  throw new Error(`FAQ_WRONG_EMBEDDING_MODEL ${model}`);\n}\nif (!Array.isArray(embedding) || embedding.length !== 4096) {\n  throw new Error(`FAQ_WRONG_SOURCE_DIMENSION ${Array.isArray(embedding) ? embedding.length : 'invalid'}`);\n}\n\nconst truncated = embedding.slice(0, 1024).map(Number);\nif (truncated.some(value => !Number.isFinite(value))) {\n  throw new Error('FAQ_INVALID_EMBEDDING_VALUE');\n}\nconst norm = Math.sqrt(truncated.reduce((sum, value) => sum + value * value, 0));\nif (!Number.isFinite(norm) || norm <= 1e-12) {\n  throw new Error('FAQ_INVALID_EMBEDDING_NORM');\n}\n\nreturn [{\n  json: {\n    ...src,\n    embedding: truncated.map(value => value / norm),\n    dimension: 1024,\n    source_dimension: 4096,\n    embedding_model_name: model\n  }\n}];"
+      },
+      "id": "6097232b-9743-4b67-95ea-6819df06320d",
+      "name": "Normalize Embedding Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3232,
+        2448
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
+          "mode": "list",
+          "cachedResultName": "Cuộc trò chuyện",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2432,
+        2000
+      ],
+      "id": "40f96802-0bf7-4792-a489-236387498d57",
+      "name": "Get row(s) in sheet1",
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a110d43-d64d-4b2a-9522-ffb61751786f",
+              "name": "Câu hỏi",
+              "value": "={{ $json['Câu hỏi'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ef6ae949-c42b-4e59-bc45-7a8844a9b2b0",
+              "name": "Câu trả lời",
+              "value": "={{ $json['Câu trả lời'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -2208,
+        2000
+      ],
+      "id": "93e26f5d-4051-4da5-adda-5cbb3b024de4",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst text = items.map((item, index) => {\n  const d = item.json;\n\n  return [\n    `FAQ ${index + 1}`,\n    `Phiên bản sử dụng: ${d['Phiên bản sử dụng'] ?? ''}`,\n    `Nội dung cần hỗ trợ: ${d['Nội dung cần hỗ trợ'] ?? ''}`,\n    `Loại lỗi: ${d['Loại lỗi'] ?? ''}`,\n    `Hướng giải quyết: ${d['Hướng giải quyết'] ?? ''}`,\n    `Mức độ: ${d['Mức độ'] ?? ''}`,\n  ].join('\\n');\n}).join('\\n\\n---\\n\\n');\n\nreturn [\n  {\n    json: {\n      content: text\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        2000
+      ],
+      "id": "774fc21c-8162-4183-98e7-566bb84034a1",
+      "name": "gộp1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// INPUT từ node gộp dữ liệu của bạn:\n//\n// $json.content có dạng:\n//\n// FAQ 1\n// Phiên bản sử dụng: ...\n// Nội dung cần hỗ trợ: ...\n// Loại lỗi: ...\n// Hướng giải quyết: ...\n// Mức độ: ...\n//\n// ---\n//\n// FAQ 2\n// ...\n\nconst text = String($json.content ?? '').trim();\n\nif (!text) {\n  throw new Error('Không tìm thấy $json.content để chia chunk.');\n}\n\n// Có thể chỉnh theo model embedding.\n// Với FAQ kỹ thuật, 4000–5000 ký tự/chunk là mức thực tế khá ổn.\nconst MAX_CHARS = 4500;\n\n// Đúng với separator ở node gộp dữ liệu của bạn.\nconst FAQ_SEPARATOR = '\\n\\n---\\n\\n';\n\n// Tách chuỗi lớn trở lại thành từng FAQ hoàn chỉnh.\n// Như vậy chunker sẽ ưu tiên KHÔNG cắt giữa một FAQ.\nlet faqBlocks = text\n  .split(FAQ_SEPARATOR)\n  .map(v => v.trim())\n  .filter(Boolean);\n\nif (!faqBlocks.length) {\n  faqBlocks = [text];\n}\n\nconst chunks = [];\n\nlet currentBlocks = [];\nlet currentLength = 0;\n\nfunction flushChunk() {\n  if (!currentBlocks.length) return;\n\n  chunks.push({\n    content: currentBlocks.join(FAQ_SEPARATOR),\n    faq_count: currentBlocks.length\n  });\n\n  currentBlocks = [];\n  currentLength = 0;\n}\n\n// Nếu một FAQ đơn lẻ dài hơn MAX_CHARS thì buộc phải chia.\n// Khi chia, lặp lại phần context chính để mỗi phần vẫn có nghĩa.\nfunction splitOversizedFaq(block) {\n  if (block.length <= MAX_CHARS) {\n    return [block];\n  }\n\n  const lines = block.split('\\n');\n\n  const faqTitle =\n    lines.find(l => /^FAQ\\s+\\d+/i.test(l.trim()))?.trim() || 'FAQ';\n\n  const versionLine =\n    lines.find(l => /^Phiên bản sử dụng:/i.test(l.trim()))?.trim() || '';\n\n  const supportLine =\n    lines.find(l => /^Nội dung cần hỗ trợ:/i.test(l.trim()))?.trim() || '';\n\n  const errorLine =\n    lines.find(l => /^Loại lỗi:/i.test(l.trim()))?.trim() || '';\n\n  const severityLine =\n    lines.find(l => /^Mức độ:/i.test(l.trim()))?.trim() || '';\n\n  const solutionMatch = block.match(\n    /Hướng giải quyết:\\s*([\\s\\S]*?)(?:\\nMức độ:|$)/i\n  );\n\n  const solution = solutionMatch\n    ? solutionMatch[1].trim()\n    : block;\n\n  const contextLines = [\n    faqTitle,\n    versionLine,\n    supportLine,\n    errorLine\n  ].filter(Boolean);\n\n  const context = contextLines.join('\\n');\n\n  // Trừ phần context để tổng chunk không vượt quá MAX_CHARS.\n  const MAX_BODY = Math.max(\n    800,\n    MAX_CHARS - context.length - severityLine.length - 120\n  );\n\n  const parts = [];\n  let start = 0;\n  let partNo = 1;\n\n  while (start < solution.length) {\n    let end = Math.min(start + MAX_BODY, solution.length);\n\n    // Cố gắng cắt tại điểm tự nhiên thay vì cắt giữa từ.\n    if (end < solution.length) {\n      const slice = solution.slice(start, end);\n\n      const candidates = [\n        slice.lastIndexOf('\\n\\n'),\n        slice.lastIndexOf('. '),\n        slice.lastIndexOf('; '),\n        slice.lastIndexOf(', ')\n      ];\n\n      const best = Math.max(...candidates);\n\n      if (best > MAX_BODY * 0.6) {\n        end = start + best + 1;\n      }\n    }\n\n    const body = solution.slice(start, end).trim();\n\n    const rebuilt = [\n      `${faqTitle} - Phần ${partNo}`,\n      versionLine,\n      supportLine,\n      errorLine,\n      'Hướng giải quyết:',\n      body,\n      severityLine\n    ]\n      .filter(Boolean)\n      .join('\\n');\n\n    parts.push(rebuilt);\n\n    start = end;\n    partNo++;\n  }\n\n  return parts;\n}\n\n// Gom nhiều FAQ hoàn chỉnh vào cùng một chunk.\n// Chỉ sang chunk mới khi thêm FAQ tiếp theo sẽ vượt MAX_CHARS.\nfor (const faq of faqBlocks) {\n  const logicalParts = splitOversizedFaq(faq);\n\n  for (const part of logicalParts) {\n    const separatorLength =\n      currentBlocks.length ? FAQ_SEPARATOR.length : 0;\n\n    const projectedLength =\n      currentLength + separatorLength + part.length;\n\n    if (\n      currentBlocks.length > 0 &&\n      projectedLength > MAX_CHARS\n    ) {\n      flushChunk();\n    }\n\n    currentBlocks.push(part);\n\n    currentLength +=\n      (currentBlocks.length > 1 ? FAQ_SEPARATOR.length : 0) +\n      part.length;\n  }\n}\n\nflushChunk();\n\n// Output thành nhiều item n8n.\n// Node tiếp theo có thể:\n// 1. insert product_document_chunks\n// 2. gọi embedding\n// 3. lưu product_chunk_embeddings\nreturn chunks.map((chunk, index) => ({\n  json: {\n    chunk_index: index,\n    section: 'FAQ_KY_THUAT',\n    content: chunk.content,\n    language: $json.language ?? 'vi',\n\n    metadata: {\n      content_type: 'faq',\n      faq_count: chunk.faq_count\n    }\n  }\n}));"
+      },
+      "id": "70bb6d05-a62c-42ee-af9e-cd0b6e4f6b46",
+      "name": "FAQ Aware Chunking - Technical1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1760,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_documents",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "product_id",
+              "keyValue": "={{ $('Attach FAQ Document Context').item.json.product_id }}"
+            },
+            {
+              "keyName": "document_type",
+              "keyValue": "faq"
+            },
+            {
+              "keyName": "title",
+              "keyValue": "={{ $('Attach FAQ Document Context').item.json.title }}"
+            },
+            {
+              "keyName": "source_type",
+              "keyValue": "google_sheets"
+            }
+          ]
+        }
+      },
+      "id": "60b55ec8-b514-45c2-a73e-39f832314fbc",
+      "name": "Supabase - Get FAQ Document1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1312,
+        2000
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1c684821-0c18-45b5-854a-02335ac50ea7",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ad14b9d2-63a2-4f30-857f-6d4331873cff",
+      "name": "IF - Document Exists?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1088,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_documents",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.product_id }}"
+            },
+            {
+              "fieldId": "document_type",
+              "fieldValue": "faq"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.title }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.language_code }}"
+            },
+            {
+              "fieldId": "source_type",
+              "fieldValue": "google_sheets"
+            },
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.source_url }}"
+            },
+            {
+              "fieldId": "file_name",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.file_name }}"
+            },
+            {
+              "fieldId": "mime_type",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.mime_type }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $('Attach FAQ Document Context').item.json.content_hash }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "active"
+            },
+            {
+              "fieldId": "is_official",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "id": "a45541f9-a560-4461-a6f2-a9050bad92cc",
+      "name": "Supabase - Create FAQ Document1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        2192
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = $json.id;\n\nif (!id) {\n  throw new Error('Không lấy được product_documents.id');\n}\n\nconst ctx = $('Attach FAQ Document Context').item.json;\n\nreturn [{\n  json: {\n    ...ctx,\n    document_id: id\n  }\n}];"
+      },
+      "id": "58ad580c-3bd3-4fd6-88e7-84dc858e7258",
+      "name": "Resolve Document ID1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "keyValue": "={{ $('Resolve Document ID1').item.json.document_id }}"
+            },
+            {
+              "keyName": "source_content_hash",
+              "keyValue": "={{ $('Resolve Document ID1').item.json.content_hash }}"
+            }
+          ]
+        }
+      },
+      "id": "7a01c0fa-6532-4058-910e-db74519fdcc1",
+      "name": "Supabase - Get FAQ Version1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        2000
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faq-version-complete",
+              "leftValue": "={{ $json.ingestion_complete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8b546a55-47d4-4cd9-9c41-9b09e41a50aa",
+      "name": "IF - Version Exists?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        32,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_versions",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Document ID1').item.json.document_id }}"
+            }
+          ]
+        }
+      },
+      "id": "6845a1c5-f8c3-43fe-91f9-ae53ab72f386",
+      "name": "Supabase - Get All Versions1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        400,
+        2480
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all()\n  .map(i => i.json)\n  .filter(x => x && x.id);\n\nconst ctx = $('Resolve Document ID1').item.json;\n\nlet maxVersion = 0;\n\nfor (const row of rows) {\n  const n = Number.parseInt(row.version_number, 10);\n  if (Number.isFinite(n) && n > maxVersion) {\n    maxVersion = n;\n  }\n}\n\nreturn [{\n  json: {\n    ...ctx,\n    version_number: maxVersion + 1\n  }\n}];"
+      },
+      "id": "8d168c83-098f-4ea3-8f3e-33c0ad605efd",
+      "name": "Prepare New Version1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_versions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_id",
+              "fieldValue": "={{ $json.document_id }}"
+            },
+            {
+              "fieldId": "version_number",
+              "fieldValue": "={{ $json.version_number }}"
+            },
+            {
+              "fieldId": "source_content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "extracted_text",
+              "fieldValue": "={{ $json.document_text }}"
+            },
+            {
+              "fieldId": "parse_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "processing"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "pending"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            },
+            {
+              "fieldId": "extraction_method",
+              "fieldValue": "google_sheets"
+            },
+            {
+              "fieldId": "extracted_fields",
+              "fieldValue": "={{ {} }}"
+            }
+          ]
+        }
+      },
+      "id": "8db2a224-d718-486e-b9da-4ad9514c5ab1",
+      "name": "Supabase - Create FAQ Version1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        768,
+        2320
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const versionId = $json.id;\n\nif (!versionId) {\n  throw new Error('Không lấy được product_document_versions.id');\n}\n\nconst ctx = $('Resolve Document ID1').item.json;\n\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length;\n  let h2 = 0x41c6ce57 ^ str.length;\n\n  for (let i = 0, ch; i < str.length; i++) {\n    ch = str.charCodeAt(i);\n    h1 = Math.imul(h1 ^ ch, 2654435761);\n    h2 = Math.imul(h2 ^ ch, 1597334677);\n  }\n\n  h1 =\n    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^\n    Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n\n  h2 =\n    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^\n    Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n\n  return (\n    (h2 >>> 0).toString(16).padStart(8, '0') +\n    (h1 >>> 0).toString(16).padStart(8, '0')\n  );\n}\n\nreturn (ctx.chunks || []).map(chunk => ({\n  json: {\n    document_version_id: versionId,\n    product_id: ctx.product_id,\n    chunk_index: chunk.chunk_index,\n    section: chunk.section ?? 'FAQ_KY_THUAT',\n    title: `FAQ kỹ thuật enjiCAD - Chunk ${chunk.chunk_index + 1}`,\n    content: chunk.content,\n    language_code: chunk.language_code ?? 'vi',\n    content_hash: hashText(chunk.content),\n    metadata: chunk.metadata ?? { content_type: 'faq' }\n  }\n}));"
+      },
+      "id": "ca8515a2-123e-4b77-9ec2-8c7f2365b19c",
+      "name": "Resolve Version ID + Expand Chunks1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_document_chunks",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "document_version_id",
+              "fieldValue": "={{ $json.document_version_id }}"
+            },
+            {
+              "fieldId": "product_id",
+              "fieldValue": "={{ $json.product_id }}"
+            },
+            {
+              "fieldId": "chunk_index",
+              "fieldValue": "={{ $json.chunk_index }}"
+            },
+            {
+              "fieldId": "section",
+              "fieldValue": "={{ $json.section }}"
+            },
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $json.content }}"
+            },
+            {
+              "fieldId": "language_code",
+              "fieldValue": "={{ $json.language_code }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "id": "15950027-d9b1-449b-bf72-0645fbdf487c",
+      "name": "Supabase - Create FAQ Chunk1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        2320
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// INPUT: nhiều item từ \"FAQ Aware Chunking - Technical\"\n\nconst items = $input.all();\n\nif (!items.length) {\n  throw new Error('Không có chunk đầu vào');\n}\n\n// enjiCAD trong bảng products\nconst PRODUCT_ID = 1103;\n\nconst TITLE = 'FAQ xử lý kỹ thuật enjiCAD';\nconst SOURCE_TYPE = 'google_sheets';\nconst SOURCE_URL =\n  'https://docs.google.com/spreadsheets/d/121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw/edit#gid=1620486330';\nconst FILE_NAME = 'Xử lý kỹ thuật - Tổng hợp lỗi';\n\nconst chunks = items\n  .map(i => ({\n    chunk_index: i.json.chunk_index,\n    section: i.json.section ?? 'FAQ_KY_THUAT',\n    content: String(i.json.content ?? '').trim(),\n    language_code: i.json.language ?? i.json.language_code ?? 'vi',\n    metadata: i.json.metadata ?? { content_type: 'faq' }\n  }))\n  .filter(x => x.content);\n\nconst documentText = chunks\n  .map(x => x.content)\n  .join('\\n\\n=== CHUNK BOUNDARY ===\\n\\n');\n\n// Hash nhẹ, ổn định, không cần require(\"crypto\")\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length;\n  let h2 = 0x41c6ce57 ^ str.length;\n\n  for (let i = 0, ch; i < str.length; i++) {\n    ch = str.charCodeAt(i);\n    h1 = Math.imul(h1 ^ ch, 2654435761);\n    h2 = Math.imul(h2 ^ ch, 1597334677);\n  }\n\n  h1 =\n    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^\n    Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n\n  h2 =\n    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^\n    Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n\n  return (\n    (h2 >>> 0).toString(16).padStart(8, '0') +\n    (h1 >>> 0).toString(16).padStart(8, '0')\n  );\n}\n\nconst contentHash = hashText(documentText);\n\nreturn [{\n  json: {\n    product_id: PRODUCT_ID,\n    title: TITLE,\n    document_type: 'faq',\n    language_code: 'vi',\n    source_type: SOURCE_TYPE,\n    source_url: SOURCE_URL,\n    file_name: FILE_NAME,\n    mime_type: 'application/vnd.google-apps.spreadsheet',\n    content_hash: contentHash,\n    document_text: documentText,\n    chunks\n  }\n}];"
+      },
+      "id": "54037298-878c-4845-80e1-dae64044f791",
+      "name": "Attach FAQ Document Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1536,
+        2000
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ai-api.cic.com.vn:9443/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: $('Resolve Embedding Model1').item.json.content } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "d00e2365-34d8-40db-9358-0bc57669283d",
+      "name": "Embedding API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3008,
+        2448
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000
+    },
+    {
+      "parameters": {
+        "jsCode": "const modelRows = $input.all().map(item => item.json).filter(row => row?.id);\nconst modelId = modelRows[0]?.id;\nconst src = $('Loop Over FAQ Embeddings1').item.json;\n\nif (!modelId) throw new Error('FAQ_EMBEDDING_MODEL_NOT_FOUND');\nif (!src?.chunk_id || !String(src.content || '').trim()) {\n  throw new Error('FAQ_EMBEDDING_LOOP_CONTEXT_INVALID');\n}\n\nreturn [{ json: { ...src, embedding_model_id: modelId } }];"
+      },
+      "id": "f3bb52e0-4e43-487b-86b9-5b5fb8015f8b",
+      "name": "Resolve Embedding Model1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2336,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "product_chunk_embeddings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chunk_id",
+              "keyValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "keyName": "embedding_model_id",
+              "keyValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "keyName": "content_hash",
+              "keyValue": "={{ $json.content_hash }}"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "true"
+            },
+            {
+              "keyName": "is_retrievable",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "09a5df1d-e782-4403-9a6d-5267f6e620fe",
+      "name": "Supabase - Get Existing Embedding1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        2320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c18b0583-28dc-4c0e-93f6-7d369ddfcef9",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2f1ca760-2c9c-4601-90f2-840ac2d4d018",
+      "name": "IF - Embedding Exists?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2784,
+        2320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $json;\nif (!src?.chunk_id || !src?.embedding_model_id) {\n  throw new Error('FAQ_EMBEDDING_INSERT_CONTEXT_INVALID');\n}\nif (!Array.isArray(src.embedding) || src.embedding.length !== 1024) {\n  throw new Error('FAQ_EMBEDDING_STORAGE_DIMENSION_INVALID');\n}\n\nreturn [{\n  json: {\n    chunk_id: src.chunk_id,\n    embedding_model_id: src.embedding_model_id,\n    embedding: JSON.stringify(src.embedding),\n    content_hash: src.content_hash,\n    document_version_id: src.document_version_id,\n    is_active: true,\n    is_retrievable: true,\n    metadata: {\n      content_type: 'faq',\n      product_id: src.product_id,\n      document_version_id: src.document_version_id,\n      chunk_index: src.chunk_index,\n      language_code: src.language_code,\n      embedding_model: 'qwen3-embedding-8b',\n      source_dimension: 4096,\n      embedding_dimension: 1024,\n      dimension_reduction: 'mrl_prefix_l2_normalized',\n      embedding_provider: 'cic-ai-api'\n    }\n  }\n}];"
+      },
+      "id": "292294ed-4ecc-4272-92d4-57eb76addcd7",
+      "name": "Prepare Embedding Insert1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3456,
+        2448
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "product_chunk_embeddings",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_id",
+              "fieldValue": "={{ $json.chunk_id }}"
+            },
+            {
+              "fieldId": "embedding_model_id",
+              "fieldValue": "={{ $json.embedding_model_id }}"
+            },
+            {
+              "fieldId": "embedding",
+              "fieldValue": "={{ $json.embedding }}"
+            },
+            {
+              "fieldId": "content_hash",
+              "fieldValue": "={{ $json.content_hash }}"
+            },
+            {
+              "fieldId": "is_active",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "is_retrievable",
+              "fieldValue": "true"
+            },
+            {
+              "fieldId": "metadata",
+              "fieldValue": "={{ $json.metadata }}"
+            }
+          ]
+        }
+      },
+      "id": "608be6ec-ae46-4e8c-b598-497321b7ad5c",
+      "name": "Supabase - Create Chunk Embedding1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3680,
+        2448
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Embedding Input').first().json.document_version_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chunk_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "embedding_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "index_status",
+              "fieldValue": "completed"
+            },
+            {
+              "fieldId": "is_current",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "2dd97ddf-fecc-405e-adf2-4bef549dd163",
+      "name": "Supabase - Mark Version Completed1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2736,
+        2096
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "id": "f777be14-82a8-4492-ba9c-342f3a5ba5a3",
+      "name": "Supabase - Get Active Embedding Model1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        2320
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows=$input.all().map(i=>i.json).filter(r=>r?.id);\nif(!rows.length)return [{json:{matching_version:false,ingestion_complete:false}}];\nrows.sort((a,b)=>Number(b.version_number||0)-Number(a.version_number||0)||String(b.created_at||'').localeCompare(String(a.created_at||'')));\nconst latest=rows[0];\nconst completed=['parse_status','chunk_status','embedding_status','index_status'].every(k=>String(latest[k]||'').toLowerCase()==='completed');\nreturn [{json:{...latest,matching_version:true,ingestion_complete:completed&&latest.is_current===true}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        2000
+      ],
+      "id": "5f85179c-d882-4fe0-aa79-be691a80877f",
+      "name": "Select Latest FAQ Version1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx=$('Resolve Document ID1').item.json;\nreturn [{json:{status:'skipped',reason:'same FAQ source hash already completed',document_id:ctx.document_id,document_version_id:$json.id,content_hash:ctx.content_hash}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        1824
+      ],
+      "id": "f9f0688d-a1c0-48ff-a647-f81709aeca9c",
+      "name": "FAQ Already Ingested1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "product_document_versions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Document ID1').first().json.document_id }}"
+            },
+            {
+              "keyName": "is_current",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "is_current",
+              "fieldValue": "false"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        2096
+      ],
+      "id": "76605637-cff2-4fe5-a892-1e632b1c6205",
+      "name": "Unset Previous FAQ Current Version",
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "embedding_models",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "model_name",
+              "keyValue": "qwen3-embedding-8b"
+            },
+            {
+              "keyName": "dimension",
+              "keyValue": "1024"
+            },
+            {
+              "keyName": "is_active",
+              "keyValue": "={{ true }}"
+            }
+          ]
+        }
+      },
+      "id": "f3ab4179-abbd-4a4e-b1d2-2f840ad4f178",
+      "name": "Get FAQ Audit Embedding Model1",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        1776
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_document_chunks?select=id,chunk_index,content_hash,product_chunk_embeddings(id,embedding_model_id,content_hash,is_active,is_retrievable)&document_version_id=eq.' + ($('Select Latest FAQ Version1').first().json.id || '00000000-0000-0000-0000-000000000000') + '&order=chunk_index.asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "4dbb57e6-0c6f-4b8c-a980-7f8ba17dffee",
+      "name": "Audit Existing FAQ Embeddings1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        1776
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const version = $('Select Latest FAQ Version1').first().json || {};\nconst modelId = $('Get FAQ Audit Embedding Model1').first().json.id;\nconst input = $input.all().map(item => item.json);\nconst rows = input.flatMap(value => {\n  const candidates = Array.isArray(value)\n    ? value\n    : (Array.isArray(value?.data) ? value.data : [value]);\n  return candidates.filter(row =>\n    row?.id &&\n    Number.isInteger(Number(row.chunk_index)) &&\n    typeof row.content_hash === 'string' &&\n    row.content_hash.length > 0\n  );\n});\n\nif (!version.id) {\n  return [{ json: { matching_version: false, ingestion_complete: false, reason: 'faq_version_not_found' } }];\n}\n\nconst bad = [];\nfor (const row of rows) {\n  const embeddings = Array.isArray(row.product_chunk_embeddings)\n    ? row.product_chunk_embeddings\n    : [];\n  const valid = embeddings.filter(embedding =>\n    embedding?.embedding_model_id === modelId &&\n    embedding?.is_active === true &&\n    embedding?.is_retrievable === true &&\n    embedding?.content_hash === row.content_hash\n  );\n  if (valid.length !== 1) {\n    bad.push({ chunk_index: row.chunk_index, valid_embeddings: valid.length });\n  }\n}\n\nconst statusesComplete = ['parse_status', 'chunk_status', 'embedding_status', 'index_status']\n  .every(key => String(version[key] || '').toLowerCase() === 'completed');\nconst indexes = rows.map(row => Number(row.chunk_index)).sort((a, b) => a - b);\nconst contiguous = indexes.length > 0 && indexes.every((value, index) => value === index);\nconst hasChunks = rows.length > 0;\nconst coverageComplete = Boolean(modelId) && hasChunks && contiguous && bad.length === 0;\n\nreturn [{\n  json: {\n    ...version,\n    matching_version: hasChunks,\n    actual_chunk_count: rows.length,\n    incomplete_chunks: bad,\n    chunk_indexes_contiguous: contiguous,\n    ingestion_complete: statusesComplete && coverageComplete && version.is_current === true,\n    reason: hasChunks ? 'faq_version_audited' : 'faq_version_has_no_chunks'\n  }\n}];"
+      },
+      "id": "5f143b95-79cc-4d6e-b15f-2dec2b2adb79",
+      "name": "Decide Existing FAQ Coverage1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        1776
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faq-matching-version",
+              "leftValue": "={{ $json.matching_version }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b6814393-b53a-4e63-8405-bf8499fffca1",
+      "name": "IF - Matching FAQ Version?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        2016
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_chunks",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_version_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Select Latest FAQ Version1').first().json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        800,
+        2048
+      ],
+      "id": "3f8cd2f4-c064-4d0b-8ca5-879819788f82",
+      "name": "Get Existing FAQ Chunks for Repair1",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "501a84f9-be26-439c-b077-59fc37f76128",
+      "name": "Loop Over FAQ Embeddings1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1888,
+        2320
+      ],
+      "notesInFlow": true,
+      "notes": "Checks and creates exactly one FAQ embedding per iteration."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_document_chunks?select=id,chunk_index,content_hash,product_chunk_embeddings(id,embedding_model_id,content_hash,is_active,is_retrievable)&document_version_id=eq.' + $('Prepare Embedding Input').first().json.document_version_id + '&order=chunk_index.asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "8428aefe-0afa-45f6-a2cc-f6a6ceef43b0",
+      "name": "Get FAQ Embedding Coverage1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2064,
+        2096
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all().map(item => item.json);\nconst rows = input.flatMap(value => Array.isArray(value) ? value : (Array.isArray(value?.data) ? value.data : (value?.id ? [value] : [])));\nconst expected = $('Prepare Embedding Input').all();\nconst modelId = $('Resolve Embedding Model1').first().json.embedding_model_id;\n\nconst indexes = rows.map(row => Number(row.chunk_index)).sort((a, b) => a - b);\nconst bad = [];\nfor (const row of rows) {\n  const embeddings = Array.isArray(row.product_chunk_embeddings)\n    ? row.product_chunk_embeddings\n    : [];\n  const valid = embeddings.filter(embedding =>\n    embedding?.embedding_model_id === modelId &&\n    embedding?.is_active === true &&\n    embedding?.is_retrievable === true &&\n    embedding?.content_hash === row.content_hash\n  );\n  if (valid.length !== 1) {\n    bad.push({ chunk_index: row.chunk_index, valid_embeddings: valid.length });\n  }\n}\n\nconst contiguous = indexes.length > 0 && indexes.every((value, index) => value === index);\nif (rows.length !== expected.length || !contiguous || bad.length) {\n  throw new Error(\n    `FAQ_EMBEDDING_COVERAGE_INCOMPLETE expected=${expected.length} actual=${rows.length} contiguous=${contiguous} bad=${JSON.stringify(bad)}`\n  );\n}\n\nreturn [{\n  json: {\n    document_version_id: $('Prepare Embedding Input').first().json.document_version_id,\n    chunk_count: rows.length,\n    embedding_count: rows.length,\n    coverage_complete: true\n  }\n}];"
+      },
+      "id": "e6f2c188-febe-44b7-b563-d0cd2b21aba0",
+      "name": "Validate FAQ Embedding Coverage1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        2096
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((item, index) => ({ row: item.json ?? {}, input_index: index }));\nfunction key(value) { return String(value ?? '').normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }\nfunction clean(value) { return String(value ?? '').normalize('NFC').replace(/\\r\\n?/g, '\\n').split('\\n').map(line => line.trim().replace(/[ \\t]+/g, ' ')).join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim(); }\nfunction field(row, wanted) { for (const [name, value] of Object.entries(row)) if (wanted.includes(key(name))) return clean(value); return ''; }\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;\n  for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }\n  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');\n}\nfunction build(version, support, errorType, solution, severity, partLabel = '') {\n  return [\n    'Phiên bản sử dụng: ' + version,\n    'Nội dung cần hỗ trợ' + partLabel + ': ' + support,\n    'Loại lỗi: ' + errorType,\n    'Hướng giải quyết: ' + solution,\n    'Mức độ: ' + severity,\n  ].join('\\n');\n}\nfunction splitSolution(version, support, errorType, solution, severity, maxChars = 4500) {\n  if (build(version, support, errorType, solution, severity).length <= maxChars) return [{ content: build(version, support, errorType, solution, severity), part_index: 0, part_count: 1 }];\n  const overhead = build(version, support, errorType, '', severity, ' (Phần 1/1)').length + 100;\n  const maxBody = Math.max(800, maxChars - overhead);\n  const parts = []; let start = 0;\n  while (start < solution.length) {\n    let end = Math.min(start + maxBody, solution.length);\n    if (end < solution.length) {\n      const slice = solution.slice(start, end);\n      const best = Math.max(slice.lastIndexOf('\\n\\n'), slice.lastIndexOf('. '), slice.lastIndexOf('; '), slice.lastIndexOf(', '), slice.lastIndexOf(' '));\n      if (best > maxBody * 0.6) end = start + best + 1;\n    }\n    parts.push(solution.slice(start, end).trim()); start = end;\n  }\n  return parts.filter(Boolean).map((part, index) => ({ content: build(version, support, errorType, part, severity, ' (Phần ' + (index + 1) + '/' + parts.length + ')'), part_index: index, part_count: parts.length }));\n}\nconst unique = new Map(); let invalidRows = 0, duplicateRows = 0;\nfor (const { row, input_index } of rows) {\n  const version = field(row, ['phien ban su dung', 'phien ban']);\n  const support = field(row, ['noi dung can ho tro', 'noi dung ho tro', 'cau hoi']);\n  const errorType = field(row, ['loai loi']);\n  const solution = field(row, ['huong giai quyet', 'giai phap', 'cau tra loi']);\n  const severity = field(row, ['muc do']);\n  if (!support || !solution) { invalidRows++; continue; }\n  for (const part of splitSolution(version, support, errorType, solution, severity)) {\n    const contentHash = hashText('faq-enjicad-technical-v1\\n' + clean(part.content));\n    if (unique.has(contentHash)) { duplicateRows++; continue; }\n    unique.set(contentHash, { content: part.content, content_hash: contentHash, source_row_number: Number(row.row_number ?? row.rowNumber ?? input_index + 2), part_index: part.part_index, part_count: part.part_count });\n  }\n}\nconst candidates = [...unique.values()];\nif (!candidates.length) throw new Error('ENJICAD_TECHNICAL_NO_VALID_ROWS');\nreturn [{ json: {\n  candidates,\n  document_text: candidates.map(item => item.content).join('\\n\\n---\\n\\n'),\n  sheet_content_hash: hashText(candidates.map(item => item.content_hash).sort().join('|')),\n  sheet_row_count: rows.length, valid_faq_count: candidates.length,\n  invalid_row_count: invalidRows, duplicate_in_sheet_count: duplicateRows,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1792,
+        224
+      ],
+      "id": "25c9155e-f407-45b9-a0e6-e30cf9f50444",
+      "name": "Technical - Normalize + Deduplicate Rows"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "product_document_versions",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "document_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Resolve Document ID').item.json.document_id }}"
+            }
+          ]
+        }
+      },
+      "id": "4c081bc9-b686-49fe-a31e-851c37424353",
+      "name": "Technical - Get Latest FAQ Version",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        224
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json).filter(row => row?.id);\nif (!rows.length) return [{ json: { version_exists: false } }];\nrows.sort((a, b) => Number(b.version_number || 0) - Number(a.version_number || 0) || String(b.created_at || '').localeCompare(String(a.created_at || '')));\nreturn [{ json: { ...rows[0], version_exists: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        224
+      ],
+      "id": "05b1e87b-ecc4-4ccc-a34a-307835cf176d",
+      "name": "Technical - Select Latest FAQ Version"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "technical-version-exists",
+              "leftValue": "={{ $json.version_exists }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a982b3be-bca6-4c89-a482-b13adc67d7de",
+      "name": "Technical - IF Version Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL.replace(/\\/$/, '') + '/rest/v1/product_document_chunks?select=id,document_version_id,product_id,chunk_index,section,title,content,language_code,content_hash,metadata,product_chunk_embeddings(id,embedding_model_id,content_hash,is_active,is_retrievable)&document_version_id=eq.' + $('Technical - Select Latest FAQ Version').first().json.id + '&order=chunk_index.asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept-Profile",
+              "value": "public"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "public"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "4d21a308-91de-4e4e-baee-f62de09ecede",
+      "name": "Technical - Get Existing FAQ + Embeddings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Resolve Document ID').first().json;\nconst selected = $('Technical - Select Latest FAQ Version').first().json;\nconst modelId = $('Get FAQ Audit Embedding Model').first().json.id;\nif (!modelId) throw new Error('ENJICAD_TECHNICAL_EMBEDDING_MODEL_NOT_FOUND');\nconst input = $input.all().map(item => item.json);\nconst flat = input.flatMap(value => Array.isArray(value) ? value : (Array.isArray(value?.data) ? value.data : [value]));\nconst versionId = selected.version_exists ? selected.id : flat.find(row => row?.id && row?.document_id === ctx.document_id)?.id;\nif (!versionId) throw new Error('ENJICAD_TECHNICAL_VERSION_ID_MISSING');\nconst existing = selected.version_exists ? flat.filter(row => row?.id && row.document_version_id === versionId && Number.isInteger(Number(row.chunk_index))) : [];\nfunction clean(value) { return String(value ?? '').normalize('NFC').replace(/\\r\\n?/g, '\\n').split('\\n').map(line => line.trim().replace(/[ \\t]+/g, ' ')).join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim(); }\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;\n  for (let i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }\n  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');\n}\nfunction legacyHashes(row) {\n  const hashes = new Set();\n  if (row.metadata?.faq_content_hash) hashes.add(row.metadata.faq_content_hash);\n  const blocks = String(row.content ?? '').split(/\\n\\n---\\n\\n/).map(block => block.trim()).filter(Boolean);\n  for (const block of blocks) {\n    const body = block.replace(/^FAQ\\s+\\d+(?:\\s*-\\s*Phần\\s+\\d+)?\\s*\\n/i, '');\n    const version = clean(body.match(/(?:^|\\n)Phiên bản sử dụng:\\s*([^\\n]*)/i)?.[1] ?? '');\n    const support = clean(body.match(/(?:^|\\n)Nội dung cần hỗ trợ:\\s*([^\\n]*)/i)?.[1] ?? '');\n    const errorType = clean(body.match(/(?:^|\\n)Loại lỗi:\\s*([^\\n]*)/i)?.[1] ?? '');\n    const solution = clean(body.match(/(?:^|\\n)Hướng giải quyết:\\s*([\\s\\S]*?)(?=\\nMức độ:|$)/i)?.[1] ?? '');\n    const severity = clean(body.match(/(?:^|\\n)Mức độ:\\s*([^\\n]*)/i)?.[1] ?? '');\n    if (!support || !solution) continue;\n    const canonical = ['Phiên bản sử dụng: ' + version, 'Nội dung cần hỗ trợ: ' + support, 'Loại lỗi: ' + errorType, 'Hướng giải quyết: ' + solution, 'Mức độ: ' + severity].join('\\n');\n    hashes.add(hashText('faq-enjicad-technical-v1\\n' + clean(canonical)));\n  }\n  return hashes;\n}\nconst logicalToRow = new Map();\nfor (const row of existing) {\n  logicalToRow.set(row.content_hash, row);\n  for (const hash of legacyHashes(row)) if (!logicalToRow.has(hash)) logicalToRow.set(hash, row);\n}\nlet nextIndex = existing.reduce((max, row) => Math.max(max, Number(row.chunk_index)), -1) + 1;\nconst work = []; const repairChunkIds = new Set(); let alreadyPresent = 0;\nfor (const faq of ctx.candidates) {\n  const row = logicalToRow.get(faq.content_hash);\n  if (!row) {\n    work.push({ json: { action: 'insert_chunk', has_work: true, needs_chunk_insert: true, document_version_id: versionId, product_id: 1103, chunk_index: nextIndex++, section: 'FAQ_KY_THUAT', title: 'FAQ xử lý kỹ thuật enjiCAD', content: faq.content, language_code: 'vi', content_hash: faq.content_hash, metadata: { ...ctx.metadata, source_row_number: faq.source_row_number, part_index: faq.part_index, part_count: faq.part_count, faq_content_hash: faq.content_hash } } });\n    continue;\n  }\n  alreadyPresent++;\n  const embeddings = Array.isArray(row.product_chunk_embeddings) ? row.product_chunk_embeddings : [];\n  const valid = embeddings.filter(embedding => embedding.embedding_model_id === modelId && embedding.content_hash === row.content_hash && embedding.is_active === true && embedding.is_retrievable === true);\n  if (valid.length !== 1 && !repairChunkIds.has(row.id)) { repairChunkIds.add(row.id); work.push({ json: { ...row, action: 'embed_existing', has_work: true, needs_chunk_insert: false } }); }\n}\nif (work.length) return work;\nreturn [{ json: { action: 'skip', has_work: false, needs_chunk_insert: false, document_id: ctx.document_id, document_version_id: versionId, sheet_faq_count: ctx.candidates.length, already_present_count: alreadyPresent, duplicate_in_sheet_count: ctx.duplicate_in_sheet_count } }];"
+      },
+      "id": "b1310def-f7d8-4169-a193-0d4691b3d9ad",
+      "name": "Technical - Plan Incremental FAQ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "technical-work-exists",
+              "leftValue": "={{ $json.has_work }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "454802d4-7e7a-4b3a-8d88-3346c746d107",
+      "name": "Technical - IF Work Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        736,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "technical-chunk-insert-needed",
+              "leftValue": "={{ $json.needs_chunk_insert }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "403ddfa2-eef9-4b65-a695-25567e77de34",
+      "name": "Technical - IF Chunk Insert Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1216,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Resolve Document ID').first().json;\nconst validation = $('Validate FAQ Embedding Coverage').first().json;\nreturn [{ json: {\n  status: validation.work_count > 0 ? 'completed' : 'skipped',\n  reason: validation.work_count > 0 ? 'new or incomplete technical FAQ processed' : 'all technical FAQ rows already exist',\n  product_id: 1103, document_id: ctx.document_id, document_version_id: validation.document_version_id,\n  sheet_faq_count: ctx.valid_faq_count, new_faq_count: validation.new_faq_count,\n  repaired_embedding_count: validation.repaired_embedding_count,\n  duplicate_in_sheet_count: ctx.duplicate_in_sheet_count,\n  total_chunk_count: validation.chunk_count,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        48
+      ],
+      "id": "a92a3b71-4ac2-4377-8fb5-9f6716ea0529",
+      "name": "Technical - Sync Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a7af813d-09ca-486c-88d8-3e26520f42b3-condition",
+              "leftValue": "={{ Number($json.new_faq_count || 0) > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a7af813d-09ca-486c-88d8-3e26520f42b3",
+      "name": "Technical - IF Telegram Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3120,
+        2096
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6263462807",
+        "text": "=✅ Đồng bộ dữ liệu kỹ thuật enjiCAD hoàn tất\n\n📦 Sản phẩm: enjiCAD\n🆔 Product ID: {{$json.product_id}}\n\n➕ FAQ thêm mới: {{$json.new_faq_count}}\n🔧 Embedding được sửa: {{$json.repaired_embedding_count}}\n📄 Tổng FAQ trong Sheet: {{$json.sheet_faq_count}}\n🧩 Tổng chunk hiện tại: {{$json.total_chunk_count}}\n\n📌 Document ID: {{$json.document_id}}\n📌 Version ID: {{$json.document_version_id}}\n📊 Trạng thái: {{$json.status}}\n\n🕐 Thời gian: {{$now.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss')}}\n⚙️ Execution ID: {{$execution.id}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3344,
+        2096
+      ],
+      "id": "d814547d-a76d-4261-a0ba-678d932ca896",
+      "name": "Send Telegram Technical Sheet Sync",
+      "credentials": {
+        "telegramApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx=$('Resolve Document ID1').first().json;\nconst validation=$('Validate FAQ Embedding Coverage1').first().json;\nreturn [{json:{status:'completed',product_id:ctx.product_id??1103,document_id:ctx.document_id,document_version_id:validation.document_version_id,sheet_faq_count:ctx.chunks?.length??validation.chunk_count,new_faq_count:validation.chunk_count,repaired_embedding_count:0,total_chunk_count:validation.chunk_count,source_name:ctx.file_name??ctx.title??'Google Sheet enjiCAD'}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        1936
+      ],
+      "id": "80d50fa0-4650-4cb8-b6a2-aa54cc260926",
+      "name": "Sheet FAQ1 - Build Sync Result"
+    },
+    {
+      "parameters": {
+        "chatId": "6263462807",
+        "text": "=✅ Đồng bộ Sheet enjiCAD hoàn tất\n\n📦 Sản phẩm: enjiCAD\n🆔 Product ID: {{$json.product_id}}\n📄 Nguồn: {{$json.source_name}}\n➕ Chunk đã cập nhật: {{$json.new_faq_count}}\n🧩 Tổng chunk version: {{$json.total_chunk_count}}\n\n📌 Document ID: {{$json.document_id}}\n📌 Version ID: {{$json.document_version_id}}\n📊 Trạng thái: {{$json.status}}\n\n🕐 Thời gian: {{$now.setZone('Asia/Ho_Chi_Minh').toFormat('dd/MM/yyyy HH:mm:ss')}}\n⚙️ Execution ID: {{$execution.id}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3200,
+        1936
+      ],
+      "id": "bf10f6b0-27c4-4ddb-94f6-f80455550ef2",
+      "name": "Send Telegram enjiCAD Sheet FAQ1 Sync",
+      "credentials": {
+        "telegramApi": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Prepare Chunk Insert": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Create FAQ Chunk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Input": {
+      "main": [
+        [
+          {
+            "node": "Loop Over FAQ Embeddings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Embedding Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Insert1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "gộp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gộp1": {
+      "main": [
+        [
+          {
+            "node": "FAQ Aware Chunking - Technical1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAQ Aware Chunking - Technical1": {
+      "main": [
+        [
+          {
+            "node": "Attach FAQ Document Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get FAQ Document1": {
+      "main": [
+        [
+          {
+            "node": "IF - Document Exists?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Document Exists?1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Document ID1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Create FAQ Document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create FAQ Document1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Document ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Document ID1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get FAQ Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get FAQ Version1": {
+      "main": [
+        [
+          {
+            "node": "Select Latest FAQ Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Version Exists?1": {
+      "main": [
+        [
+          {
+            "node": "FAQ Already Ingested1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF - Matching FAQ Version?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get All Versions1": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Version1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Create FAQ Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create FAQ Version1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Version ID + Expand Chunks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Version ID + Expand Chunks1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Chunk Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create FAQ Chunk1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach FAQ Document Context": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get FAQ Document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embedding API": {
+      "main": [
+        [
+          {
+            "node": "Normalize Embedding Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Embedding Model1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Existing Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Existing Embedding1": {
+      "main": [
+        [
+          {
+            "node": "IF - Embedding Exists?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Embedding Exists?1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over FAQ Embeddings1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Embedding API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Insert1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Create Chunk Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create Chunk Embedding1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over FAQ Embeddings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Active Embedding Model1": {
+      "main": [
+        [
+          {
+            "node": "Resolve Embedding Model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Latest FAQ Version1": {
+      "main": [
+        [
+          {
+            "node": "Get FAQ Audit Embedding Model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unset Previous FAQ Current Version": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Mark Version Completed1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FAQ Audit Embedding Model1": {
+      "main": [
+        [
+          {
+            "node": "Audit Existing FAQ Embeddings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit Existing FAQ Embeddings1": {
+      "main": [
+        [
+          {
+            "node": "Decide Existing FAQ Coverage1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Existing FAQ Coverage1": {
+      "main": [
+        [
+          {
+            "node": "IF - Version Exists?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Matching FAQ Version?1": {
+      "main": [
+        [
+          {
+            "node": "Get Existing FAQ Chunks for Repair1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Get All Versions1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing FAQ Chunks for Repair1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over FAQ Embeddings1": {
+      "main": [
+        [
+          {
+            "node": "Get FAQ Embedding Coverage1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Get Active Embedding Model1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FAQ Embedding Coverage1": {
+      "main": [
+        [
+          {
+            "node": "Validate FAQ Embedding Coverage1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate FAQ Embedding Coverage1": {
+      "main": [
+        [
+          {
+            "node": "Unset Previous FAQ Current Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Technical - Normalize + Deduplicate Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - Normalize + Deduplicate Rows": {
+      "main": [
+        [
+          {
+            "node": "Attach FAQ Document Context1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach FAQ Document Context1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get FAQ Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get FAQ Document": {
+      "main": [
+        [
+          {
+            "node": "IF - Document Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Document Exists?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Document ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Create FAQ Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create FAQ Document": {
+      "main": [
+        [
+          {
+            "node": "Resolve Document ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Document ID": {
+      "main": [
+        [
+          {
+            "node": "Get FAQ Audit Embedding Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FAQ Audit Embedding Model": {
+      "main": [
+        [
+          {
+            "node": "Technical - Get Latest FAQ Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - Get Latest FAQ Version": {
+      "main": [
+        [
+          {
+            "node": "Technical - Select Latest FAQ Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - Select Latest FAQ Version": {
+      "main": [
+        [
+          {
+            "node": "Technical - IF Version Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - IF Version Exists": {
+      "main": [
+        [
+          {
+            "node": "Technical - Get Existing FAQ + Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Get All Versions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - Get Existing FAQ + Embeddings": {
+      "main": [
+        [
+          {
+            "node": "Technical - Plan Incremental FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get All Versions": {
+      "main": [
+        [
+          {
+            "node": "Prepare New Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare New Version": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Create FAQ Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create FAQ Version": {
+      "main": [
+        [
+          {
+            "node": "Technical - Plan Incremental FAQ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - Plan Incremental FAQ": {
+      "main": [
+        [
+          {
+            "node": "Technical - IF Work Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - IF Work Exists": {
+      "main": [
+        [
+          {
+            "node": "Technical - IF Chunk Insert Needed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get FAQ Embedding Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - IF Chunk Insert Needed": {
+      "main": [
+        [
+          {
+            "node": "Prepare Chunk Insert1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Embedding Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Chunk Insert1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Create FAQ Chunk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create FAQ Chunk": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Input1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over FAQ Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over FAQ Embeddings": {
+      "main": [
+        [
+          {
+            "node": "Get FAQ Embedding Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Supabase - Get Active Embedding Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Active Embedding Model": {
+      "main": [
+        [
+          {
+            "node": "Resolve Embedding Model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Embedding Model": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Get Existing Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Get Existing Embedding": {
+      "main": [
+        [
+          {
+            "node": "IF - Embedding Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Embedding Exists?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over FAQ Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Embedding API1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embedding API1": {
+      "main": [
+        [
+          {
+            "node": "Normalize Embedding Response1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Embedding Response1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Insert": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Create Chunk Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Create Chunk Embedding": {
+      "main": [
+        [
+          {
+            "node": "Loop Over FAQ Embeddings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FAQ Embedding Coverage": {
+      "main": [
+        [
+          {
+            "node": "Validate FAQ Embedding Coverage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate FAQ Embedding Coverage": {
+      "main": [
+        [
+          {
+            "node": "Unset Previous FAQ Current Version1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unset Previous FAQ Current Version1": {
+      "main": [
+        [
+          {
+            "node": "Supabase - Mark Version Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase - Mark Version Completed": {
+      "main": [
+        [
+          {
+            "node": "Technical - Sync Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - Sync Result": {
+      "main": [
+        [
+          {
+            "node": "Technical - IF Telegram Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical - IF Telegram Needed": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Technical Sheet Sync",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Supabase - Mark Version Completed1": {
+      "main": [
+        [
+          {
+            "node": "Sheet FAQ1 - Build Sync Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet FAQ1 - Build Sync Result": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram enjiCAD Sheet FAQ1 Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "2defb010-a3d5-4602-b998-e310769fa86a",
+  "activeVersionId": null,
+  "versionCounter": 14,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-08-20T09:08:41.302Z",
+      "createdAt": "2026-08-20T09:08:41.302Z",
+      "role": "workflow:owner",
+      "workflowId": "rfZhcWA2P0XrWYAb",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

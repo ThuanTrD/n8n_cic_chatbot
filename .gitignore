@@ -1,0 +1,15 @@
+# Never version raw n8n runtime or secret-bearing material
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+credentials/
+executions/
+binaryData/
+raw-export/
+*.pem
+*.key
+*.log
+*.tmp
