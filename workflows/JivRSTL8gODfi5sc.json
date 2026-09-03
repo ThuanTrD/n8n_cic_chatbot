@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-03T03:20:16.000Z",
+  "updatedAt": "2026-09-03T03:44:07.000Z",
   "createdAt": "2026-08-21T01:55:36.743Z",
   "id": "JivRSTL8gODfi5sc",
   "name": "CMS IntelliCAD - Facebook Chatbot",
@@ -3168,7 +3168,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://league-providing-smoking-upc.trycloudflare.com/v1/chat/completions",
+        "url": "http://172.18.0.1:18644/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -3191,7 +3191,7 @@
         "rawContentType": "application/json",
         "body": "={{ $json.verifier_request_body }}",
         "options": {
-          "timeout": 120000
+          "timeout": 600000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -3476,7 +3476,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://league-providing-smoking-upc.trycloudflare.com/v1/chat/completions",
+        "url": "http://172.18.0.1:18644/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -3499,7 +3499,7 @@
         "rawContentType": "application/json",
         "body": "={{ $json.router_request_body }}",
         "options": {
-          "timeout": 120000
+          "timeout": 600000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -3548,7 +3548,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://league-providing-smoking-upc.trycloudflare.com/v1/chat/completions",
+        "url": "http://172.18.0.1:18644/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -3571,7 +3571,7 @@
         "rawContentType": "application/json",
         "body": "={{ JSON.stringify({model:'cms-intellicad',temperature:0.45,max_tokens:900,response_format:{type:'json_object'},messages:[\n{role:'system',content:'Bạn soạn phản hồi Facebook Messenger cho CMS IntelliCAD. RESPONSE_LANGUAGE=vi thì viết tiếng Việt, xưng em và gọi khách anh/chị. RESPONSE_LANGUAGE=en thì viết hoàn toàn bằng tiếng Anh tự nhiên, không dùng anh/chị/dạ/ạ/nhé. Tự diễn đạt tự nhiên theo tình huống, không dùng một mẫu câu cố định. Chỉ xác nhận dữ liệu có trong ACTION_RESULT. Chỉ xác nhận hành động DB đã hoàn tất và các trường hiện có. Không nói sẽ chuyển, sẽ xử lý, sẽ gửi, sẽ gọi, sẽ liên hệ hay hứa thời gian/kênh xử lý trong tương lai, trừ khi chính ACTION_RESULT có trạng thái hoặc lịch cụ thể chứng minh điều đó. Với QUOTE phải nêu mã yêu cầu và số lượng. Với LEAD nêu dữ liệu đã ghi nhận. Với FEEDBACK cảm ơn đúng nội dung/điểm khách đưa. Với HANDOFF xác nhận đã ghi nhận yêu cầu người thật nhưng không hứa thời gian. Dùng đoạn ngắn, emoji vừa phải, bullet nếu hữu ích; không bảng Markdown, không HTML. JSON duy nhất {\"final_answer\":\"...\"}.'},\n{role:'user',content:'RESPONSE_LANGUAGE:\\n'+String($json.response_language||'vi')+'\\n\\nCUSTOMER_MESSAGE:\\n'+String($json.original_question||'')+'\\n\\nACTION_TYPE:\\n'+String($json.action_type)+'\\n\\nACTION_RESULT:\\n'+JSON.stringify($json.action_result)}]}) }}",
         "options": {
-          "timeout": 120000
+          "timeout": 600000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -3650,7 +3650,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://league-providing-smoking-upc.trycloudflare.com/v1/chat/completions",
+        "url": "http://172.18.0.1:18644/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -3673,7 +3673,7 @@
         "rawContentType": "application/json",
         "body": "={{ JSON.stringify({model:'cms-intellicad',temperature:0,max_tokens:700,response_format:{type:'json_object'},messages:[\n      {role:'system',content:'Bạn kiểm định lời xác nhận hành động của chatbot CMS IntelliCAD. ACTION_RESULT là nguồn duy nhất. Giữ cách diễn đạt tự nhiên nhưng xóa mọi lời hứa hoặc mô tả việc tương lai không được ACTION_RESULT chứng minh, gồm chuyển tiếp, xử lý, gửi, gọi, liên hệ, thời gian phản hồi hay kênh phản hồi. Chỉ xác nhận hành động DB đã hoàn tất và dữ liệu thực có. Với HANDOFF chỉ xác nhận yêu cầu kết nối người thật đã được ghi nhận; không hứa họ sẽ phản hồi. Với QUOTE chỉ xác nhận yêu cầu báo giá đã tạo, mã và số lượng; không hứa sẽ gửi. Với LEAD/FEEDBACK chỉ xác nhận đã ghi nhận. Tuân thủ RESPONSE_LANGUAGE: vi thì tiếng Việt, xưng em và gọi khách anh/chị; en thì hoàn toàn tiếng Anh và không dùng anh/chị/dạ/ạ/nhé. Trả JSON duy nhất gồm final_answer và mảng removed_commitments.'},\n      {role:'user',content:'RESPONSE_LANGUAGE:\\n'+String($('Chuẩn bị AI phản hồi hành động1').item.json.response_language||'vi')+'\\n\\nACTION_TYPE:\\n'+String($('Chuẩn bị AI phản hồi hành động1').item.json.action_type||'')+'\\n\\nACTION_RESULT:\\n'+JSON.stringify($('Chuẩn bị AI phản hồi hành động1').item.json.action_result||{})+'\\n\\nDRAFT:\\n'+String($json?.data?.choices?.[0]?.message?.content??$json?.choices?.[0]?.message?.content??'')}\n    ]}) }}",
         "options": {
-          "timeout": 120000
+          "timeout": 600000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -3999,7 +3999,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://league-providing-smoking-upc.trycloudflare.com/v1/chat/completions",
+        "url": "http://172.18.0.1:18644/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -4022,7 +4022,7 @@
         "rawContentType": "application/json",
         "body": "={{ $('Chuẩn bị Request Kiểm định1').item.json.verifier_retry_request_body }}",
         "options": {
-          "timeout": 120000
+          "timeout": 600000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -4133,7 +4133,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://league-providing-smoking-upc.trycloudflare.com/v1/chat/completions",
+        "url": "http://172.18.0.1:18644/v1/chat/completions",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -4156,7 +4156,7 @@
         "rawContentType": "application/json",
         "body": "={{ $json.hermes_agent_request_body }}",
         "options": {
-          "timeout": 180000
+          "timeout": 600000
         }
       },
       "id": "bd841a7c-1e99-4977-a4fc-4126529682a2",
@@ -6112,9 +6112,9 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "bbbb2dc8-c5cf-46f5-820c-47cb9d32eeca",
+  "versionId": "e9501437-4b9d-4850-b1b9-e403d638bf76",
   "activeVersionId": "05ae075c-4756-43b5-997a-05e727f40b2d",
-  "versionCounter": 113,
+  "versionCounter": 114,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

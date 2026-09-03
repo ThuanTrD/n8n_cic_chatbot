@@ -27,3 +27,13 @@ journalctl -u n8n-git-backup.service
 ## Restore boundary
 
 Import workflow JSON through n8n and then recreate/remap credentials. This repository is not a full n8n disaster-recovery backup.
+
+## Hermes serial gateway
+
+The VM-side `hermes-serial-gateway.service` protects the workstation by serializing only Hermes chat-completion requests. It uses concurrency 1 and a maximum waiting queue of 20; global n8n concurrency remains unchanged.
+
+```bash
+systemctl status hermes-serial-gateway.service
+curl http://172.18.0.1:18644/health
+journalctl -u hermes-serial-gateway.service
+```

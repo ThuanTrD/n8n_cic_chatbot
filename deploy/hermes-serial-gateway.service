@@ -1,0 +1,35 @@
+[Unit]
+Description=Hermes bounded serial inference gateway
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ADMIN
+Group=ADMIN
+WorkingDirectory=/home/ADMIN/n8n_cic_chatbot
+Environment=PYTHONUNBUFFERED=1
+Environment=HERMES_GATEWAY_BIND=172.18.0.1
+Environment=HERMES_GATEWAY_PORT=18644
+Environment=HERMES_TARGET_ORIGIN=https://league-providing-smoking-upc.trycloudflare.com
+Environment=HERMES_GATEWAY_CONCURRENCY=1
+Environment=HERMES_GATEWAY_MAX_QUEUE=20
+Environment=HERMES_GATEWAY_QUEUE_TIMEOUT=480
+Environment=HERMES_GATEWAY_UPSTREAM_TIMEOUT=300
+Environment=HERMES_GATEWAY_MAX_BODY_BYTES=2097152
+ExecStart=/usr/bin/python3 /home/ADMIN/n8n_cic_chatbot/scripts/hermes_serial_gateway.py
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
