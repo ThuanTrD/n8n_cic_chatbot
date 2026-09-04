@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-04T09:24:17.000Z",
+  "updatedAt": "2026-09-04T10:04:38.000Z",
   "createdAt": "2026-08-24T08:04:25.963Z",
   "id": "intellicadSalesSheetSync",
   "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
@@ -636,8 +636,8 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "30265293-03fe-4fc9-b6a7-7a870ac8c8a6",
-  "activeVersionId": "30265293-03fe-4fc9-b6a7-7a870ac8c8a6",
+  "versionId": "059e8d66-336b-426c-86a5-5a62324204e3",
+  "activeVersionId": "059e8d66-336b-426c-86a5-5a62324204e3",
   "versionCounter": 19,
   "triggerCount": 1,
   "sourceWorkflowId": null,

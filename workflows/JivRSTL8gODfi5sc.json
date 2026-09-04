@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-04T09:48:35.000Z",
+  "updatedAt": "2026-09-04T10:04:32.000Z",
   "createdAt": "2026-08-21T01:55:36.743Z",
   "id": "JivRSTL8gODfi5sc",
   "name": "CMS IntelliCAD - Facebook Chatbot",
@@ -6190,8 +6190,8 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "55ea2cf7-e426-4f40-a9ad-9049d3acb910",
-  "activeVersionId": "55ea2cf7-e426-4f40-a9ad-9049d3acb910",
+  "versionId": "62a24e98-0c44-45dd-80d8-131b2bf695a7",
+  "activeVersionId": "62a24e98-0c44-45dd-80d8-131b2bf695a7",
   "versionCounter": 140,
   "triggerCount": 1,
   "sourceWorkflowId": null,
