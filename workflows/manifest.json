@@ -47,7 +47,7 @@
       "active": true,
       "archived": false,
       "file": "JivRSTL8gODfi5sc.json",
-      "redactions": 70
+      "redactions": 72
     },
     {
       "id": "T75y5nS7I6C1rHeK",
@@ -122,7 +122,7 @@
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 240,
+    "credential_references": 242,
     "sensitive_named_values": 9
   }
 }
