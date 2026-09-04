@@ -1,5 +1,5 @@
 {
-  "workflowCount": 11,
+  "workflowCount": 12,
   "workflows": [
     {
       "id": "0BBvkcVoFM38P15y",
@@ -24,6 +24,14 @@
       "archived": false,
       "file": "FKayVMyWoQKSErYE.json",
       "redactions": 26
+    },
+    {
+      "id": "GmiCVh7CyLs4zMMm",
+      "name": "CIC Chatbot Tổng - Qwen Agent RAG Toàn bộ Dữ liệu",
+      "active": false,
+      "archived": false,
+      "file": "GmiCVh7CyLs4zMMm.json",
+      "redactions": 35
     },
     {
       "id": "JivRSTL8gODfi5sc",
@@ -63,7 +71,7 @@
       "active": true,
       "archived": false,
       "file": "dMoXXuKEuUW7vRFV.json",
-      "redactions": 30
+      "redactions": 35
     },
     {
       "id": "intellicadSalesSheetSync",
@@ -91,14 +99,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 16,
+    "bearer": 19,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 191,
-    "sensitive_named_values": 7
+    "credential_references": 226,
+    "sensitive_named_values": 9
   }
 }
