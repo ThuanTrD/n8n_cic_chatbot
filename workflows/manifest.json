@@ -1,5 +1,5 @@
 {
-  "workflowCount": 13,
+  "workflowCount": 14,
   "workflows": [
     {
       "id": "0BBvkcVoFM38P15y",
@@ -66,6 +66,14 @@
       "redactions": 27
     },
     {
+      "id": "XxSiIs3HSzXfgoWl",
+      "name": "02 - META - Daily Customer Intelligence",
+      "active": false,
+      "archived": false,
+      "file": "XxSiIs3HSzXfgoWl.json",
+      "redactions": 5
+    },
+    {
       "id": "Yns4Vi7tQiwFHW32",
       "name": "AI Tool AI Agent Reply_lấy ở ytb",
       "active": false,
@@ -114,7 +122,7 @@
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 235,
+    "credential_references": 240,
     "sensitive_named_values": 9
   }
 }

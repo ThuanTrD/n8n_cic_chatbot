@@ -1,0 +1,345 @@
+{
+  "updatedAt": "2026-09-04T08:34:33.414Z",
+  "createdAt": "2026-09-04T08:33:20.211Z",
+  "id": "XxSiIs3HSzXfgoWl",
+  "name": "02 - META - Daily Customer Intelligence",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "meta-customer-message",
+        "options": {}
+      },
+      "id": "a83fe2f1-7178-48ce-80fb-e5815f0d23c6",
+      "name": "Meta Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "fc20ada6-efa5-4088-91f8-d521180dd428"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const payload = $json.body ?? $json;\nconst output = [];\n\nfor (const entry of payload.entry ?? []) {\n  for (const event of entry.messaging ?? []) {\n    // Bỏ qua delivery/read/echo; chỉ lấy tin nhắn thực của khách.\n    if (!event.message || event.message.is_echo) continue;\n\n    const text = event.message.text ?? null;\n    const attachments = event.message.attachments ?? [];\n    const timestampMs = Number(event.timestamp ?? Date.now());\n\n    output.push({\n      json: {\n        platform: \"facebook\",\n        page_id: String(event.recipient?.id ?? entry.id ?? \"\"),\n        customer_platform_id: String(event.sender?.id ?? \"\"),\n        platform_message_id: String(event.message.mid ?? \"\"),\n        message_type: text\n          ? \"text\"\n          : attachments.length\n            ? \"attachment\"\n            : \"unknown\",\n        text,\n        attachments,\n        event_timestamp: new Date(timestampMs).toISOString(),\n        raw_event: event\n      }\n    });\n  }\n}\n\nreturn output;"
+      },
+      "id": "5770e590-923d-459d-8612-0aba805f1ed7",
+      "name": "Normalize Meta Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO messages (\n  platform,\n  page_id,\n  customer_platform_id,\n  platform_message_id,\n  message_type,\n  text,\n  attachments,\n  raw_event,\n  created_at,\n  processed\n)\nVALUES (\n  $1, $2, $3, $4, $5, $6,\n  $7::jsonb,\n  $8::jsonb,\n  $9::timestamptz,\n  FALSE\n)\nON CONFLICT (platform_message_id)\nDO NOTHING\nRETURNING id, platform_message_id, customer_platform_id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.platform, $json.page_id, $json.customer_platform_id, $json.platform_message_id, $json.message_type, $json.text, $json.attachments, $json.raw_event, $json.event_timestamp ] }}"
+        }
+      },
+      "id": "1aab32aa-8731-485c-b8a0-07edf9c4e995",
+      "name": "Insert Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * *"
+            }
+          ]
+        }
+      },
+      "id": "fb062bbb-acaf-4b17-8f58-a06ef446e875",
+      "name": "Every Day 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH pending AS (\n  SELECT DISTINCT\n    platform,\n    page_id,\n    customer_platform_id\n  FROM messages\n  WHERE processed = FALSE\n)\nSELECT\n  p.platform,\n  p.page_id,\n  p.customer_platform_id,\n  COALESCE(\n    (\n      SELECT json_agg(x ORDER BY x.created_at)\n      FROM (\n        SELECT\n          m2.text,\n          m2.message_type,\n          m2.created_at\n        FROM messages m2\n        WHERE m2.platform = p.platform\n          AND m2.page_id = p.page_id\n          AND m2.customer_platform_id = p.customer_platform_id\n        ORDER BY m2.created_at DESC\n        LIMIT 50\n      ) x\n    ),\n    '[]'::json\n  ) AS messages,\n  (\n    SELECT COUNT(*)\n    FROM messages m3\n    WHERE m3.platform = p.platform\n      AND m3.page_id = p.page_id\n      AND m3.customer_platform_id = p.customer_platform_id\n      AND m3.processed = FALSE\n  ) AS pending_count,\n  COALESCE(to_jsonb(cs), '{}'::jsonb) AS old_state\nFROM pending p\nLEFT JOIN customer_state cs\n  ON cs.platform = p.platform\n AND cs.page_id = p.page_id\n AND cs.customer_platform_id = p.customer_platform_id;",
+        "options": {}
+      },
+      "id": "4529e416-e92b-4231-9699-30e31a799c58",
+      "name": "Get Customers With Pending Messages",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        128,
+        384
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const row = $json;\nconst messages = Array.isArray(row.messages) ? row.messages : [];\nconst oldState = row.old_state ?? {};\n\nconst conversation = messages\n  .map((m, i) => {\n    const time = m.created_at ? new Date(m.created_at).toISOString() : \"\";\n    const text = m.text ?? `[${m.message_type ?? \"unknown\"}]`;\n    return `${i + 1}. ${time} | KHÁCH: ${text}`;\n  })\n  .join(\"\\n\");\n\n// Trích xuất deterministic trước khi gọi AI.\nconst allText = messages.map(m => m.text ?? \"\").join(\"\\n\");\n\nconst emailMatch = allText.match(\n  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i\n);\n\nconst phoneMatches = allText.match(\n  /(?:\\+84|84|0)(?:[\\s.\\-]?\\d){8,10}/g\n) ?? [];\n\nconst normalizePhone = (s) => {\n  if (!s) return null;\n  let p = s.replace(/[^\\d+]/g, \"\");\n  if (p.startsWith(\"+84\")) p = \"0\" + p.slice(3);\n  else if (p.startsWith(\"84\") && !p.startsWith(\"840\")) p = \"0\" + p.slice(2);\n  return p;\n};\n\nconst regexPhone = phoneMatches.length\n  ? normalizePhone(phoneMatches[0])\n  : null;\n\nconst regexEmail = emailMatch?.[0]?.toLowerCase() ?? null;\n\nconst schema = {\n  type: \"object\",\n  additionalProperties: false,\n  properties: {\n    phone: { type: [\"string\", \"null\"] },\n    email: { type: [\"string\", \"null\"] },\n    customer_name: { type: [\"string\", \"null\"] },\n    intents: {\n      type: \"array\",\n      items: {\n        type: \"string\",\n        enum: [\n          \"GREETING\",\n          \"PRODUCT_SEARCH\",\n          \"PRODUCT_INFORMATION\",\n          \"PRICE_INQUIRY\",\n          \"PRODUCT_COMPARISON\",\n          \"PRODUCT_RECOMMENDATION\",\n          \"AVAILABILITY_CHECK\",\n          \"REQUEST_QUOTE\",\n          \"ORDER_PRODUCT\",\n          \"DELIVERY_INQUIRY\",\n          \"PAYMENT_INQUIRY\",\n          \"WARRANTY\",\n          \"TECHNICAL_SUPPORT\",\n          \"COMPLAINT\",\n          \"REQUEST_HUMAN\",\n          \"OTHER\"\n        ]\n      }\n    },\n    product: { type: [\"string\", \"null\"] },\n    brand: { type: [\"string\", \"null\"] },\n    product_code: { type: [\"string\", \"null\"] },\n    quantity: { type: [\"integer\", \"null\"], minimum: 1 },\n    budget_min: { type: [\"number\", \"null\"], minimum: 0 },\n    budget_max: { type: [\"number\", \"null\"], minimum: 0 },\n    use_case: { type: [\"string\", \"null\"] },\n    requirements: {\n      type: \"array\",\n      items: { type: \"string\" }\n    },\n    purchase_time: { type: [\"string\", \"null\"] },\n    request_quote: { type: \"boolean\" },\n    request_callback: { type: \"boolean\" },\n    urgency: {\n      type: \"string\",\n      enum: [\"low\", \"medium\", \"high\"]\n    },\n    summary: { type: \"string\" },\n    confidence: {\n      type: \"number\",\n      minimum: 0,\n      maximum: 1\n    }\n  },\n  required: [\n    \"phone\",\n    \"email\",\n    \"customer_name\",\n    \"intents\",\n    \"product\",\n    \"brand\",\n    \"product_code\",\n    \"quantity\",\n    \"budget_min\",\n    \"budget_max\",\n    \"use_case\",\n    \"requirements\",\n    \"purchase_time\",\n    \"request_quote\",\n    \"request_callback\",\n    \"urgency\",\n    \"summary\",\n    \"confidence\"\n  ]\n};\n\nconst prompt = `\nBạn là bộ máy trích xuất thông tin khách hàng cho hệ thống bán hàng.\n\nNGUYÊN TẮC:\n- Chỉ dùng dữ liệu có trong hội thoại hoặc trạng thái cũ.\n- Không tự đoán tên, số điện thoại, email hay sản phẩm.\n- Nếu không biết, trả null.\n- Ngân sách phải chuyển thành số VND. Ví dụ \"30tr\" = 30000000.\n- Nếu khách nói \"25-30 triệu\" thì budget_min=25000000, budget_max=30000000.\n- quantity là số lượng sản phẩm khách muốn mua.\n- summary phải ngắn, đủ cho nhân viên sales đọc trong vài giây.\n- Nếu dữ liệu mới không phủ định dữ liệu cũ, được phép giữ dữ liệu cũ.\n- Không suy luận thông tin nhạy cảm.\n\nTHÔNG TIN ĐÃ BIẾT:\n${JSON.stringify(oldState)}\n\nREGEX ĐÃ PHÁT HIỆN:\nphone=${regexPhone ?? \"null\"}\nemail=${regexEmail ?? \"null\"}\n\nHỘI THOẠI GẦN NHẤT:\n${conversation || \"(không có text)\"}\n`.trim();\n\nreturn {\n  json: {\n    platform: row.platform,\n    page_id: row.page_id,\n    customer_platform_id: row.customer_platform_id,\n    pending_count: Number(row.pending_count ?? 0),\n    old_state: oldState,\n    regex_phone: regexPhone,\n    regex_email: regexEmail,\n    openai_request: {\n      model: \"gpt-5.6-luna\",\n      input: prompt,\n      text: {\n        format: {\n          type: \"json_schema\",\n          name: \"customer_intelligence\",\n          strict: true,\n          schema\n        }\n      }\n    }\n  }\n};"
+      },
+      "id": "0b39f3d3-30e7-4611-b1f0-97c7885ec328",
+      "name": "Build AI Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.openai_request) }}",
+        "options": {}
+      },
+      "id": "37935dc2-e17b-4948-afb7-ff586536cfa2",
+      "name": "OpenAI - Analyze Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        384
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const response = $json;\nconst source = $(\"Build AI Request\").item.json;\n\n// Responses API: tìm output_text trong output[].content[].\nlet outputText = null;\n\nif (typeof response.output_text === \"string\") {\n  outputText = response.output_text;\n}\n\nif (!outputText && Array.isArray(response.output)) {\n  outer:\n  for (const item of response.output) {\n    for (const content of item.content ?? []) {\n      if (content.type === \"output_text\" && typeof content.text === \"string\") {\n        outputText = content.text;\n        break outer;\n      }\n      if (typeof content.text === \"string\") {\n        outputText = content.text;\n        break outer;\n      }\n    }\n  }\n}\n\nif (!outputText) {\n  throw new Error(\"Không tìm thấy text JSON trong OpenAI Responses API.\");\n}\n\nconst ai = JSON.parse(outputText);\nconst old = source.old_state ?? {};\n\n// Ưu tiên dữ liệu mới; nếu null thì giữ dữ liệu cũ.\nconst merged = {\n  phone: ai.phone ?? source.regex_phone ?? old.phone ?? null,\n  email: ai.email ?? source.regex_email ?? old.email ?? null,\n  customer_name: ai.customer_name ?? old.customer_name ?? null,\n  intents: Array.isArray(ai.intents) && ai.intents.length\n    ? ai.intents\n    : (old.intents ?? []),\n  product: ai.product ?? old.product ?? null,\n  brand: ai.brand ?? old.brand ?? null,\n  product_code: ai.product_code ?? old.product_code ?? null,\n  quantity: ai.quantity ?? old.quantity ?? null,\n  budget_min: ai.budget_min ?? old.budget_min ?? null,\n  budget_max: ai.budget_max ?? old.budget_max ?? null,\n  use_case: ai.use_case ?? old.use_case ?? null,\n  requirements: Array.isArray(ai.requirements) && ai.requirements.length\n    ? ai.requirements\n    : (old.requirements ?? []),\n  purchase_time: ai.purchase_time ?? old.purchase_time ?? null,\n  request_quote: Boolean(ai.request_quote || old.request_quote),\n  request_callback: Boolean(ai.request_callback || old.request_callback),\n  urgency: ai.urgency ?? old.urgency ?? \"low\",\n  summary: ai.summary ?? old.summary ?? \"\",\n  confidence: Number(ai.confidence ?? 0)\n};\n\n// Lead scoring deterministic.\nlet score = 0;\nif (merged.product) score += 10;\nif (merged.use_case) score += 10;\nif (merged.budget_min || merged.budget_max) score += 15;\nif (merged.quantity) score += 10;\nif (merged.phone) score += 25;\nif (merged.email) score += 10;\nif (merged.request_quote) score += 20;\nif (merged.request_callback) score += 10;\nif (merged.urgency === \"high\") score += 10;\n\nscore = Math.min(score, 100);\n\nlet lead_status = \"COLD\";\nif (score >= 70) lead_status = \"HOT\";\nelse if (score >= 50) lead_status = \"QUALIFIED\";\nelse if (score >= 20) lead_status = \"WARM\";\n\nreturn {\n  json: {\n    platform: source.platform,\n    page_id: source.page_id,\n    customer_platform_id: source.customer_platform_id,\n    pending_count: source.pending_count,\n    ...merged,\n    lead_score: score,\n    lead_status\n  }\n};"
+      },
+      "id": "dfe95474-afaa-4545-9725-71a72c4719d7",
+      "name": "Parse AI Result + Lead Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO customer_state (\n  platform,\n  page_id,\n  customer_platform_id,\n  phone,\n  email,\n  customer_name,\n  intents,\n  product,\n  brand,\n  product_code,\n  quantity,\n  budget_min,\n  budget_max,\n  use_case,\n  requirements,\n  purchase_time,\n  request_quote,\n  request_callback,\n  urgency,\n  summary,\n  confidence,\n  lead_score,\n  lead_status,\n  updated_at\n)\nVALUES (\n  $1, $2, $3, $4, $5, $6,\n  $7::jsonb,\n  $8, $9, $10, $11, $12, $13, $14,\n  $15::jsonb,\n  $16, $17, $18, $19, $20, $21, $22, $23,\n  NOW()\n)\nON CONFLICT (platform, page_id, customer_platform_id)\nDO UPDATE SET\n  phone = COALESCE(EXCLUDED.phone, customer_state.phone),\n  email = COALESCE(EXCLUDED.email, customer_state.email),\n  customer_name = COALESCE(EXCLUDED.customer_name, customer_state.customer_name),\n  intents = CASE\n    WHEN jsonb_array_length(EXCLUDED.intents) > 0 THEN EXCLUDED.intents\n    ELSE customer_state.intents\n  END,\n  product = COALESCE(EXCLUDED.product, customer_state.product),\n  brand = COALESCE(EXCLUDED.brand, customer_state.brand),\n  product_code = COALESCE(EXCLUDED.product_code, customer_state.product_code),\n  quantity = COALESCE(EXCLUDED.quantity, customer_state.quantity),\n  budget_min = COALESCE(EXCLUDED.budget_min, customer_state.budget_min),\n  budget_max = COALESCE(EXCLUDED.budget_max, customer_state.budget_max),\n  use_case = COALESCE(EXCLUDED.use_case, customer_state.use_case),\n  requirements = CASE\n    WHEN jsonb_array_length(EXCLUDED.requirements) > 0 THEN EXCLUDED.requirements\n    ELSE customer_state.requirements\n  END,\n  purchase_time = COALESCE(EXCLUDED.purchase_time, customer_state.purchase_time),\n  request_quote = EXCLUDED.request_quote OR customer_state.request_quote,\n  request_callback = EXCLUDED.request_callback OR customer_state.request_callback,\n  urgency = EXCLUDED.urgency,\n  summary = EXCLUDED.summary,\n  confidence = EXCLUDED.confidence,\n  lead_score = EXCLUDED.lead_score,\n  lead_status = EXCLUDED.lead_status,\n  updated_at = NOW()\nRETURNING\n  platform,\n  page_id,\n  customer_platform_id,\n  lead_score,\n  lead_status;",
+        "options": {
+          "queryReplacement": "={{ [ $json.platform, $json.page_id, $json.customer_platform_id, $json.phone, $json.email, $json.customer_name, $json.intents, $json.product, $json.brand, $json.product_code, $json.quantity, $json.budget_min, $json.budget_max, $json.use_case, $json.requirements, $json.purchase_time, $json.request_quote, $json.request_callback, $json.urgency, $json.summary, $json.confidence, $json.lead_score, $json.lead_status ] }}"
+        }
+      },
+      "id": "d775c08c-42bf-493a-aacf-cc7fef8593fb",
+      "name": "Upsert Customer State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1184,
+        384
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE messages\nSET processed = TRUE,\n    processed_at = NOW()\nWHERE platform = $1\n  AND page_id = $2\n  AND customer_platform_id = $3\n  AND processed = FALSE\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ $('Parse AI Result + Lead Score').item.json.platform, $('Parse AI Result + Lead Score').item.json.page_id, $('Parse AI Result + Lead Score').item.json.customer_platform_id ] }}"
+        }
+      },
+      "id": "9c995f83-c2fc-43ab-8787-57b44ade5c13",
+      "name": "Mark Messages Processed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1456,
+        384
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Meta Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Meta Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Meta Payload": {
+      "main": [
+        [
+          {
+            "node": "Insert Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Day 20:00": {
+      "main": [
+        [
+          {
+            "node": "Get Customers With Pending Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customers With Pending Messages": {
+      "main": [
+        [
+          {
+            "node": "Build AI Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build AI Request": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Analyze Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Analyze Customer": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Result + Lead Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Result + Lead Score": {
+      "main": [
+        [
+          {
+            "node": "Upsert Customer State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Customer State": {
+      "main": [
+        [
+          {
+            "node": "Mark Messages Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "c4cd447b-b026-4f6a-9262-471917c30b74",
+  "activeVersionId": null,
+  "versionCounter": 8,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-04T08:33:20.218Z",
+      "createdAt": "2026-09-04T08:33:20.218Z",
+      "role": "workflow:owner",
+      "workflowId": "XxSiIs3HSzXfgoWl",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-04T03:11:53.887Z",
+  "updatedAt": "2026-09-04T07:05:20.226Z",
   "createdAt": "2026-09-04T03:11:51.811Z",
   "id": "Bzi9dHprJPgP54H2",
   "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
@@ -13,7 +13,7 @@
       "typeVersion": 1,
       "position": [
         -16208,
-        528
+        2784
       ],
       "id": "44fc47a3-3970-5932-8b0f-68591b272398",
       "name": "Manual Legal Ingestion"
@@ -25,8 +25,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -15800,
-        500
+        -15984,
+        2784
       ],
       "id": "7b4df5e8-1a34-549b-9a3d-84769067bbd5",
       "name": "Legal Ingestion Config",
@@ -41,8 +41,8 @@
         "filter": {
           "folderId": {
             "__rl": true,
-            "value": "={{ $('Legal Ingestion Config').item.json.folder_id }}",
-            "mode": "id"
+            "mode": "id",
+            "value": "={{ $('Legal Ingestion Config').item.json.folder_id }}"
           },
           "whatToSearch": "files",
           "fileTypes": [
@@ -61,8 +61,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -15550,
-        700
+        -15760,
+        2784
       ],
       "id": "d6d5e871-d880-5aee-ae4a-a0580c1d7150",
       "name": "List Legal Drive Folder",
@@ -86,8 +86,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -15300,
-        700
+        -15536,
+        2784
       ],
       "id": "6b6583f1-8d8c-5d34-8623-a831977770c9",
       "name": "Normalize Legal Drive Files",
@@ -101,8 +101,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -15050,
-        700
+        -15312,
+        2784
       ],
       "id": "9bbbe5c8-db2c-5506-9f6c-175d38deb2b1",
       "name": "Loop Over Legal Files"
@@ -114,8 +114,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -14800,
-        420
+        -15088,
+        1824
       ],
       "id": "adfa6bb4-7cd4-54eb-9e68-1f35443d44a1",
       "name": "All Legal Files Completed"
@@ -127,14 +127,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -14800,
-        700
+        -15088,
+        2016
       ],
       "id": "ea308f31-6354-5731-aa63-b4ed51df23b4",
       "name": "Prepare Legal Source Metadata",
       "notesInFlow": true,
-      "notes": "Allowlist, 50 MB bound, stable Drive identity and source hash.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Allowlist, 50 MB bound, stable Drive identity and source hash."
     },
     {
       "parameters": {
@@ -147,18 +147,18 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -14550,
-        700
+        -14864,
+        1920
       ],
       "id": "d71e1e60-5db2-55fd-adaf-22d4c4f502b6",
       "name": "Reserve Legal Source",
+      "notesInFlow": true,
       "credentials": {
         "postgres": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
       },
-      "notesInFlow": true,
       "notes": "Idempotent organization+Drive file+hash reservation with stale-run recovery."
     },
     {
@@ -188,8 +188,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -14300,
-        700
+        -14640,
+        1920
       ],
       "id": "95f202e7-b64e-5a09-8b8a-df9af8cad053",
       "name": "IF Legal Source Needs Processing"
@@ -201,8 +201,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -14050,
-        500
+        -14416,
+        2048
       ],
       "id": "94d42842-b503-556b-8605-4402c6b3ca69",
       "name": "Legal Source Skipped"
@@ -222,8 +222,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -14050,
-        820
+        -14416,
+        2240
       ],
       "id": "c0b3990b-43d9-570b-9368-1242a082fccf",
       "name": "Download Legal File",
@@ -276,8 +276,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -13800,
-        820
+        -14192,
+        2160
       ],
       "id": "5bfc18f2-b421-53d5-b32b-540353c989f4",
       "name": "IF Legal Office File"
@@ -289,14 +289,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -13550,
-        700
+        -13968,
+        2064
       ],
       "id": "27b0e0b2-154c-5971-9b91-92bc4689f9de",
       "name": "Prepare Legal Office OCR Batches",
       "notesInFlow": true,
-      "notes": "Splits DOCX by logical OOXML body blocks and PPTX by slides before Gemini OCR; prunes unreachable package assets and caps oversized batches.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Splits DOCX by logical OOXML body blocks and PPTX by slides before Gemini OCR; prunes unreachable package assets and caps oversized batches."
     },
     {
       "parameters": {
@@ -307,8 +307,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -13550,
-        940
+        -13968,
+        2544
       ],
       "onError": "continueErrorOutput"
     },
@@ -323,8 +323,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -13300,
-        820
+        -13744,
+        2000
       ],
       "notesInFlow": true,
       "notes": "Runs one page batch at a time so Gemini retries are independent per batch."
@@ -338,12 +338,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -13050,
-        940
+        -11056,
+        2000
       ],
       "notesInFlow": true,
-      "notes": "Converts only the current loop batch to base64, avoiding whole-file base64 duplication in execution data.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Converts only the current loop batch to base64, avoiding whole-file base64 duplication in execution data."
     },
     {
       "parameters": {
@@ -373,8 +373,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -12800,
-        940
+        -10832,
+        2064
       ],
       "id": "8c88f0d2-86b2-55a6-9ca8-3395e79db35d",
       "name": "Gemini Legal Document OCR",
@@ -394,8 +394,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -12550,
-        940
+        -10608,
+        2144
       ],
       "onError": "continueErrorOutput"
     },
@@ -408,8 +408,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -12300,
-        940
+        -10384,
+        2496
       ],
       "notesInFlow": true,
       "notes": "Waits five seconds between successful OCR batches to stay below Gemini free-tier request-rate limits."
@@ -423,8 +423,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -13050,
-        700
+        -13520,
+        1280
       ],
       "onError": "continueErrorOutput"
     },
@@ -435,14 +435,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -12800,
-        700
+        -13296,
+        1200
       ],
       "id": "bcf4992d-d0b0-56d4-92fd-0d75020c8e0c",
       "name": "Normalize Legal Extracted Text",
       "notesInFlow": true,
-      "notes": "Preserves page markers and rejects empty/truncated extraction.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Preserves page markers and rejects empty/truncated extraction."
     },
     {
       "parameters": {
@@ -451,8 +451,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -12550,
-        700
+        -13072,
+        1136
       ],
       "id": "c5729141-7dac-54f6-be30-a381bf22f71e",
       "name": "Prepare Legal Metadata Request",
@@ -487,8 +487,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -12300,
-        700
+        -12848,
+        1136
       ],
       "id": "b040bcfa-3bff-5b07-8731-a96860fbe2d0",
       "name": "Extract Legal Metadata Qwen",
@@ -496,8 +496,8 @@
       "maxTries": 3,
       "waitBetweenTries": 5000,
       "notesInFlow": true,
-      "notes": "Metadata only; deterministic downstream validator rejects unsupported values.",
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "notes": "Metadata only; deterministic downstream validator rejects unsupported values."
     },
     {
       "parameters": {
@@ -506,14 +506,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -12050,
-        700
+        -12624,
+        1136
       ],
       "id": "2fde2c15-83e2-5ef2-b3a6-35140812d5ac",
       "name": "Validate Legal Metadata",
       "notesInFlow": true,
-      "notes": "Every extracted string/date must be supported by filename or source; effective is never inferred.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Every extracted string/date must be supported by filename or source; effective is never inferred."
     },
     {
       "parameters": {
@@ -526,20 +526,20 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -11800,
-        700
+        -12400,
+        1056
       ],
       "id": "e7ea1f1c-acc9-56dc-8cb3-1fc7a0ee8455",
       "name": "Begin Legal Document Version",
+      "notesInFlow": true,
       "credentials": {
         "postgres": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
       },
-      "notesInFlow": true,
-      "notes": "Creates or safely resets only an incomplete source-hash version; completed versions are immutable.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Creates or safely resets only an incomplete source-hash version; completed versions are immutable."
     },
     {
       "parameters": {
@@ -548,14 +548,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -11550,
-        700
+        -12176,
+        992
       ],
       "id": "0130fffb-dc15-5b14-ba7c-95639ab5b4ac",
       "name": "Chunk Legal Document",
       "notesInFlow": true,
-      "notes": "3500-character/500-chunk bounds with original page and article lineage.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "3500-character/500-chunk bounds with original page and article lineage."
     },
     {
       "parameters": {
@@ -568,8 +568,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -11300,
-        700
+        -11952,
+        848
       ],
       "id": "aa9c7810-a4e6-52d1-af14-cc471bf764d2",
       "name": "Upsert Legal Chunk",
@@ -619,8 +619,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -11050,
-        700
+        -11728,
+        720
       ],
       "id": "41127ebf-d6fd-5883-9a39-bdc09ff32563",
       "name": "Legal Chunk Embedding API",
@@ -628,8 +628,8 @@
       "maxTries": 3,
       "waitBetweenTries": 5000,
       "notesInFlow": true,
-      "notes": "Retries transient CIC embedding capacity/timeouts. Source vector is validated as 4096 dimensions downstream.",
-      "onError": "continueErrorOutput"
+      "onError": "continueErrorOutput",
+      "notes": "Retries transient CIC embedding capacity/timeouts. Source vector is validated as 4096 dimensions downstream."
     },
     {
       "parameters": {
@@ -638,8 +638,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -10800,
-        700
+        -11504,
+        656
       ],
       "id": "f2a225ac-9797-5dac-af5f-bfe8e14b7d83",
       "name": "Validate Legal 1024 Embedding",
@@ -656,8 +656,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -10550,
-        700
+        -11280,
+        576
       ],
       "id": "f61b4dbd-5063-5786-9cd9-89d6bca61cb0",
       "name": "Resolve Legal Embedding Model",
@@ -680,8 +680,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -10300,
-        700
+        -11056,
+        512
       ],
       "id": "6a157720-2637-53a4-808e-b6c6ee32c5fa",
       "name": "Upsert Legal Chunk Embedding",
@@ -704,19 +704,19 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -10050,
-        700
+        -10832,
+        432
       ],
       "id": "ed38ee27-ccd1-54f9-91d7-4eefb118e5dc",
       "name": "Finalize Legal Version",
+      "executeOnce": true,
+      "notesInFlow": true,
       "credentials": {
         "postgres": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
       },
-      "executeOnce": true,
-      "notesInFlow": true,
       "notes": "Atomically exposes only a version with one valid embedding per stored chunk."
     },
     {
@@ -747,8 +747,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -9800,
-        700
+        -10608,
+        432
       ],
       "id": "c74be065-0fb7-5a8d-b7a6-e2036411526b",
       "name": "IF Legal Ingestion Complete"
@@ -760,8 +760,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -9550,
-        620
+        -10384,
+        864
       ],
       "id": "8a9d3a2e-ee07-5d85-8329-e3c1b70323f7",
       "name": "Legal Ingestion Summary"
@@ -777,19 +777,19 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        -9550,
-        850
+        -10384,
+        1632
       ],
       "id": "2ce56d3d-5f0e-5d86-b206-fdaed9e37946",
       "name": "Mark Legal Ingestion Failed",
+      "executeOnce": true,
+      "notesInFlow": true,
       "credentials": {
         "postgres": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
       },
-      "executeOnce": true,
-      "notesInFlow": true,
       "notes": "Keeps partial versions non-current/non-retrievable and records a bounded failure."
     },
     {
@@ -799,8 +799,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -14550,
-        980
+        -14864,
+        2688
       ],
       "id": "99d30156-8269-5372-94d9-46272d397c42",
       "name": "Reject Legal File"
@@ -1357,9 +1357,9 @@
   "meta": null,
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "8f6a9ef6-1878-4149-ae94-3ad412157a31",
+  "versionId": "eaf047ed-e78e-4914-8d2f-54e5eb5c9381",
   "activeVersionId": null,
-  "versionCounter": 2,
+  "versionCounter": 6,
   "triggerCount": 0,
   "sourceWorkflowId": null,
   "tags": [],
