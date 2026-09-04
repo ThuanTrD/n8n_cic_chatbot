@@ -1,5 +1,5 @@
 {
-  "workflowCount": 12,
+  "workflowCount": 13,
   "workflows": [
     {
       "id": "0BBvkcVoFM38P15y",
@@ -16,6 +16,14 @@
       "archived": true,
       "file": "9K1mIjI6jIunOSbp.json",
       "redactions": 1
+    },
+    {
+      "id": "Bzi9dHprJPgP54H2",
+      "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
+      "active": false,
+      "archived": false,
+      "file": "Bzi9dHprJPgP54H2.json",
+      "redactions": 9
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -68,7 +76,7 @@
     {
       "id": "dMoXXuKEuUW7vRFV",
       "name": "ENJICAD Facebook - Qwen Agent RAG Preload TEST",
-      "active": true,
+      "active": false,
       "archived": false,
       "file": "dMoXXuKEuUW7vRFV.json",
       "redactions": 35
@@ -106,7 +114,7 @@
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 226,
+    "credential_references": 235,
     "sensitive_named_values": 9
   }
 }

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-03T09:55:38.000Z",
+  "updatedAt": "2026-09-04T04:37:31.134Z",
   "createdAt": "2026-08-21T01:55:36.743Z",
   "id": "JivRSTL8gODfi5sc",
   "name": "CMS IntelliCAD - Facebook Chatbot",
@@ -1140,6 +1140,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1155,9 +1157,7 @@
         "body": "={{ $json.verifier_request_body }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1170,13 +1170,13 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "onError": "continueRegularOutput",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1195,7 +1195,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input=$json;\nlet text=String(input.output??input.text??'').trim();\nif(!text)throw new Error('MESSENGER_FORMAT_EMPTY');\ntext=text.replace(/<br\\s*\\/?\\s*>/gi,'\\n').replace(/\\x60\\x60\\x60[a-z]*\\n?/gi,'').replace(/\\x60\\x60\\x60/g,'');\ntext=text.replace(/\\[(https?:\\/\\/[^\\]\\s]+)\\]\\(\\1\\)/gi,'$1').replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/gi,'$1:\\n$2');\nconst preservedUrls=[];\ntext=text.replace(/https?:\\/\\/[^\\s<>()\\[\\]]+/gi,url=>{const token='__URL_TOKEN_'+preservedUrls.length+'__';preservedUrls.push(url);return token;});\nconst lines=text.split(/\\r?\\n/);const output=[];let tableHeaderSeen=false;\nfor(const raw of lines){\n  let line=raw.trim();\n  if(!line){if(output.length&&output[output.length-1]!=='')output.push('');continue;}\n  if(/^\\|?[\\s:|-]+\\|?$/.test(line))continue;\n  if(/^\\|.*\\|$/.test(line)){\n    const cells=line.slice(1,-1).split('|').map(v=>v.replace(/\\*\\*/g,'').trim()).filter(Boolean);\n    if(!cells.length)continue;\n    if(!tableHeaderSeen){output.push('📋 '+cells.join(' — '));tableHeaderSeen=true;}\n    else output.push('• '+cells[0]+(cells.length>1?': '+cells.slice(1).join(' / '):''));\n    continue;\n  }\n  line=line.replace(/^#{1,6}\\s*/,'').replace(/^[-*]\\s+/,'• ');\n  output.push(line);\n}\ntext=output.join('\\n').replace(/\\n{3,}/g,'\\n\\n').trim();\ntext=text.replace(/\\.\\s*(dwg|dxf|dgn|dwf|dxb|dwt|svg|pdf|net)\\b/gi,'__DOT_$1__').replace(/(\\d)\\.(?=\\s*\\d)/g,'$1__DECIMAL__');\n\n// Break an unexpectedly long single block into readable Messenger paragraphs.\nconst initialParagraphs=text.split(/\\n{2,}/).map(v=>v.trim()).filter(Boolean);const readable=[];\nfor(const paragraph of initialParagraphs){\n  if(paragraph.length<=360||/^•/m.test(paragraph)){readable.push(paragraph);continue;}\n  const sentences=paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(v=>v.trim()).filter(Boolean)||[paragraph];\n  let group='';\n  for(const sentence of sentences){\n    if(group&&(group.length+1+sentence.length>280)){readable.push(group);group=sentence;}\n    else group=(group?group+' ':'')+sentence;\n  }\n  if(group)readable.push(group);\n}\n\nfunction boldFirst(value,pattern){return value.replace(pattern,(match,offset,whole)=>{\n  if(whole.slice(Math.max(0,offset-2),offset)==='**'&&whole.slice(offset+match.length,offset+match.length+2)==='**')return match;\n  return '**'+match+'**';\n});}\nlet styled=readable.join('\\n\\n');\nstyled=boldFirst(styled,/(?<!\\*)CMS IntelliCAD(?:\\s+PE Plus|\\s+PE)?(?!\\*)/i);\nstyled=boldFirst(styled,/(?<!\\*)\\b\\d+\\s+bản(?:\\s+quyền)?\\b(?!\\*)/i);\nstyled=boldFirst(styled,/(?<!\\*)\\b(?:báo giá|chính sách ưu đãi|số điện thoại|họ tên|bản dùng thử)\\b(?!\\*)/i);\n\nlet iconCount=0;const maxIcons=3;\nconst paragraphs=styled.split(/\\n{2,}/).map(paragraph=>{\n  if(iconCount>=maxIcons||/^[\\p{Extended_Pictographic}]/u.test(paragraph))return paragraph;\n  let icon='';\n  if(/(?:báo giá|chính sách giá|chiết khấu|ưu đãi)/i.test(paragraph))icon='💰';\n  else if(/(?:số điện thoại|họ tên|thông tin liên hệ)/i.test(paragraph))icon='📌';\n  else if(/(?:dùng thử|bản demo|link tải)/i.test(paragraph))icon='🔗';\n  else if(/(?:tính năng|định dạng|tương thích)/i.test(paragraph))icon='💡';\n  if(icon){iconCount++;return icon+' '+paragraph;}\n  return paragraph;\n});\ntext=paragraphs.join('\\n\\n').replace(/__DOT_(dwg|dxf|dgn|dwf|dxb|dwt|svg|pdf|net)__/gi,'.$1').replace(/__DECIMAL__/g,'.').replace(/[ \\t]{2,}/g,' ').replace(/\\n{3,}/g,'\\n\\n').replace(/__URL_TOKEN_(\\d+)__/g,(_,i)=>preservedUrls[Number(i)]||'').trim();\nreturn {json:{...input,output:text,messenger_formatted:true,messenger_paragraph_count:paragraphs.length,messenger_icon_count:iconCount}};"
+        "jsCode": "const input = $json;\n\n// ==========================================================\n// 1. LẤY NỘI DUNG TỪ OUTPUT AGENT\n// Hỗ trợ:\n// - OpenAI compatible: choices[0].message.content\n// - output\n// - text\n// - content\n// ==========================================================\n\nlet text =\n  input?.choices?.[0]?.message?.content ??\n  input?.output ??\n  input?.text ??\n  input?.content ??\n  '';\n\ntext = String(text).trim();\n\nif (!text) {\n  throw new Error('MESSENGER_FORMAT_EMPTY');\n}\n\nconst rawOutput = text;\n\n\n// ==========================================================\n// 2. CLEAN NỘI DUNG CƠ BẢN\n// ==========================================================\n\n// HTML <br> -> xuống dòng\ntext = text.replace(/<br\\s*\\/?\\s*>/gi, '\\n');\n\n// Bỏ code fences ```xxx\ntext = text\n  .replace(/```[a-zA-Z0-9_-]*\\n?/g, '')\n  .replace(/```/g, '');\n\n// Markdown link:\n// [Tên](https://...) -> Tên:\\nhttps://...\ntext = text.replace(\n  /\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/gi,\n  '$1:\\n$2'\n);\n\n\n// ==========================================================\n// 3. BẢO VỆ URL\n// Tránh regex phía dưới phá dấu . / ? & = trong URL\n// ==========================================================\n\nconst preservedUrls = [];\n\ntext = text.replace(\n  /https?:\\/\\/[^\\s<>()\\[\\]]+/gi,\n  (url) => {\n    const token = `__URL_${preservedUrls.length}__`;\n    preservedUrls.push(url);\n    return token;\n  }\n);\n\n\n// ==========================================================\n// 4. HELPER\n// ==========================================================\n\nfunction clean(value) {\n  return String(value ?? '')\n    .replace(/[ \\t]{2,}/g, ' ')\n    .trim();\n}\n\nfunction isDivider(line) {\n  return /^\\|?[\\s:|-]+\\|?$/.test(line);\n}\n\nfunction isTableRow(line) {\n  return /^\\|.*\\|$/.test(line);\n}\n\nfunction tableCells(line) {\n  return line\n    .slice(1, -1)\n    .split('|')\n    .map(cell =>\n      clean(\n        cell\n          .replace(/\\*\\*/g, '')\n          .replace(/__/g, '')\n      )\n    )\n    .filter(Boolean);\n}\n\n\n// ==========================================================\n// 5. CHUYỂN MARKDOWN -> FORMAT MESSENGER\n// ==========================================================\n\nconst lines = text.split(/\\r?\\n/);\n\nconst blocks = [];\n\nlet tableHeaders = null;\nlet tableRows = [];\n\nfunction flushTable() {\n  if (!tableRows.length) {\n    tableHeaders = null;\n    return;\n  }\n\n  const tableBlock = [];\n\n  tableBlock.push('📊 SO SÁNH');\n\n  for (const row of tableRows) {\n    // Nếu có header tương ứng\n    if (tableHeaders && tableHeaders.length === row.length) {\n      const first = row[0];\n\n      tableBlock.push('');\n      tableBlock.push(`• ${first}`);\n\n      for (let i = 1; i < row.length; i++) {\n        if (!row[i]) continue;\n\n        const label = tableHeaders[i] || `Thông tin ${i}`;\n\n        tableBlock.push(`  - ${label}: ${row[i]}`);\n      }\n    } else {\n      tableBlock.push(`• ${row.join(' — ')}`);\n    }\n  }\n\n  blocks.push(tableBlock.join('\\n').trim());\n\n  tableHeaders = null;\n  tableRows = [];\n}\n\n\nfor (const rawLine of lines) {\n\n  let line = clean(rawLine);\n\n  // dòng trống\n  if (!line) {\n    flushTable();\n\n    if (\n      blocks.length &&\n      blocks[blocks.length - 1] !== ''\n    ) {\n      blocks.push('');\n    }\n\n    continue;\n  }\n\n  // separator của markdown table\n  if (isDivider(line)) {\n    continue;\n  }\n\n  // Markdown table\n  if (isTableRow(line)) {\n\n    const cells = tableCells(line);\n\n    if (!cells.length) {\n      continue;\n    }\n\n    if (!tableHeaders) {\n      tableHeaders = cells;\n    } else {\n      tableRows.push(cells);\n    }\n\n    continue;\n  }\n\n  flushTable();\n\n\n  // ========================================================\n  // Markdown Heading\n  // ========================================================\n\n  const headingMatch = line.match(/^#{1,6}\\s+(.+)$/);\n\n  if (headingMatch) {\n    const title = clean(headingMatch[1]);\n\n    blocks.push(`📌 ${title.toUpperCase()}`);\n    continue;\n  }\n\n\n  // ========================================================\n  // Bullet markdown\n  // ========================================================\n\n  line = line\n    .replace(/^[-*+]\\s+/, '• ')\n    .replace(/^\\d+[.)]\\s+/, match => `${match.trim()} `);\n\n\n  blocks.push(line);\n}\n\nflushTable();\n\n\n// ==========================================================\n// 6. GHÉP LẠI\n// ==========================================================\n\ntext = blocks\n  .join('\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\n\n// ==========================================================\n// 7. CHUẨN HÓA PARAGRAPH\n// Messenger nên ngắn, tránh khối chữ quá dài\n// ==========================================================\n\nconst sourceParagraphs = text\n  .split(/\\n{2,}/)\n  .map(p => p.trim())\n  .filter(Boolean);\n\nconst readableParagraphs = [];\n\n\n// ==========================================================\n// Tách câu thông minh\n// Không cắt:\n// - số thập phân 12.5\n// - extension .dwg\n// - URL đã được bảo vệ\n// ==========================================================\n\nfunction splitSentences(paragraph) {\n\n  let safe = paragraph\n\n    // file extension\n    .replace(\n      /\\.(dwg|dxf|dgn|dwf|dxb|dwt|svg|pdf|net)\\b/gi,\n      '__DOT__$1'\n    )\n\n    // decimal\n    .replace(\n      /(\\d)\\.(?=\\d)/g,\n      '$1__DECIMAL__'\n    );\n\n  const result =\n    safe.match(/[^.!?]+(?:[.!?]+|$)/g)\n      ?.map(v => v.trim())\n      .filter(Boolean)\n    ?? [safe];\n\n  return result.map(v =>\n    v\n      .replace(/__DOT__(dwg|dxf|dgn|dwf|dxb|dwt|svg|pdf|net)/gi, '.$1')\n      .replace(/__DECIMAL__/g, '.')\n  );\n}\n\n\n// ==========================================================\n// 8. CHIA ĐOẠN DÀI\n// ==========================================================\n\nconst MAX_PARAGRAPH = 320;\nconst TARGET_PARAGRAPH = 250;\n\nfor (const paragraph of sourceParagraphs) {\n\n  // Bullet/table đã dễ đọc -> giữ nguyên\n  if (\n    paragraph.length <= MAX_PARAGRAPH ||\n    /^•/m.test(paragraph) ||\n    /^📊/m.test(paragraph)\n  ) {\n    readableParagraphs.push(paragraph);\n    continue;\n  }\n\n  const sentences = splitSentences(paragraph);\n\n  let group = '';\n\n  for (const sentence of sentences) {\n\n    const candidate =\n      group\n        ? `${group} ${sentence}`\n        : sentence;\n\n    if (\n      group &&\n      candidate.length > TARGET_PARAGRAPH\n    ) {\n      readableParagraphs.push(group.trim());\n      group = sentence;\n    } else {\n      group = candidate;\n    }\n  }\n\n  if (group.trim()) {\n    readableParagraphs.push(group.trim());\n  }\n}\n\n\n// ==========================================================\n// 9. STYLE THEO NGỮ NGHĨA\n// Chỉ thêm icon khi thực sự hữu ích\n// ==========================================================\n\nfunction getSectionIcon(paragraph) {\n\n  const p = paragraph.toLowerCase();\n\n  if (\n    /báo giá|mức giá|đơn giá|chiết khấu|ưu đãi|khuyến mãi/.test(p)\n  ) {\n    return '💰';\n  }\n\n  if (\n    /so sánh|khác nhau|khác biệt|versus|\\bvs\\b/.test(p)\n  ) {\n    return '📊';\n  }\n\n  if (\n    /tính năng|hỗ trợ|định dạng|tương thích|dwg|dxf|dgn/.test(p)\n  ) {\n    return '💡';\n  }\n\n  if (\n    /dùng thử|bản trial|bản demo|link tải|tải xuống/.test(p)\n  ) {\n    return '🔗';\n  }\n\n  if (\n    /số điện thoại|email|họ tên|thông tin liên hệ|liên hệ/.test(p)\n  ) {\n    return '📌';\n  }\n\n  if (\n    /lưu ý|quan trọng|chú ý/.test(p)\n  ) {\n    return '⚠️';\n  }\n\n  return '';\n}\n\n\n// ==========================================================\n// 10. KHÔNG NHỒI QUÁ NHIỀU EMOJI\n// ==========================================================\n\nlet iconCount = 0;\nconst MAX_ICONS = 4;\n\nconst styledParagraphs = readableParagraphs.map(\n  (paragraph, index) => {\n\n    let value = paragraph.trim();\n\n    if (!value) {\n      return '';\n    }\n\n    // Đã có emoji đầu dòng -> không thêm\n    if (/^[\\p{Extended_Pictographic}]/u.test(value)) {\n      return value;\n    }\n\n    // Greeting đầu tiên không cần icon\n    if (\n      index === 0 &&\n      /^(dạ|chào|xin chào|em chào)/i.test(value)\n    ) {\n      return value;\n    }\n\n    if (iconCount >= MAX_ICONS) {\n      return value;\n    }\n\n    const icon = getSectionIcon(value);\n\n    if (icon) {\n      iconCount++;\n      return `${icon} ${value}`;\n    }\n\n    return value;\n  }\n);\n\n\n// ==========================================================\n// 11. LÀM NỔI BẬT CÁC BULLET QUAN TRỌNG\n// Không cố dùng quá nhiều markdown\n// ==========================================================\n\ntext = styledParagraphs\n  .join('\\n\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\n\n// ==========================================================\n// 12. FORMAT CÁC DÒNG LABEL: VALUE\n//\n// Ví dụ:\n// Giá: 5.000.000\n//\n// ->\n// Giá:\n// 5.000.000\n//\n// Nhưng chỉ áp dụng với label nghiệp vụ quan trọng.\n// ==========================================================\n\nconst importantLabels = [\n  'Giá',\n  'Đơn giá',\n  'Số lượng',\n  'Thời hạn',\n  'Phiên bản',\n  'Sản phẩm',\n  'Ưu đãi',\n  'Chiết khấu',\n  'Link tải',\n  'Số điện thoại',\n  'Email'\n];\n\nfor (const label of importantLabels) {\n\n  const regex = new RegExp(\n    `(^|\\\\n)(${label})\\\\s*:\\\\s*([^\\\\n]+)`,\n    'gi'\n  );\n\n  text = text.replace(\n    regex,\n    (match, prefix, key, value) =>\n      `${prefix}• ${key}: ${clean(value)}`\n  );\n}\n\n\n// ==========================================================\n// 13. PHỤC HỒI URL\n// ==========================================================\n\ntext = text.replace(\n  /__URL_(\\d+)__/g,\n  (_, index) =>\n    preservedUrls[Number(index)] ?? ''\n);\n\n\n// ==========================================================\n// 14. CLEAN CUỐI\n// ==========================================================\n\ntext = text\n  .replace(/[ \\t]{2,}/g, ' ')\n  .replace(/\\n[ \\t]+/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\n\n// ==========================================================\n// 15. OUTPUT\n// ==========================================================\n\nreturn {\n  json: {\n    ...input,\n\n    // Giữ bản gốc để debug\n    messenger_raw_output: rawOutput,\n\n    // Đây là nội dung dùng để gửi Messenger\n    output: text,\n\n    messenger_formatted: true,\n\n    messenger_paragraph_count:\n      text.split(/\\n{2,}/).filter(Boolean).length,\n\n    messenger_icon_count: iconCount,\n\n    messenger_source:\n      input?.choices?.[0]?.message?.content !== undefined\n        ? 'choices[0].message.content'\n        : input?.output !== undefined\n          ? 'output'\n          : input?.text !== undefined\n            ? 'text'\n            : 'content'\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1448,6 +1448,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1463,9 +1465,7 @@
         "body": "={{ $json.router_request_body }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1479,14 +1479,14 @@
       "maxTries": 3,
       "waitBetweenTries": 1500,
       "notesInFlow": true,
-      "onError": "continueRegularOutput",
-      "notes": "Phân loại theo nghĩa hội thoại và trích dữ liệu khách; không dùng danh sách câu nói cố định.",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Phân loại theo nghĩa hội thoại và trích dữ liệu khách; không dùng danh sách câu nói cố định."
     },
     {
       "parameters": {
@@ -1520,6 +1520,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1535,9 +1537,7 @@
         "body": "={{ JSON.stringify({model:'qwen3-vl-30b',temperature:0.45,max_tokens:900,response_format:{type:'json_object'},messages:[\n{role:'system',content:'Bạn soạn phản hồi Facebook Messenger cho CMS IntelliCAD. RESPONSE_LANGUAGE=vi thì viết tiếng Việt, xưng em và gọi khách anh/chị. RESPONSE_LANGUAGE=en thì viết hoàn toàn bằng tiếng Anh tự nhiên, không dùng anh/chị/dạ/ạ/nhé. Tự diễn đạt tự nhiên theo tình huống, không dùng một mẫu câu cố định. Chỉ xác nhận dữ liệu có trong ACTION_RESULT. Chỉ xác nhận hành động DB đã hoàn tất và các trường hiện có. Không nói sẽ chuyển, sẽ xử lý, sẽ gửi, sẽ gọi, sẽ liên hệ hay hứa thời gian/kênh xử lý trong tương lai, trừ khi chính ACTION_RESULT có trạng thái hoặc lịch cụ thể chứng minh điều đó. Với QUOTE phải nêu mã yêu cầu và số lượng. Với LEAD nêu dữ liệu đã ghi nhận. Với FEEDBACK cảm ơn đúng nội dung/điểm khách đưa. Với HANDOFF xác nhận đã ghi nhận yêu cầu người thật nhưng không hứa thời gian. Dùng đoạn ngắn, emoji vừa phải, bullet nếu hữu ích; không bảng Markdown, không HTML. JSON duy nhất {\"final_answer\":\"...\"}.'},\n{role:'user',content:'RESPONSE_LANGUAGE:\\n'+String($json.response_language||'vi')+'\\n\\nCUSTOMER_MESSAGE:\\n'+String($json.original_question||'')+'\\n\\nACTION_TYPE:\\n'+String($json.action_type)+'\\n\\nACTION_RESULT:\\n'+JSON.stringify($json.action_result)}]}) }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1550,13 +1550,13 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "onError": "continueRegularOutput",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1622,6 +1622,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1637,9 +1639,7 @@
         "body": "={{ JSON.stringify({model:'qwen3-vl-30b',temperature:0,max_tokens:700,response_format:{type:'json_object'},messages:[\n      {role:'system',content:'Bạn kiểm định lời xác nhận hành động của chatbot CMS IntelliCAD. ACTION_RESULT là nguồn duy nhất. Giữ cách diễn đạt tự nhiên nhưng xóa mọi lời hứa hoặc mô tả việc tương lai không được ACTION_RESULT chứng minh, gồm chuyển tiếp, xử lý, gửi, gọi, liên hệ, thời gian phản hồi hay kênh phản hồi. Chỉ xác nhận hành động DB đã hoàn tất và dữ liệu thực có. Với HANDOFF chỉ xác nhận yêu cầu kết nối người thật đã được ghi nhận; không hứa họ sẽ phản hồi. Với QUOTE chỉ xác nhận yêu cầu báo giá đã tạo, mã và số lượng; không hứa sẽ gửi. Với LEAD/FEEDBACK chỉ xác nhận đã ghi nhận. Tuân thủ RESPONSE_LANGUAGE: vi thì tiếng Việt, xưng em và gọi khách anh/chị; en thì hoàn toàn tiếng Anh và không dùng anh/chị/dạ/ạ/nhé. Trả JSON duy nhất gồm final_answer và mảng removed_commitments.'},\n      {role:'user',content:'RESPONSE_LANGUAGE:\\n'+String($('Chuẩn bị AI phản hồi hành động').item.json.response_language||'vi')+'\\n\\nACTION_TYPE:\\n'+String($('Chuẩn bị AI phản hồi hành động').item.json.action_type||'')+'\\n\\nACTION_RESULT:\\n'+JSON.stringify($('Chuẩn bị AI phản hồi hành động').item.json.action_result||{})+'\\n\\nDRAFT:\\n'+String($json?.data?.choices?.[0]?.message?.content??$json?.choices?.[0]?.message?.content??'')}\n    ]}) }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1653,14 +1653,14 @@
       "maxTries": 3,
       "waitBetweenTries": 1500,
       "notesInFlow": true,
-      "onError": "continueRegularOutput",
-      "notes": "Kiểm định ngữ nghĩa lời xác nhận action; loại cam kết tương lai không có trong kết quả DB.",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Kiểm định ngữ nghĩa lời xác nhận action; loại cam kết tương lai không có trong kết quả DB."
     },
     {
       "parameters": {
@@ -1971,6 +1971,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1986,9 +1988,7 @@
         "body": "={{ $('Chuẩn bị Request Kiểm định').item.json.verifier_retry_request_body }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -2001,14 +2001,14 @@
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 800,
-      "onError": "continueRegularOutput",
-      "notes": "Retry độc lập một lần khi API trả body lỗi/thiếu choices.",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Retry độc lập một lần khi API trả body lỗi/thiếu choices."
     },
     {
       "parameters": {
@@ -4300,7 +4300,7 @@
       "main": [
         [
           {
-            "node": "Chuẩn bị Request Kiểm định",
+            "node": "Định dạng trả lời Messenger",
             "type": "main",
             "index": 0
           }
@@ -4674,13 +4674,7 @@
     },
     "Áp kết quả kiểm định": {
       "main": [
-        [
-          {
-            "node": "Định dạng trả lời Messenger",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Định dạng trả lời Messenger": {
@@ -6081,9 +6075,9 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "896074fb-c349-4924-8974-73101bba2b75",
-  "activeVersionId": "896074fb-c349-4924-8974-73101bba2b75",
-  "versionCounter": 137,
+  "versionId": "e20486d3-3d86-43ce-885e-213c31ec3cc1",
+  "activeVersionId": "e20486d3-3d86-43ce-885e-213c31ec3cc1",
+  "versionCounter": 139,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],
@@ -6108,7 +6102,7 @@
     }
   ],
   "versionMetadata": {
-    "name": "Version f14285bb",
+    "name": "Version e20486d3",
     "description": ""
   }
 }

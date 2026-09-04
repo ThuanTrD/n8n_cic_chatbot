@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-28T07:34:22.000Z",
+  "updatedAt": "2026-09-04T04:17:45.572Z",
   "createdAt": "2026-08-24T08:04:25.963Z",
   "id": "intellicadSalesSheetSync",
   "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
@@ -40,6 +40,7 @@
     },
     {
       "parameters": {
+        "authentication": "serviceAccount",
         "documentId": {
           "__rl": true,
           "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
@@ -54,8 +55,7 @@
           "cachedResultName": "Báo giá",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=1064603921"
         },
-        "options": {},
-        "authentication": "serviceAccount"
+        "options": {}
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -104,7 +104,6 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
         "jsCode": "const rows=$input.all().map(item=>item.json||{});return [{json:{sheet_rows_checked:rows.length,database_changes:rows.filter(row=>row.lead_changed||row.quote_changed||row.item_changed).length}}];"
       },
       "type": "n8n-nodes-base.code",
@@ -142,8 +141,7 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const dbItems=$input.all();const sheetItems=$('Đọc Sheet Báo giá').all();const existing=new Map(sheetItems.map(item=>[String(item.json?.['Mã đồng bộ']||''),item.json||{}]).filter(([key])=>key));const systemFields=['Mã lead','Mã báo giá','Trạng thái đồng bộ','quote_id','conversation_id','product_id','assigned_user_id'];return dbItems.filter(item=>{const row=item.json||{},old=existing.get(String(row['Mã đồng bộ']||''));if(!old)return true;if(String(old.db_hash||'')!==String(row.db_hash||''))return true;return systemFields.some(key=>String(old[key]||'')!==String(row[key]||''));});"
+        "jsCode": "const dbItems = $input.all();\nconst sheetItems = $('Đọc Sheet Báo giá').all();\n\nfunction normalize(value) {\n  if (value === null || value === undefined) return '';\n\n  return String(value)\n    .replace(/\\r\\n/g, '\\n')\n    .trim();\n}\n\nfunction normalizePhone(value) {\n  return normalize(value)\n    .replace(/^'/, '')\n    .replace(/\\s+/g, '');\n}\n\nfunction normalizeQuantity(value) {\n  const valueNormalized = normalize(value).replace(',', '.');\n\n  if (!valueNormalized) return '';\n\n  const num = Number(valueNormalized);\n\n  return Number.isNaN(num)\n    ? valueNormalized\n    : String(num);\n}\n\nfunction normalizeField(field, value) {\n  switch (field) {\n    case 'Số điện thoại':\n      return normalizePhone(value);\n\n    case 'Số lượng':\n      return normalizeQuantity(value);\n\n    case 'Email':\n      return normalize(value).toLowerCase();\n\n    case 'Nguồn lead':\n      return normalize(value).toLowerCase();\n\n    case 'Trạng thái lead':\n    case 'Trạng thái báo giá':\n      return normalize(value).toUpperCase();\n\n    default:\n      return normalize(value);\n  }\n}\n\n\n// ======================================\n// Tạo map dữ liệu hiện tại trên Sheet\n// ======================================\n\nconst sheetMap = new Map();\n\nfor (const item of sheetItems) {\n  const row = item.json ?? {};\n\n  const syncKey = normalize(row['Mã đồng bộ']);\n\n  if (!syncKey) continue;\n\n  sheetMap.set(syncKey, row);\n}\n\n\n// ======================================\n// Các field cần kiểm tra thay đổi\n// ======================================\n\nconst compareFields = [\n  'Mã lead',\n  'Mã báo giá',\n\n  'Nguồn lead',\n  'Sản phẩm',\n\n  'Tên khách hàng',\n  'Số điện thoại',\n  'Email',\n  'Công ty',\n  'Loại khách hàng',\n\n  'Số lượng',\n  'Nhu cầu',\n\n  'Trạng thái lead',\n  'Trạng thái báo giá',\n\n  'Nhân viên phụ trách',\n\n  'Lần liên hệ gần nhất',\n  'Lịch liên hệ tiếp theo',\n\n  'Ghi chú nhân viên',\n\n  'Link hội thoại',\n\n  'Ngày tạo lead',\n\n  // Bắt trường hợp DB update updated_at\n  'Cập nhật lần cuối',\n\n  'quote_id',\n  'conversation_id',\n  'product_id',\n  'assigned_user_id'\n];\n\n\n// ======================================\n// Chỉ trả ra dòng DB cần đẩy sang Sheet\n// ======================================\n\nconst output = [];\n\nfor (const item of dbItems) {\n  const dbRow = item.json ?? {};\n\n  const syncKey = normalize(dbRow['Mã đồng bộ']);\n\n  // Không có key thì Google Sheet không match được\n  if (!syncKey) {\n    continue;\n  }\n\n  const sheetRow = sheetMap.get(syncKey);\n\n\n  // ====================================\n  // Dòng DB mới, Sheet chưa có\n  // ====================================\n\n  if (!sheetRow) {\n    output.push({\n      json: {\n        ...dbRow,\n        'Trạng thái đồng bộ': 'SYNCED'\n      }\n    });\n\n    continue;\n  }\n\n\n  // ====================================\n  // Kiểm tra dữ liệu có thay đổi không\n  // ====================================\n\n  let changed = false;\n\n  for (const field of compareFields) {\n    const dbValue = normalizeField(\n      field,\n      dbRow[field]\n    );\n\n    const sheetValue = normalizeField(\n      field,\n      sheetRow[field]\n    );\n\n    if (dbValue !== sheetValue) {\n      changed = true;\n      break;\n    }\n  }\n\n\n  // ====================================\n  // Kiểm tra db_hash\n  // ====================================\n\n  if (!changed) {\n    const dbHash = normalize(dbRow['db_hash']);\n    const sheetHash = normalize(sheetRow['db_hash']);\n\n    if (dbHash !== sheetHash) {\n      changed = true;\n    }\n  }\n\n\n  // ====================================\n  // Có thay đổi thì đẩy\n  // ====================================\n\n  if (changed) {\n    output.push({\n      json: {\n        ...dbRow,\n        'Trạng thái đồng bộ': 'SYNCED'\n      }\n    });\n  }\n}\n\nreturn output;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -156,6 +154,7 @@
     },
     {
       "parameters": {
+        "authentication": "serviceAccount",
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
@@ -491,8 +490,7 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": true
         },
-        "options": {},
-        "authentication": "serviceAccount"
+        "options": {}
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
@@ -629,7 +627,8 @@
   "settings": {
     "executionOrder": "v1",
     "timezone": "Asia/Ho_Chi_Minh",
-    "availableInMCP": true
+    "availableInMCP": true,
+    "binaryMode": "separate"
   },
   "staticData": null,
   "meta": {
@@ -637,9 +636,9 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "6bf507ec-ff96-419d-a61e-014bbd2d3b69",
+  "versionId": "82e37575-acee-42fe-b58e-f6ba57eb531a",
   "activeVersionId": "6bf507ec-ff96-419d-a61e-014bbd2d3b69",
-  "versionCounter": 12,
+  "versionCounter": 17,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

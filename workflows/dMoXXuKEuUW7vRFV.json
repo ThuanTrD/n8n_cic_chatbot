@@ -4,7 +4,7 @@
   "id": "dMoXXuKEuUW7vRFV",
   "name": "ENJICAD Facebook - Qwen Agent RAG Preload TEST",
   "description": "ENJICAD Facebook chatbot tư vấn sản phẩm bằng Qwen Agent, RAG Supabase có kiểm định bằng chứng, handoff, lead, báo giá và feedback tự động.",
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -3027,7 +3027,7 @@
   "nodeGroups": [],
   "pinData": {},
   "versionId": "a1eb96a1-19e3-4580-b9d1-d093e78eb56c",
-  "activeVersionId": "a1eb96a1-19e3-4580-b9d1-d093e78eb56c",
+  "activeVersionId": null,
   "versionCounter": 891,
   "triggerCount": 1,
   "sourceWorkflowId": null,
