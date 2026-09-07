@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-04T01:15:58.000Z",
+  "updatedAt": "2026-09-07T02:57:33.972Z",
   "createdAt": "2026-08-11T07:08:47.474Z",
   "id": "dMoXXuKEuUW7vRFV",
   "name": "ENJICAD Facebook - Qwen Agent RAG Preload TEST",
@@ -633,7 +633,7 @@
     {
       "parameters": {
         "multipleMethods": true,
-        "path": "398fcad1-7e96-4ec9-a771-a317b6acec8f",
+        "path": "enjicad",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -1140,6 +1140,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1155,9 +1157,7 @@
         "body": "={{ $json.verifier_request_body }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1170,13 +1170,13 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "onError": "continueRegularOutput",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1448,6 +1448,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1463,9 +1465,7 @@
         "body": "={{ $json.router_request_body }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1479,14 +1479,14 @@
       "maxTries": 3,
       "waitBetweenTries": 1500,
       "notesInFlow": true,
-      "onError": "continueRegularOutput",
-      "notes": "Phân loại theo nghĩa hội thoại và trích dữ liệu khách; không dùng danh sách câu nói cố định.",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Phân loại theo nghĩa hội thoại và trích dữ liệu khách; không dùng danh sách câu nói cố định."
     },
     {
       "parameters": {
@@ -1520,6 +1520,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1535,9 +1537,7 @@
         "body": "={{ JSON.stringify({model:'qwen3-vl-30b',temperature:0.45,max_tokens:900,response_format:{type:'json_object'},messages:[\n{role:'system',content:'Bạn soạn phản hồi Facebook Messenger cho ENJICAD. RESPONSE_LANGUAGE=vi thì viết tiếng Việt, xưng em và gọi khách anh/chị. RESPONSE_LANGUAGE=en thì viết hoàn toàn bằng tiếng Anh tự nhiên, không dùng anh/chị/dạ/ạ/nhé. Tự diễn đạt tự nhiên theo tình huống, không dùng một mẫu câu cố định. Chỉ xác nhận dữ liệu có trong ACTION_RESULT. Chỉ xác nhận hành động DB đã hoàn tất và các trường hiện có. Không nói sẽ chuyển, sẽ xử lý, sẽ gửi, sẽ gọi, sẽ liên hệ hay hứa thời gian/kênh xử lý trong tương lai, trừ khi chính ACTION_RESULT có trạng thái hoặc lịch cụ thể chứng minh điều đó. Với QUOTE phải nêu mã yêu cầu và số lượng. Với LEAD nêu dữ liệu đã ghi nhận. Với FEEDBACK cảm ơn đúng nội dung/điểm khách đưa. Với HANDOFF xác nhận đã ghi nhận yêu cầu người thật nhưng không hứa thời gian. Dùng đoạn ngắn, emoji vừa phải, bullet nếu hữu ích; không bảng Markdown, không HTML. JSON duy nhất {\"final_answer\":\"...\"}.'},\n{role:'user',content:'RESPONSE_LANGUAGE:\\n'+String($json.response_language||'vi')+'\\n\\nCUSTOMER_MESSAGE:\\n'+String($json.original_question||'')+'\\n\\nACTION_TYPE:\\n'+String($json.action_type)+'\\n\\nACTION_RESULT:\\n'+JSON.stringify($json.action_result)}]}) }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1550,13 +1550,13 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 1500,
-      "onError": "continueRegularOutput",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -1622,6 +1622,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1637,9 +1639,7 @@
         "body": "={{ JSON.stringify({model:'qwen3-vl-30b',temperature:0,max_tokens:700,response_format:{type:'json_object'},messages:[\n      {role:'system',content:'Bạn kiểm định lời xác nhận hành động của chatbot ENJICAD. ACTION_RESULT là nguồn duy nhất. Giữ cách diễn đạt tự nhiên nhưng xóa mọi lời hứa hoặc mô tả việc tương lai không được ACTION_RESULT chứng minh, gồm chuyển tiếp, xử lý, gửi, gọi, liên hệ, thời gian phản hồi hay kênh phản hồi. Chỉ xác nhận hành động DB đã hoàn tất và dữ liệu thực có. Với HANDOFF chỉ xác nhận yêu cầu kết nối người thật đã được ghi nhận; không hứa họ sẽ phản hồi. Với QUOTE chỉ xác nhận yêu cầu báo giá đã tạo, mã và số lượng; không hứa sẽ gửi. Với LEAD/FEEDBACK chỉ xác nhận đã ghi nhận. Tuân thủ RESPONSE_LANGUAGE: vi thì tiếng Việt, xưng em và gọi khách anh/chị; en thì hoàn toàn tiếng Anh và không dùng anh/chị/dạ/ạ/nhé. Trả JSON duy nhất gồm final_answer và mảng removed_commitments.'},\n      {role:'user',content:'RESPONSE_LANGUAGE:\\n'+String($('Chuẩn bị AI phản hồi hành động').item.json.response_language||'vi')+'\\n\\nACTION_TYPE:\\n'+String($('Chuẩn bị AI phản hồi hành động').item.json.action_type||'')+'\\n\\nACTION_RESULT:\\n'+JSON.stringify($('Chuẩn bị AI phản hồi hành động').item.json.action_result||{})+'\\n\\nDRAFT:\\n'+String($json?.data?.choices?.[0]?.message?.content??$json?.choices?.[0]?.message?.content??'')}\n    ]}) }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -1653,14 +1653,14 @@
       "maxTries": 3,
       "waitBetweenTries": 1500,
       "notesInFlow": true,
-      "onError": "continueRegularOutput",
-      "notes": "Kiểm định ngữ nghĩa lời xác nhận action; loại cam kết tương lai không có trong kết quả DB.",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Kiểm định ngữ nghĩa lời xác nhận action; loại cam kết tương lai không có trong kết quả DB."
     },
     {
       "parameters": {
@@ -1971,6 +1971,8 @@
       "parameters": {
         "method": "POST",
         "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1986,9 +1988,7 @@
         "body": "={{ $('Chuẩn bị Request Kiểm định').item.json.verifier_retry_request_body }}",
         "options": {
           "timeout": 600000
-        },
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "openAiApi"
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -2001,14 +2001,14 @@
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 800,
-      "onError": "continueRegularOutput",
-      "notes": "Retry độc lập một lần khi API trả body lỗi/thiếu choices.",
       "credentials": {
         "openAiApi": {
           "id": "__CREDENTIAL_ID__",
           "name": "__CREDENTIAL_NAME__"
         }
-      }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Retry độc lập một lần khi API trả body lỗi/thiếu choices."
     },
     {
       "parameters": {
@@ -3026,9 +3026,9 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "a1eb96a1-19e3-4580-b9d1-d093e78eb56c",
+  "versionId": "01415390-2b1d-4157-a385-74b817efadaa",
   "activeVersionId": null,
-  "versionCounter": 891,
+  "versionCounter": 892,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],
@@ -3053,7 +3053,7 @@
     }
   ],
   "versionMetadata": {
-    "name": "Remove temporary ENJICAD webhook test bypass",
-    "description": "Restore production Meta fail-closed handoff check after synthetic webhook tests."
+    "name": null,
+    "description": null
   }
 }

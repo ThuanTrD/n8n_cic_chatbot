@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-25T03:13:42.688Z",
+  "updatedAt": "2026-09-07T07:13:52.850Z",
   "createdAt": "2026-08-22T01:16:47.258Z",
   "id": "FKayVMyWoQKSErYE",
   "name": "Thêm dữ liệu Drive vào CMS IntelliCAD",
@@ -1886,10 +1886,10 @@
         "filter": {
           "folderId": {
             "__rl": true,
-            "value": "1aCJHJGIQWX7owPW4W5RnV7hxnfXzd0Lv",
+            "value": "",
             "mode": "list",
-            "cachedResultName": "CMS IntelliCAD _Tài liệu",
-            "cachedResultUrl": "https://drive.google.com/drive/folders/1aCJHJGIQWX7owPW4W5RnV7hxnfXzd0Lv"
+            "cachedResultName": "",
+            "cachedResultUrl": ""
           },
           "whatToSearch": "files",
           "fileTypes": [
@@ -3566,9 +3566,9 @@
   "meta": null,
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "9470b7fc-70c2-4c94-a4d5-4132854cae20",
+  "versionId": "0a5860c0-8749-4486-a592-bf4f0232749e",
   "activeVersionId": null,
-  "versionCounter": 8,
+  "versionCounter": 10,
   "triggerCount": 0,
   "sourceWorkflowId": null,
   "tags": [],

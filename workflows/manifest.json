@@ -23,7 +23,7 @@
       "active": false,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
-      "redactions": 9
+      "redactions": 11
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -115,7 +115,7 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 19,
+    "bearer": 21,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
