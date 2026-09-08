@@ -1,0 +1,96 @@
+{
+  "updatedAt": "2026-09-08T02:50:46.823Z",
+  "createdAt": "2026-09-08T02:50:46.823Z",
+  "id": "recoverLegalSourceTmp20260908",
+  "name": "Temporary legal ingestion recovery",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "notice": ""
+      },
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "manual",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "executeQuery",
+        "query": "WITH affected AS (UPDATE legal_ingestion_runs SET status='failed', completed_at=now(), updated_at=now(), error_code='RECOVERED_STALE_PROCESSING', error_message='Recovered before one-file OCR verification' WHERE source_external_id='1N6rZG50QUhAgdGtg7W6_Qy84FmuWaww4' AND status='processing' RETURNING document_id) UPDATE legal_documents d SET status='failed', updated_at=now() FROM affected a WHERE d.id=a.document_id RETURNING d.id::text AS document_id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ],
+      "id": "recover",
+      "name": "Recover stale test source",
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Recover stale test source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "0fca9430-52ce-4ad0-b700-edad2a50508f",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-08T02:50:46.829Z",
+      "createdAt": "2026-09-08T02:50:46.829Z",
+      "role": "workflow:owner",
+      "workflowId": "recoverLegalSourceTmp20260908",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

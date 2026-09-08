@@ -1,5 +1,5 @@
 {
-  "workflowCount": 14,
+  "workflowCount": 15,
   "workflows": [
     {
       "id": "0BBvkcVoFM38P15y",
@@ -20,10 +20,10 @@
     {
       "id": "Bzi9dHprJPgP54H2",
       "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
-      "redactions": 11
+      "redactions": 12
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -98,6 +98,14 @@
       "redactions": 5
     },
     {
+      "id": "recoverLegalSourceTmp20260908",
+      "name": "Temporary legal ingestion recovery",
+      "active": false,
+      "archived": false,
+      "file": "recoverLegalSourceTmp20260908.json",
+      "redactions": 1
+    },
+    {
       "id": "rfZhcWA2P0XrWYAb",
       "name": "thêm dữ liệu enjicad từ sheet",
       "active": false,
@@ -115,14 +123,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 21,
+    "bearer": 22,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 242,
+    "credential_references": 243,
     "sensitive_named_values": 9
   }
 }
