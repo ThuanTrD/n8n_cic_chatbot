@@ -1,0 +1,88 @@
+{
+  "updatedAt": "2026-09-09T05:26:35.054Z",
+  "createdAt": "2026-09-09T05:21:51.921Z",
+  "id": "inspectLegalIngest20260909",
+  "name": "TEMP Delete Incomplete Legal Ingestion",
+  "description": "Temporary read-only inspection",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5f8341a9-2183-4fb2-87a4-a63835f0ac8f",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH target_runs AS (SELECT id,document_id,document_version_id FROM legal_ingestion_runs WHERE metadata->>'workflow_id'='Bzi9dHprJPgP54H2' AND status IN ('processing','failed')), target_versions AS (SELECT DISTINCT document_version_id id FROM target_runs WHERE document_version_id IS NOT NULL), emb_del AS (DELETE FROM legal_chunk_embeddings e USING legal_document_chunks c,target_versions v WHERE e.chunk_id=c.id AND c.document_version_id=v.id RETURNING e.id), chunk_del AS (DELETE FROM legal_document_chunks c USING target_versions v WHERE c.document_version_id=v.id RETURNING c.id), ver_del AS (DELETE FROM legal_document_versions v USING target_versions t WHERE v.id=t.id AND v.is_current=false RETURNING v.id), run_del AS (DELETE FROM legal_ingestion_runs r USING target_runs t WHERE r.id=t.id RETURNING r.id,r.document_id), target_docs AS (SELECT DISTINCT document_id id FROM run_del WHERE document_id IS NOT NULL), doc_del AS (DELETE FROM legal_documents d USING target_docs t WHERE d.id=t.id AND NOT EXISTS (SELECT 1 FROM legal_document_versions v WHERE v.document_id=d.id) AND NOT EXISTS (SELECT 1 FROM legal_ingestion_runs r WHERE r.document_id=d.id) RETURNING d.id) SELECT (SELECT count(*) FROM target_runs) AS target_runs,(SELECT count(*) FROM emb_del) AS deleted_embeddings,(SELECT count(*) FROM chunk_del) AS deleted_chunks,(SELECT count(*) FROM ver_del) AS deleted_versions,(SELECT count(*) FROM run_del) AS deleted_runs,(SELECT count(*) FROM doc_del) AS deleted_documents;",
+        "options": {}
+      },
+      "id": "2b898919-1acc-41c0-a547-f73758f57431",
+      "name": "Delete incomplete legal ingestion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        260,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Delete incomplete legal ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "6a112e24-4c86-40d2-824c-d1c14d988828",
+  "activeVersionId": null,
+  "versionCounter": 2,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-09T05:21:51.926Z",
+      "createdAt": "2026-09-09T05:21:51.926Z",
+      "role": "workflow:owner",
+      "workflowId": "inspectLegalIngest20260909",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": null
+}

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-08T09:14:04.000Z",
+  "updatedAt": "2026-09-09T09:43:29.817Z",
   "createdAt": "2026-09-04T03:11:51.811Z",
   "id": "Bzi9dHprJPgP54H2",
   "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const folderId = '1-jX6gHWwi8bQImE9Hglin-5ia1Qzp943';\n\nconst organizationId = String(\n  $env.CIC_ORGANIZATION_ID || '00000000-0000-0000-0000-000000000001'\n).trim();\n\nif (!/^[A-Za-z0-9_-]{10,}$/.test(folderId)) {\n  throw new Error('LEGAL_DRIVE_FOLDER_ID_INVALID');\n}\n\nif (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(organizationId)) {\n  throw new Error('LEGAL_ORGANIZATION_ID_INVALID');\n}\n\nreturn [{\n  json: {\n    folder_id: folderId,\n    organization_id: organizationId,\n    corpus: 'VN_CONSTRUCTION_LAW',\n    max_file_bytes: 52428800,\n    max_files_per_run: 200\n  }\n}];"
+        "jsCode": "const folderId = '1-jX6gHWwi8bQImE9Hglin-5ia1Qzp943';\n\nconst organizationId = String(\n  $env.CIC_ORGANIZATION_ID || '00000000-0000-0000-0000-000000000001'\n).trim();\n\nif (!/^[A-Za-z0-9_-]{10,}$/.test(folderId)) {\n  throw new Error('LEGAL_DRIVE_FOLDER_ID_INVALID');\n}\n\nif (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(organizationId)) {\n  throw new Error('LEGAL_ORGANIZATION_ID_INVALID');\n}\n\nreturn [{\n  json: {\n    folder_id: folderId,\n    organization_id: organizationId,\n    corpus: 'VN_CONSTRUCTION_LAW',\n    max_file_bytes: 262144000,\n    max_files_per_run: 200\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -302,7 +302,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -341,21 +341,21 @@
     },
     {
       "parameters": {
-        "jsCode": "const response = $json || {};\nconst batch = $('Encode Legal OCR Batch').item.json;\nconst payload = response.data && typeof response.data === 'object' && !Array.isArray(response.data)\n  ? response.data\n  : response;\n\nconst apiError = payload?.details?.description\n  ?? response?.details?.description\n  ?? payload?.error?.description\n  ?? response?.error?.description\n  ?? payload?.error?.message\n  ?? payload?.error?.status\n  ?? payload?.details?.message\n  ?? response?.error?.message\n  ?? response?.details?.message\n  ?? (typeof payload?.error === 'string' ? payload.error : null);\nif (apiError) {\n  const httpCode = payload?.details?.httpCode ?? response?.details?.httpCode ?? payload?.statusCode ?? response?.statusCode ?? 'unknown';\n  throw new Error(\n    `${String(httpCode) === '429' ? 'OCR_BATCH_RATE_LIMIT' : 'OCR_BATCH_API_ERROR'} batch=${batch.batch_index + 1}/${batch.batch_count} ` +\n    `pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} ` +\n    `http=${httpCode} ` +\n    `message=${String(apiError).slice(0, 500)}`\n  );\n}\n\nconst candidates = Array.isArray(payload.candidates) ? payload.candidates : [];\nconst finishReasons = candidates.map(candidate => candidate?.finishReason ?? candidate?.finish_reason).filter(Boolean);\nconst incomplete = finishReasons.filter(reason => reason !== 'STOP');\nif (incomplete.length) throw new Error(`OCR_BATCH_INCOMPLETE batch=${batch.batch_index + 1}/${batch.batch_count} pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} reasons=${incomplete.join(',')}`);\n\nconst texts = [];\nfor (const candidate of candidates) {\n  const parts = candidate?.content?.parts;\n  if (!Array.isArray(parts)) continue;\n  for (const part of parts) {\n    if (part?.thought === true) continue;\n    if (typeof part?.text === 'string' && part.text.trim()) texts.push(part.text.trim());\n  }\n}\nconst text = texts.map(value => { try { const parsed=JSON.parse(value); if(Array.isArray(parsed?.sections)) return parsed.sections.map(s=>String(s?.text??'').trim()).filter(Boolean).join('\\n'); } catch {} return value; }).join('\\n').trim();\nif (!text) throw new Error(`OCR_BATCH_EMPTY batch=${batch.batch_index + 1}/${batch.batch_count} pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} response_keys=${Object.keys(payload).join(',')}`);\n\nreturn [{json:{\n  batch_index: batch.batch_index,\n  batch_count: batch.batch_count,\n  ocr_loop_reset: false,\n  page_start: batch.page_start,\n  page_end: batch.page_end,\n  page_count: batch.page_count,\n  pages_in_batch: batch.pages_in_batch,\n  logical_start: batch.logical_start ?? null,\n  logical_end: batch.logical_end ?? null,\n  logical_units_in_batch: batch.logical_units_in_batch ?? null,\n  logical_unit_name: batch.logical_unit_name ?? null,\n  source_size_bytes: batch.source_size_bytes,\n  source_size_mb: batch.source_size_mb,\n  batch_size_bytes: batch.batch_size_bytes,\n  ocr_batch_strategy: batch.ocr_batch_strategy,\n  text,\n  modelVersion: payload.modelVersion ?? response.modelVersion ?? null,\n  responseId: payload.responseId ?? response.responseId ?? null\n}, pairedItem: { item: 0 }}];\n"
+        "jsCode": "const response = $json || {};\nconst batch = $('Encode Legal OCR Batch').item.json;\nconst payload = response.data && typeof response.data === 'object' && !Array.isArray(response.data)\n  ? response.data\n  : response;\n\nconst apiError = payload?.details?.description\n  ?? response?.details?.description\n  ?? payload?.error?.description\n  ?? response?.error?.description\n  ?? payload?.error?.message\n  ?? payload?.error?.status\n  ?? payload?.details?.message\n  ?? response?.error?.message\n  ?? response?.details?.message\n  ?? (typeof payload?.error === 'string' ? payload.error : null);\nif (apiError) {\n  const httpCode = String(payload?.details?.httpCode ?? response?.details?.httpCode ?? payload?.statusCode ?? response?.statusCode ?? 'unknown');\n  if (httpCode === '429' || httpCode === '503' || httpCode === '502' || httpCode === '504') {\n    return [{ json: { ...batch, ocr_loop_reset: false, ocr_fallback_reason: httpCode === '429' ? 'OCR_BATCH_RATE_LIMIT' : 'OCR_BATCH_API_UNAVAILABLE' }, pairedItem: { item: 0 } }];\n  }\n  throw new Error(\n    `OCR_BATCH_API_ERROR batch=${batch.batch_index + 1}/${batch.batch_count} ` +\n    `pages=${batch.page_start ?? 'n/a'}-${batch.page_end ?? 'n/a'} ` +\n    `http=${httpCode} ` +\n    `message=${String(apiError).slice(0, 500)}`\n  );\n}\n\nconst candidates = Array.isArray(payload.candidates) ? payload.candidates : [];\nconst finishReasons = candidates.map(candidate => candidate?.finishReason ?? candidate?.finish_reason).filter(Boolean);\nconst incomplete = finishReasons.filter(reason => reason !== 'STOP');\nif (incomplete.length) {\n  if (incomplete.includes('RECITATION')) {\n    return [{ json: { ...batch, ocr_loop_reset: false, ocr_fallback_reason: 'RECITATION' }, pairedItem: { item: 0 } }];\n  }\n  throw new Error('OCR_BATCH_INCOMPLETE batch=' + (batch.batch_index + 1) + '/' + batch.batch_count + ' pages=' + (batch.page_start ?? 'n/a') + '-' + (batch.page_end ?? 'n/a') + ' reasons=' + incomplete.join(','));\n}\n\nconst texts = [];\nfor (const candidate of candidates) {\n  const parts = candidate?.content?.parts;\n  if (!Array.isArray(parts)) continue;\n  for (const part of parts) {\n    if (part?.thought === true) continue;\n    if (typeof part?.text === 'string' && part.text.trim()) texts.push(part.text.trim());\n  }\n}\nconst text = texts.map(value => { try { const parsed=JSON.parse(value); if(Array.isArray(parsed?.sections)) return parsed.sections.map(s=>String(s?.text??'').trim()).filter(Boolean).join('\\n'); } catch {} return value; }).join('\\n').trim();\nif (!text) {\n  return [{ json: { ...batch, ocr_loop_reset: false, ocr_fallback_reason: 'OCR_BATCH_EMPTY' }, pairedItem: { item: 0 } }];\n}\n\nreturn [{json:{\n  batch_index: batch.batch_index,\n  batch_count: batch.batch_count,\n  ocr_loop_reset: false,\n  page_start: batch.page_start,\n  page_end: batch.page_end,\n  page_count: batch.page_count,\n  pages_in_batch: batch.pages_in_batch,\n  logical_start: batch.logical_start ?? null,\n  logical_end: batch.logical_end ?? null,\n  logical_units_in_batch: batch.logical_units_in_batch ?? null,\n  logical_unit_name: batch.logical_unit_name ?? null,\n  source_size_bytes: batch.source_size_bytes,\n  source_size_mb: batch.source_size_mb,\n  batch_size_bytes: batch.batch_size_bytes,\n  ocr_batch_strategy: batch.ocr_batch_strategy,\n  text,\n  modelVersion: payload.modelVersion ?? response.modelVersion ?? null,\n  responseId: payload.responseId ?? response.responseId ?? null\n}, pairedItem: { item: 0 }}];\n"
       },
       "id": "810c4031-1ffc-5f83-95ff-cd86b7b3bd11",
       "name": "Normalize Legal OCR Batch",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -10608,
-        2096
+        -10560,
+        2112
       ],
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nif (!items.length) return [];\n// Pace every OCR request, including the first request of each file.\nawait new Promise(resolve => setTimeout(resolve, 12000));\nreturn items;\n"
+        "jsCode": "const items = $input.all();\nif (!items.length) return [];\n// Pace every OCR request, including the first request of each file.\nawait new Promise(resolve => setTimeout(resolve, 30000));\nreturn items;\n"
       },
       "id": "41baea91-ccb9-5d0e-a218-6025de2e5ba8",
       "name": "Throttle Legal OCR Requests",
@@ -537,56 +537,6 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://ai-api.cic.com.vn:9443/v1/embeddings",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "__REDACTED_SECRET__"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: $json.content } }}",
-        "options": {
-          "batching": {
-            "batch": {
-              "batchSize": 1,
-              "batchInterval": 1500
-            }
-          },
-          "response": {
-            "response": {
-              "responseFormat": "json"
-            }
-          },
-          "timeout": 180000
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -11728,
-        704
-      ],
-      "id": "41127ebf-d6fd-5883-9a39-bdc09ff32563",
-      "name": "Legal Chunk Embedding API",
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
-      "notesInFlow": true,
-      "onError": "continueErrorOutput",
-      "notes": "Retries transient CIC embedding capacity/timeouts. Source vector is validated as 4096 dimensions downstream."
-    },
-    {
-      "parameters": {
         "jsCode": "const SOURCE_DIMENSION=4096;\nconst STORAGE_DIMENSION=1024;\nconst PROJECTION='signed-fold-v1';\nconst responses=$input.all();\nconst src=$('Upsert Legal Chunk').all();\nif(responses.length!==src.length)throw new Error(`EMBEDDING_RESPONSE_COUNT_MISMATCH ${responses.length}/${src.length}`);\nreturn responses.map((item,i)=>{\n const r=item.json||{}; const e=r?.data?.[0]?.embedding??r.embedding; const model=String(r.model||'qwen3-embedding-8b').toLowerCase();\n if(model!=='qwen3-embedding-8b')throw new Error(`WRONG_EMBEDDING_MODEL item=${i} model=${model}`);\n if(!Array.isArray(e)||e.length!==SOURCE_DIMENSION)throw new Error(`WRONG_EMBEDDING_DIMENSION item=${i} expected=${SOURCE_DIMENSION} actual=${Array.isArray(e)?e.length:'invalid'}`);\n const projected=Array(STORAGE_DIMENSION).fill(0);\n for(let j=0;j<SOURCE_DIMENSION;j++){const v=Number(e[j]);if(!Number.isFinite(v))throw new Error(`INVALID_EMBEDDING_VALUE item=${i}`); projected[j%STORAGE_DIMENSION]+=((Math.floor(j/STORAGE_DIMENSION)%2===0)?1:-1)*v;}\n const norm=Math.hypot(...projected); if(!Number.isFinite(norm)||norm<=1e-12)throw new Error(`INVALID_EMBEDDING_NORM item=${i}`);\n const embedding=projected.map(v=>v/norm); return {json:{...src[i].json,embedding,dimension:STORAGE_DIMENSION,source_dimension:SOURCE_DIMENSION,embedding_model_name:model,embedding_projection:PROJECTION},pairedItem:{item:i}};\n});"
       },
       "type": "n8n-nodes-base.code",
@@ -725,7 +675,7 @@
         "operation": "executeQuery",
         "query": "WITH input AS (\n    SELECT $1::jsonb AS data\n),\n\nb AS (\n    SELECT\n        data,\n        NULLIF(data->>'run_id', '')::uuid AS run_id,\n        NULLIF(data->>'document_version_id', '')::uuid AS version_id,\n        NULLIF(data->>'document_id', '')::uuid AS document_id\n    FROM input\n),\n\nemb_off AS (\n    UPDATE legal_chunk_embeddings e\n    SET is_retrievable = false\n    FROM legal_document_chunks c, b\n    WHERE b.version_id IS NOT NULL\n      AND c.document_version_id = b.version_id\n      AND e.chunk_id = c.id\n    RETURNING e.id\n),\n\nver_fail AS (\n    UPDATE legal_document_versions v\n    SET\n        chunk_status = 'failed',\n        embedding_status = 'failed',\n        index_status = 'failed',\n        is_current = false,\n        updated_at = now()\n    FROM b\n    WHERE b.version_id IS NOT NULL\n      AND v.id = b.version_id\n    RETURNING v.id\n),\n\nrun_fail AS (\n    UPDATE legal_ingestion_runs r\n    SET\n        status = 'failed',\n        completed_at = now(),\n        error_code = LEFT(\n            COALESCE(\n                b.data->>'error_code',\n                'INGESTION_FAILED'\n            ),\n            100\n        ),\n        error_message = LEFT(\n            COALESCE(\n                b.data->>'error_message',\n                'legal ingestion failed'\n            ),\n            500\n        ),\n        document_version_id = b.version_id,\n        updated_at = now()\n    FROM b\n    WHERE b.run_id IS NOT NULL\n      AND r.id = b.run_id\n    RETURNING r.id\n),\n\ndoc_fail AS (\n    UPDATE legal_documents d\n    SET\n        status = CASE\n            WHEN EXISTS (\n                SELECT 1\n                FROM legal_document_versions v\n                WHERE v.document_id = d.id\n                  AND v.is_current = true\n            )\n            THEN d.status\n            ELSE 'failed'\n        END,\n        updated_at = now()\n    FROM b\n    WHERE b.document_id IS NOT NULL\n      AND d.id = b.document_id\n    RETURNING d.id\n)\n\nSELECT\n    'failed' AS status,\n    b.data->>'file_id' AS file_id,\n    b.data->>'file_name' AS file_name,\n    COALESCE(\n        b.data->>'error_code',\n        'INGESTION_FAILED'\n    ) AS error_code,\n    LEFT(\n        COALESCE(\n            b.data->>'error_message',\n            'legal ingestion failed'\n        ),\n        500\n    ) AS error_message\nFROM b;",
         "options": {
-          "queryReplacement": "={{ [JSON.stringify({ run_id: String($('Reserve Legal Source').first().json.run_id || ''), document_id: String($('Reserve Legal Source').first().json.document_id || ''), document_version_id: String($('Begin Legal Document Version').isExecuted ? ($('Begin Legal Document Version').first().json.document_version_id || '') : ''), file_id: String($('Reserve Legal Source').first().json.file_id || ''), file_name: String($('Reserve Legal Source').first().json.file_name || ''), error_code: 'LEGAL_INGESTION_FAILED', error_message: String($json.error?.message || $json.message || 'legal ingestion failed').slice(0,500) })] }}"
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -817,7 +767,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -827,8 +777,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: 'Luật xây dựng quy định về quản lý hoạt động đầu tư xây dựng.' } }}",
+        "jsonBody": "={{ { model: 'qwen3-embedding-8b', input: $json.content } }}",
         "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 1500
+            }
+          },
           "response": {
             "response": {
               "responseFormat": "json"
@@ -842,10 +798,154 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -12464,
-        3440
+        -11728,
+        704
       ],
-      "disabled": true
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Qwen 8B embedding model for legal chunks. Source vector is validated as 4096 dimensions downstream."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.18.0.1:18710/ocr",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { pdf_base64: $json.pdf_base64, language: 'vie+eng' } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -10016,
+        1616
+      ],
+      "id": "c0cc72ec-f094-4eb9-a5ca-c82235f679b4",
+      "name": "Tesseract Legal OCR Fallback",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "notes": "Primary local OCR: pdftotext when a text layer exists, otherwise Poppler 300-DPI render plus Tesseract vie+eng. No external Gemini API."
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json || {};\nconst payload = response.data && typeof response.data === 'object' && !Array.isArray(response.data) ? response.data : response;\nconst batch = $('Encode Legal OCR Batch').item.json;\nconst text = String(payload?.text ?? '').trim();\nif (!text) throw new Error('OCR_TESSERACT_EMPTY batch=' + (batch.batch_index + 1) + '/' + batch.batch_count + ' pages=' + (batch.page_start ?? 'n/a') + '-' + (batch.page_end ?? 'n/a') + ' message=' + String(payload?.error ?? '').slice(0, 300));\nreturn [{json:{\n  batch_index: batch.batch_index, batch_count: batch.batch_count, ocr_loop_reset: false,\n  page_start: batch.page_start, page_end: batch.page_end, page_count: batch.page_count,\n  pages_in_batch: batch.pages_in_batch, logical_start: batch.logical_start ?? null,\n  logical_end: batch.logical_end ?? null, logical_units_in_batch: batch.logical_units_in_batch ?? null,\n  logical_unit_name: batch.logical_unit_name ?? null, source_size_bytes: batch.source_size_bytes,\n  source_size_mb: batch.source_size_mb, batch_size_bytes: batch.batch_size_bytes,\n  ocr_batch_strategy: batch.ocr_batch_strategy, text, modelVersion: 'tesseract-5.5.0',\n  responseId: null, ocr_fallback_reason: batch.ocr_fallback_reason\n}, pairedItem: { item: 0 }}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -9696,
+        1648
+      ],
+      "id": "3ce84898-fbf7-4896-9030-e8fed2252164",
+      "name": "Normalize Tesseract OCR Fallback",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorText = String($json?.error?.message ?? $json?.message ?? JSON.stringify($json ?? {}));\nif (!/(^|[^0-9])429([^0-9]|$)|rate.limit|resource exhausted|quota/i.test(errorText)) {\n  throw new Error(errorText.slice(0, 1000));\n}\nconst batch = $('Encode Legal OCR Batch').item.json;\n// Gemini has already used its built-in five short retries. Wait long enough for\n// the API quota window to replenish before retrying this exact single-page batch.\nawait new Promise(resolve => setTimeout(resolve, 90000));\nreturn [{ json: { ...batch, ocr_rate_limit_recovered: true }, pairedItem: { item: 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -12208,
+        1424
+      ],
+      "id": "f80583ea-66a9-4370-9b92-6582e4d6e42e",
+      "name": "Gemini 429 Backoff",
+      "onError": "continueErrorOutput",
+      "notes": "Only handles Gemini HTTP 429/quota exhaustion: wait 90 seconds after native retries, then retry the same batch. Other errors pass to the RECITATION/empty handler."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8c39af9e-b45f-4ce1-96c2-a66468621e2c",
+              "leftValue": "={{ Boolean($json.ocr_fallback_reason) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -12976,
+        1568
+      ],
+      "id": "5dfc944e-df42-4479-9654-019734ec7575",
+      "name": "IF Gemini OCR Needs Local Fallback",
+      "notesInFlow": true,
+      "notes": "RECITATION and empty Gemini responses are valid fallback cases, not workflow errors. True: local Tesseract. False: normal Gemini result."
+    },
+    {
+      "parameters": {
+        "jsCode": "const detail = String($json?.error_message ?? $json?.message ?? 'legal ingestion failed');\nthrow new Error('LEGAL_INGESTION_ABORTED: ' + detail.slice(0, 500));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -10080,
+        1200
+      ],
+      "id": "c812a4b3-f163-43c9-b99d-98642f8dace7",
+      "name": "Abort Legal Ingestion On Failure",
+      "notesInFlow": true,
+      "notes": "Terminal failure gate. A failed document never advances the file loop; only Legal Ingestion Summary may start the next document."
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -16192,
+        2288
+      ],
+      "id": "31e1b871-13b0-4373-b019-2413a2c11f36",
+      "name": "Chạy mỗi 5 giờ"
     }
   ],
   "connections": {
@@ -1088,7 +1188,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Gemini 429 Backoff",
             "type": "main",
             "index": 0
           }
@@ -1099,7 +1199,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Legal OCR Batches",
+            "node": "IF Gemini OCR Needs Local Fallback",
             "type": "main",
             "index": 0
           }
@@ -1240,25 +1340,7 @@
       "main": [
         [
           {
-            "node": "Legal Chunk Embedding API",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Mark Legal Ingestion Failed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Legal Chunk Embedding API": {
-      "main": [
-        [
-          {
-            "node": "Validate Legal 1024 Embedding",
+            "node": "Embedding API - Qwen 8B",
             "type": "main",
             "index": 0
           }
@@ -1370,7 +1452,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Legal Files",
+            "node": "Abort Legal Ingestion On Failure",
             "type": "main",
             "index": 0
           }
@@ -1387,6 +1469,107 @@
           }
         ]
       ]
+    },
+    "Tesseract Legal OCR Fallback": {
+      "main": [
+        [
+          {
+            "node": "Normalize Tesseract OCR Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Legal Ingestion Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Tesseract OCR Fallback": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Legal OCR Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Legal Ingestion Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 429 Backoff": {
+      "main": [
+        [
+          {
+            "node": "Gemini Legal Document OCR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Legal Ingestion Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Gemini OCR Needs Local Fallback": {
+      "main": [
+        [
+          {
+            "node": "Tesseract Legal OCR Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Legal OCR Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embedding API - Qwen 8B": {
+      "main": [
+        [
+          {
+            "node": "Validate Legal 1024 Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Legal Ingestion Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chạy mỗi 5 giờ": {
+      "main": [
+        [
+          {
+            "node": "Legal Ingestion Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -1395,16 +1578,25 @@
     "availableInMCP": false,
     "saveExecutionProgress": false
   },
-  "staticData": null,
+  "staticData": {
+    "node:Chạy mỗi 5 giờ": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        "hours:5"
+      ]
+    }
+  },
   "meta": {
     "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "cb9b690b-df92-4d3f-8d90-6733c331e76d",
-  "activeVersionId": "cb9b690b-df92-4d3f-8d90-6733c331e76d",
-  "versionCounter": 125,
-  "triggerCount": 0,
+  "versionId": "a7b21eac-5791-4897-9d19-49dc6f0a9633",
+  "activeVersionId": "a7b21eac-5791-4897-9d19-49dc6f0a9633",
+  "versionCounter": 152,
+  "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],
   "shared": [
@@ -1428,7 +1620,7 @@
     }
   ],
   "versionMetadata": {
-    "name": null,
-    "description": null
+    "name": "Version a7b21eac",
+    "description": ""
   }
 }

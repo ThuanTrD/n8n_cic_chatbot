@@ -4,7 +4,7 @@
   "id": "intellicadSalesSheetSync",
   "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
   "description": null,
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -637,7 +637,7 @@
   "nodeGroups": [],
   "pinData": {},
   "versionId": "059e8d66-336b-426c-86a5-5a62324204e3",
-  "activeVersionId": "059e8d66-336b-426c-86a5-5a62324204e3",
+  "activeVersionId": null,
   "versionCounter": 19,
   "triggerCount": 1,
   "sourceWorkflowId": null,

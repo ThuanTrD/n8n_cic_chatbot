@@ -1,5 +1,5 @@
 {
-  "workflowCount": 15,
+  "workflowCount": 16,
   "workflows": [
     {
       "id": "0BBvkcVoFM38P15y",
@@ -23,7 +23,7 @@
       "active": true,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
-      "redactions": 12
+      "redactions": 11
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -90,9 +90,17 @@
       "redactions": 35
     },
     {
+      "id": "inspectLegalIngest20260909",
+      "name": "TEMP Delete Incomplete Legal Ingestion",
+      "active": false,
+      "archived": false,
+      "file": "inspectLegalIngest20260909.json",
+      "redactions": 1
+    },
+    {
       "id": "intellicadSalesSheetSync",
       "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
-      "active": true,
+      "active": false,
       "archived": false,
       "file": "intellicadSalesSheetSync.json",
       "redactions": 5
@@ -123,14 +131,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 22,
+    "bearer": 21,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 243,
+    "credential_references": 244,
     "sensitive_named_values": 9
   }
 }
