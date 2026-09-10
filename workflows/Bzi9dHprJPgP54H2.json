@@ -435,7 +435,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ctx=$('Prepare Legal Metadata Request').item.json;const response=$json?.data??$json;const raw=response?.choices?.[0]?.message?.content??response?.output_text??'';let parsed={};\ntry{const text=String(raw).replace(/<think>[\\s\\S]*?<\\/think>/gi,'').trim();const a=text.indexOf('{'),z=text.lastIndexOf('}');if(a>=0&&z>a)parsed=JSON.parse(text.slice(a,z+1));}catch{}\nconst fold=v=>String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/?/gi,'d').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();const corpus=fold(ctx.file_name+'\\n'+ctx.normalized_text);const supported=v=>{const x=fold(v);return x.length>=2&&corpus.includes(x)};\nconst dateSet=new Set();for(const m of String(ctx.normalized_text).matchAll(/\\b(\\d{1,2})[\\/.\\-](\\d{1,2})[\\/.\\-](\\d{4})\\b/g)){dateSet.add(`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`);}for(const m of String(ctx.normalized_text).matchAll(/\\b(\\d{4})-(\\d{2})-(\\d{2})\\b/g))dateSet.add(m[0]);const safeDate=v=>/^\\d{4}-\\d{2}-\\d{2}$/.test(String(v||''))&&dateSet.has(String(v))?String(v):null;\nconst f=fold(ctx.file_name+' '+ctx.normalized_text.slice(0,3000));let type='other';if(/qcvn|quy chuan/.test(f))type='regulation';else if(/tcvn|tieu chuan/.test(f))type='standard';else if(/nghi dinh/.test(f))type='decree';else if(/thong tu/.test(f))type='circular';else if(/quyet dinh/.test(f))type='decision';else if(/(?:^| )luat /.test(f))type='law';else if(/cong van/.test(f))type='official_letter';else if(/giay chung nhan|certificate/.test(f))type='certificate';else if(/hop dong|contract/.test(f))type='contract';\nconst title=supported(parsed.title)?String(parsed.title).trim().slice(0,500):null;const number=supported(parsed.document_number)?String(parsed.document_number).trim().slice(0,160):null;const authority=supported(parsed.issuing_authority)?String(parsed.issuing_authority).trim().slice(0,240):null;const status='unknown';const topics=Array.isArray(parsed.topics)?parsed.topics.map(String).filter(supported).slice(0,8):[];\n// KI?M TRA ??Y ?? TH?NG TIN:\nif (!ctx.normalized_text || ctx.normalized_text.length < 150) {\n  throw new Error('LEGAL_METADATA_INCOMPLETE: Extracted text is too short or empty');\n}\nconst validTitle = title || (\n  ctx.file_name && !ctx.file_name.endsWith('_copy.pdf')\n    ? String(ctx.file_name).replace(/\\.[^.]+$/, '').replace(/_/g, ' ')\n    : null\n);\nif (!validTitle || validTitle.length < 5) {\n  throw new Error('LEGAL_METADATA_INCOMPLETE: Document title is missing or invalid');\n}\nif (!authority && !number && type === 'other') {\n  throw new Error('LEGAL_METADATA_INCOMPLETE: Document lacks issuing authority, document number, and legal document type');\n}\nreturn [{json:{\n  ...ctx,\n  legal_metadata:{\n    document_type:type,\n    title: validTitle,\n    document_number:number,\n    issuing_authority:authority,\n    issued_date:safeDate(parsed.issued_date),\n    effective_date:safeDate(parsed.effective_date),\n    expiry_date:safeDate(parsed.expiry_date),\n    legal_status:status,\n    jurisdiction:'VN',\n    topics\n  },\n  metadata_model_used:Boolean(raw),\n  metadata_validated:true\n}}];"
+        "jsCode": "const ctx=$('Prepare Legal Metadata Request').item.json;const response=$json?.data??$json;const raw=response?.choices?.[0]?.message?.content??response?.output_text??'';let parsed={};\ntry{const text=String(raw).replace(/<think>[\\s\\S]*?<\\/think>/gi,'').trim();const a=text.indexOf('{'),z=text.lastIndexOf('}');if(a>=0&&z>a)parsed=JSON.parse(text.slice(a,z+1));}catch{}\nconst fold=v=>String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[\\u0110\\u0111]/g,'d').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();const corpus=fold(ctx.file_name+'\\n'+ctx.normalized_text);const supported=v=>{const x=fold(v);return x.length>=2&&corpus.includes(x)};\nconst dateSet=new Set();for(const m of String(ctx.normalized_text).matchAll(/\\b(\\d{1,2})[\\/.\\-](\\d{1,2})[\\/.\\-](\\d{4})\\b/g)){dateSet.add(`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`);}for(const m of String(ctx.normalized_text).matchAll(/\\b(\\d{4})-(\\d{2})-(\\d{2})\\b/g))dateSet.add(m[0]);const safeDate=v=>/^\\d{4}-\\d{2}-\\d{2}$/.test(String(v||''))&&dateSet.has(String(v))?String(v):null;\nconst f=fold(ctx.file_name+' '+ctx.normalized_text.slice(0,3000));let type='other';if(/qcvn|quy chuan/.test(f))type='regulation';else if(/tcvn|tieu chuan/.test(f))type='standard';else if(/nghi dinh/.test(f))type='decree';else if(/thong tu/.test(f))type='circular';else if(/quyet dinh/.test(f))type='decision';else if(/(?:^| )luat /.test(f))type='law';else if(/cong van/.test(f))type='official_letter';else if(/giay chung nhan|certificate/.test(f))type='certificate';else if(/hop dong|contract/.test(f))type='contract';\nconst title=supported(parsed.title)?String(parsed.title).trim().slice(0,500):null;const number=supported(parsed.document_number)?String(parsed.document_number).trim().slice(0,160):null;const authority=supported(parsed.issuing_authority)?String(parsed.issuing_authority).trim().slice(0,240):null;const status='unknown';const topics=Array.isArray(parsed.topics)?parsed.topics.map(String).filter(supported).slice(0,8):[];\n// KI?M TRA ??Y ?? TH?NG TIN:\nif (!ctx.normalized_text || ctx.normalized_text.length < 150) {\n  throw new Error('LEGAL_METADATA_INCOMPLETE: Extracted text is too short or empty');\n}\nconst validTitle = title || (\n  ctx.file_name && !ctx.file_name.endsWith('_copy.pdf')\n    ? String(ctx.file_name).replace(/\\.[^.]+$/, '').replace(/_/g, ' ')\n    : null\n);\nif (!validTitle || validTitle.length < 5) {\n  throw new Error('LEGAL_METADATA_INCOMPLETE: Document title is missing or invalid');\n}\nif (!authority && !number && type === 'other') {\n  throw new Error('LEGAL_METADATA_INCOMPLETE: Document lacks issuing authority, document number, and legal document type');\n}\nreturn [{json:{\n  ...ctx,\n  legal_metadata:{\n    document_type:type,\n    title: validTitle,\n    document_number:number,\n    issuing_authority:authority,\n    issued_date:safeDate(parsed.issued_date),\n    effective_date:safeDate(parsed.effective_date),\n    expiry_date:safeDate(parsed.expiry_date),\n    legal_status:status,\n    jurisdiction:'VN',\n    topics\n  },\n  metadata_model_used:Boolean(raw),\n  metadata_validated:true\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -655,7 +655,7 @@
         "operation": "executeQuery",
         "query": "WITH input AS (\n    SELECT $1::jsonb AS data\n),\n\nb AS (\n    SELECT\n        data,\n        NULLIF(data->>'run_id', '')::uuid AS run_id,\n        NULLIF(data->>'document_id', '')::uuid AS document_id\n    FROM input\n),\n\n-- X?a t?i li?u l?i / ch?a ho?n t?t kh?i legal_documents ?? kh?ng l?u r?c\ndel_doc AS (\n    DELETE FROM legal_documents d\n    USING b\n    WHERE b.document_id IS NOT NULL\n      AND d.id = b.document_id\n      AND NOT EXISTS (\n          SELECT 1 FROM legal_document_versions v\n          WHERE v.document_id = d.id AND v.is_current = true\n      )\n    RETURNING d.id\n),\n\n-- C?p nh?t run_id th?nh failed v? ghi nh?n nguy?n nh?n l?i\nrun_fail AS (\n    UPDATE legal_ingestion_runs r\n    SET\n        status = 'failed',\n        completed_at = now(),\n        error_code = LEFT(\n            COALESCE(\n                b.data->>'error_code',\n                'INGESTION_FAILED'\n            ),\n            100\n        ),\n        error_message = LEFT(\n            COALESCE(\n                b.data->>'error_message',\n                b.data->'error'->>'message',\n                'legal ingestion failed'\n            ),\n            500\n        ),\n        document_id = null,\n        document_version_id = null,\n        updated_at = now()\n    FROM b\n    WHERE b.run_id IS NOT NULL\n      AND r.id = b.run_id\n    RETURNING r.id\n)\n\nSELECT\n    'failed' AS status,\n    b.data->>'file_id' AS file_id,\n    b.data->>'file_name' AS file_name,\n    COALESCE(b.data->>'error_code', 'INGESTION_FAILED') AS error_code,\n    LEFT(\n        COALESCE(\n            b.data->>'error_message',\n            b.data->'error'->>'message',\n            'legal ingestion failed'\n        ),\n        500\n    ) AS error_message\nFROM b;",
         "options": {
-          "queryReplacement": "={{ [JSON.stringify({\n  ...$json,\n  error_message: $json.error_message || $json.error?.message || $json.message || 'legal ingestion failed',\n  error_code: $json.error_code || $json.error?.name || 'INGESTION_FAILED',\n  run_id: $json.run_id || $('Reserve Legal Source').item?.json?.run_id || null,\n  document_id: $json.document_id || $('Reserve Legal Source').item?.json?.document_id || null,\n  file_id: $json.file_id || $('Reserve Legal Source').item?.json?.file_id || null,\n  file_name: $json.file_name || $('Reserve Legal Source').item?.json?.file_name || null\n})] }}"
+          "queryReplacement": "={{ [JSON.stringify($json)] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -674,7 +674,8 @@
           "name": "Postgres CMS IntelliCAD Flow 2"
         }
       },
-      "notes": "Keeps partial versions non-current/non-retrievable and records a bounded failure."
+      "notes": "Keeps partial versions non-current/non-retrievable and records a bounded failure.",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -931,6 +932,21 @@
       ],
       "id": "if-skip-gemini-ocr-auto-id",
       "name": "IF Skip Gemini OCR"
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawError = $json?.error || $json?.errorMessage || $json?.message || 'legal ingestion failed';\nif (typeof rawError === 'object' && rawError !== null) {\n  rawError = rawError.message || JSON.stringify(rawError);\n}\nconst errMsg = String(rawError || 'legal ingestion failed').slice(0, 500);\n\nlet reserveJson = {};\ntry {\n  reserveJson = $('Reserve Legal Source').first()?.json || {};\n} catch (e) {}\n\nconst runId = $json?.run_id || reserveJson.run_id || null;\nconst docId = $json?.document_id || reserveJson.document_id || null;\nconst fileId = $json?.file_id || reserveJson.file_id || null;\nconst fileName = $json?.file_name || reserveJson.file_name || null;\nconst errCode = $json?.error_code || $json?.error?.name || 'INGESTION_FAILED';\n\nreturn [{\n  json: {\n    run_id: runId,\n    document_id: docId,\n    file_id: fileId,\n    file_name: fileName,\n    error_code: String(errCode).slice(0, 100),\n    error_message: errMsg\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -10560,
+        1200
+      ],
+      "id": "e45a96d1-12c4-4b5c-b170-failurepayload",
+      "name": "Prepare Legal Failure Payload",
+      "notesInFlow": true,
+      "notes": "Extracts run_id, document_id, file metadata and error details reliably into a clean payload for Mark Legal Ingestion Failed."
     }
   ],
   "connections": {
@@ -1065,7 +1081,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1101,7 +1117,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1119,7 +1135,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1155,7 +1171,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1191,7 +1207,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1209,7 +1225,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1227,7 +1243,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1267,7 +1283,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1285,7 +1301,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1303,7 +1319,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1321,7 +1337,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1339,7 +1355,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1357,7 +1373,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1375,7 +1391,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1404,7 +1420,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1473,7 +1489,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1509,7 +1525,7 @@
         ],
         [
           {
-            "node": "Mark Legal Ingestion Failed",
+            "node": "Prepare Legal Failure Payload",
             "type": "main",
             "index": 0
           }
@@ -1539,6 +1555,17 @@
         [
           {
             "node": "Gemini Legal Document OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Legal Failure Payload": {
+      "main": [
+        [
+          {
+            "node": "Mark Legal Ingestion Failed",
             "type": "main",
             "index": 0
           }
