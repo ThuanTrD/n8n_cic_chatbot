@@ -1,5 +1,5 @@
 {
-  "workflowCount": 16,
+  "workflowCount": 17,
   "workflows": [
     {
       "id": "0BBvkcVoFM38P15y",
@@ -20,7 +20,7 @@
     {
       "id": "Bzi9dHprJPgP54H2",
       "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
-      "active": true,
+      "active": false,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
       "redactions": 11
@@ -67,11 +67,11 @@
     },
     {
       "id": "XxSiIs3HSzXfgoWl",
-      "name": "02 - META - Daily Customer Intelligence",
+      "name": "02 - META - Daily Extract Full 21 Fields",
       "active": false,
       "archived": false,
       "file": "XxSiIs3HSzXfgoWl.json",
-      "redactions": 5
+      "redactions": 6
     },
     {
       "id": "Yns4Vi7tQiwFHW32",
@@ -88,6 +88,14 @@
       "archived": false,
       "file": "dMoXXuKEuUW7vRFV.json",
       "redactions": 35
+    },
+    {
+      "id": "extractCustomerSheetBot",
+      "name": "CMS IntelliCAD - Bot Tr?ch xu?t Kh?ch h?ng & B?o gi? Google Sheets",
+      "active": false,
+      "archived": false,
+      "file": "extractCustomerSheetBot.json",
+      "redactions": 0
     },
     {
       "id": "inspectLegalIngest20260909",
@@ -138,7 +146,7 @@
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 244,
+    "credential_references": 245,
     "sensitive_named_values": 9
   }
 }

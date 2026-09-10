@@ -1,0 +1,14 @@
+[Unit]
+Description=CIC local Tesseract OCR fallback for n8n
+After=docker.service
+Requires=docker.service
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/cic_ocr_fallback.py
+Restart=on-failure
+RestartSec=3
+User=ADMIN
+NoNewPrivileges=true
+PrivateTmp=true
+[Install]
+WantedBy=multi-user.target

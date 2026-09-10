@@ -1,0 +1,10 @@
+[Unit]
+Description=Sync Cloudflare Tunnel domain with n8n Webhook URL
+After=cloudflared-n8n.service docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/bin/sync_cloudflared_n8n.py
+
+[Install]
+WantedBy=multi-user.target
