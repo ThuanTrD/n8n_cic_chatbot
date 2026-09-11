@@ -4,7 +4,7 @@
   "id": "JivRSTL8gODfi5sc",
   "name": "CMS IntelliCAD - Facebook Chatbot",
   "description": null,
-  "active": true,
+  "active": false,
   "isArchived": false,
   "nodes": [
     {
@@ -6191,7 +6191,7 @@
   "nodeGroups": [],
   "pinData": {},
   "versionId": "62a24e98-0c44-45dd-80d8-131b2bf695a7",
-  "activeVersionId": "62a24e98-0c44-45dd-80d8-131b2bf695a7",
+  "activeVersionId": null,
   "versionCounter": 141,
   "triggerCount": 1,
   "sourceWorkflowId": null,

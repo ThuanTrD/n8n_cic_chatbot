@@ -1,0 +1,143 @@
+{
+  "updatedAt": "2026-09-11T07:32:01.000Z",
+  "createdAt": "2026-09-11T07:32:01.000Z",
+  "id": "systemDbGarbageCollector",
+  "name": "99 - SYSTEM - Tự động dọn rác & Tối ưu Database Supabase",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 3 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger-3am",
+      "name": "Chạy lúc 03:00 sáng hàng ngày",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "manual-clean-trigger",
+      "name": "Bấm dọn rác thủ công ngay",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- 1. Dọn dẹp Chunk Embedding mồ côi\nWITH orphaned_emb AS (\n  DELETE FROM legal_chunk_embeddings e\n  WHERE NOT EXISTS (\n    SELECT 1 FROM legal_document_chunks c WHERE c.id = e.chunk_id\n  )\n  RETURNING id\n),\n-- 2. Dọn dẹp Chunk của các phiên bản tài liệu không hoàn tất cũ hơn 24h\nstale_versions AS (\n  SELECT id FROM legal_document_versions\n  WHERE is_current = false AND created_at < now() - INTERVAL '24 hours'\n    AND NOT EXISTS (\n      SELECT 1 FROM legal_ingestion_runs r WHERE r.document_version_id = legal_document_versions.id AND r.status = 'completed'\n    )\n),\nstale_chunks AS (\n  DELETE FROM legal_document_chunks c\n  USING stale_versions v\n  WHERE c.document_version_id = v.id\n  RETURNING c.id\n),\nstale_vers_del AS (\n  DELETE FROM legal_document_versions v\n  USING stale_versions sv\n  WHERE v.id = sv.id\n  RETURNING v.id\n),\n-- 3. Dọn dẹp tin nhắn rỗng nội dung\nempty_msgs AS (\n  DELETE FROM conversation_messages\n  WHERE (content IS NULL OR trim(content) = '')\n    AND (attachments IS NULL OR attachments = '[]'::jsonb)\n  RETURNING id\n),\n-- 4. Dọn dẹp hội thoại không có bất kỳ tin nhắn nào (cũ hơn 14 ngày)\nempty_convs AS (\n  DELETE FROM conversations c\n  WHERE c.created_at < now() - INTERVAL '14 days'\n    AND NOT EXISTS (\n      SELECT 1 FROM conversation_messages m WHERE m.conversation_id = c.id\n    )\n  RETURNING id\n),\n-- 5. Dọn dẹp Lead rác hoàn toàn không có thông tin\nempty_leads AS (\n  DELETE FROM leads\n  WHERE full_name IS NULL\n    AND phone IS NULL\n    AND email IS NULL\n    AND need IS NULL\n  RETURNING id\n)\nSELECT\n  (SELECT count(*) FROM orphaned_emb) AS deleted_orphaned_embeddings,\n  (SELECT count(*) FROM stale_chunks) AS deleted_stale_chunks,\n  (SELECT count(*) FROM stale_vers_del) AS deleted_stale_versions,\n  (SELECT count(*) FROM empty_msgs) AS deleted_empty_messages,\n  (SELECT count(*) FROM empty_convs) AS deleted_empty_conversations,\n  (SELECT count(*) FROM empty_leads) AS deleted_empty_leads;"
+      },
+      "id": "execute-db-hygiene-cleanup",
+      "name": "1. Thực thi dọn rác toàn diện Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        520,
+        380
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const r = $json;\nconst totalCleaned = Number(r.deleted_orphaned_embeddings || 0) +\n                     Number(r.deleted_stale_chunks || 0) +\n                     Number(r.deleted_stale_versions || 0) +\n                     Number(r.deleted_empty_messages || 0) +\n                     Number(r.deleted_empty_conversations || 0) +\n                     Number(r.deleted_empty_leads || 0);\n\nreturn {\n  json: {\n    \"Trạng thái\": \"✅ ĐÃ DỌN DẸP SẠCH SẼ TOÀN BỘ DATABASE\",\n    \"Tổng số bản ghi rác đã xóa\": totalCleaned,\n    \"Vector Embedding mồ côi đã xóa\": Number(r.deleted_orphaned_embeddings || 0),\n    \"Chunk văn bản lỗi đã xóa\": Number(r.deleted_stale_chunks || 0),\n    \"Phiên bản tài liệu dở dang đã xóa\": Number(r.deleted_stale_versions || 0),\n    \"Tin nhắn rỗng đã xóa\": Number(r.deleted_empty_messages || 0),\n    \"Hội thoại mồ côi đã xóa\": Number(r.deleted_empty_conversations || 0),\n    \"Lead rác không thông tin đã xóa\": Number(r.deleted_empty_leads || 0),\n    \"Thời gian thực hiện\": new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })\n  }\n};"
+      },
+      "id": "format-cleanup-summary",
+      "name": "2. Báo cáo kết quả dọn dẹp Database",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        380
+      ]
+    }
+  ],
+  "connections": {
+    "Chạy lúc 03:00 sáng hàng ngày": {
+      "main": [
+        [
+          {
+            "node": "1. Thực thi dọn rác toàn diện Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bấm dọn rác thủ công ngay": {
+      "main": [
+        [
+          {
+            "node": "1. Thực thi dọn rác toàn diện Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Thực thi dọn rác toàn diện Database": {
+      "main": [
+        [
+          {
+            "node": "2. Báo cáo kết quả dọn dẹp Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "154f3a6d-1b34-4a97-95b7-4c3dbd703508",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-11T07:34:17.000Z",
+      "createdAt": "2026-09-11T07:34:17.000Z",
+      "role": "workflow:owner",
+      "workflowId": "systemDbGarbageCollector",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": null
+}

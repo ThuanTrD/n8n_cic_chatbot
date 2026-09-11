@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-08-25T03:13:42.688Z",
+  "updatedAt": "2026-09-11T03:08:19.000Z",
   "createdAt": "2026-08-20T09:30:17.886Z",
   "id": "0BBvkcVoFM38P15y",
-  "name": "Facebook Page Messenger -> Q&A Google Sheets",
+  "name": "04 - Facebook Page Messenger -> Q&A Google Sheets",
   "description": null,
   "active": false,
   "isArchived": false,
@@ -151,19 +151,49 @@
           "__rl": true,
           "value": "1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0",
           "mode": "list",
-          "cachedResultName": "Cuộc trò chuyện"
+          "cachedResultName": "Cuộc trò chuyện",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Trang tính1"
+          "cachedResultName": "Trang tính1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gDdtPwZDQQCWX1pF04NXWgHPh40WiU0OZ6Fj-FoOjR0/edit#gid=0"
         },
         "columns": {
-          "mappingMode": "autoMapInputData",
+          "mappingMode": "defineBelow",
           "value": {},
           "matchingColumns": [],
-          "schema": [],
+          "schema": [
+            {
+              "id": "Tên khách hàng",
+              "displayName": "Tên khách hàng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Câu hỏi",
+              "displayName": "Câu hỏi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Câu trả lời",
+              "displayName": "Câu trả lời",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         },
@@ -322,9 +352,9 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "18e6d878-b080-404f-bca0-acf3c1c4145d",
+  "versionId": "8f59081d-3d01-4b6b-beb1-fdb3d235505a",
   "activeVersionId": null,
-  "versionCounter": 44,
+  "versionCounter": 52,
   "triggerCount": 0,
   "sourceWorkflowId": null,
   "tags": [],

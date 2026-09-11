@@ -1,9 +1,17 @@
 {
-  "workflowCount": 17,
+  "workflowCount": 19,
   "workflows": [
     {
+      "id": "03MetaSyncMonitor",
+      "name": "01 - META - Theo dõi & Đồng bộ Hội thoại Fanpage vào Supabase",
+      "active": true,
+      "archived": false,
+      "file": "03MetaSyncMonitor.json",
+      "redactions": 5
+    },
+    {
       "id": "0BBvkcVoFM38P15y",
-      "name": "Facebook Page Messenger -> Q&A Google Sheets",
+      "name": "04 - Facebook Page Messenger -> Q&A Google Sheets",
       "active": false,
       "archived": false,
       "file": "0BBvkcVoFM38P15y.json",
@@ -23,7 +31,7 @@
       "active": false,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
-      "redactions": 11
+      "redactions": 9
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -44,7 +52,7 @@
     {
       "id": "JivRSTL8gODfi5sc",
       "name": "CMS IntelliCAD - Facebook Chatbot",
-      "active": true,
+      "active": false,
       "archived": false,
       "file": "JivRSTL8gODfi5sc.json",
       "redactions": 72
@@ -68,10 +76,10 @@
     {
       "id": "XxSiIs3HSzXfgoWl",
       "name": "02 - META - Daily Extract Full 21 Fields",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "XxSiIs3HSzXfgoWl.json",
-      "redactions": 6
+      "redactions": 4
     },
     {
       "id": "Yns4Vi7tQiwFHW32",
@@ -91,7 +99,7 @@
     },
     {
       "id": "extractCustomerSheetBot",
-      "name": "CMS IntelliCAD - Bot Tr?ch xu?t Kh?ch h?ng & B?o gi? Google Sheets",
+      "name": "CMS IntelliCAD - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
       "active": false,
       "archived": false,
       "file": "extractCustomerSheetBot.json",
@@ -107,7 +115,7 @@
     },
     {
       "id": "intellicadSalesSheetSync",
-      "name": "CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
+      "name": "03 - CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
       "active": false,
       "archived": false,
       "file": "intellicadSalesSheetSync.json",
@@ -130,6 +138,14 @@
       "redactions": 33
     },
     {
+      "id": "systemDbGarbageCollector",
+      "name": "99 - SYSTEM - Tự động dọn rác & Tối ưu Database Supabase",
+      "active": true,
+      "archived": false,
+      "file": "systemDbGarbageCollector.json",
+      "redactions": 1
+    },
+    {
       "id": "yW1A9s1Lmoq9wZQp",
       "name": "Hermes CMS IntelliCAD - Credential Check",
       "active": false,
@@ -139,14 +155,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 21,
+    "bearer": 22,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 245,
+    "credential_references": 246,
     "sensitive_named_values": 9
   }
 }

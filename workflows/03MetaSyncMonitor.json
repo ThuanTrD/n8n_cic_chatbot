@@ -1,0 +1,361 @@
+{
+  "updatedAt": "2026-09-11T02:48:42.000Z",
+  "createdAt": "2026-09-11T02:05:34.000Z",
+  "id": "03MetaSyncMonitor",
+  "name": "01 - META - Theo dõi & Đồng bộ Hội thoại Fanpage vào Supabase",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual-sync",
+      "name": "Bấm Để Kiểm tra & Đồng bộ Ngay",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule-sync",
+      "name": "Tự động kiểm tra mỗi 15 phút",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.facebook.com/v26.0/1274733055725344/conversations?fields=id,updated_time,participants,message_count&limit=50",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-fb-convs",
+      "name": "1. Lấy danh sách hội thoại từ Meta Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all();\nconst raw = (items[0]?.json?.data) || [];\nconst pageId = '1274733055725344';\nconst out = [];\n\nfor (const c of raw) {\n  const cust = (c.participants?.data || []).find(p => p.id !== pageId);\n  const custId = cust?.id ?? 'Chưa rõ';\n  const custName = cust?.name ?? 'Khách Facebook';\n  out.push({\n    fb_conversation_id: c.id,\n    customer_id: custId,\n    customer_name: custName,\n    fb_message_count: Number(c.message_count ?? 0),\n    fb_updated_time: c.updated_time,\n    conversation_link: `https://business.facebook.com/latest/inbox/all?asset_id=${pageId}&selected_item_id=${custId}`\n  });\n}\n\nreturn out.length > 0 ? out.map(x => ({ json: x })) : [{ json: { empty: true } }];"
+      },
+      "id": "split-fb-convs",
+      "name": "2. Bóc tách từng hội thoại",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  coalesce(c.id, '00000000-0000-0000-0000-000000000000'::uuid) AS db_conversation_id,\n  $1 AS external_user_id,\n  c.last_message_at,\n  count(m.id)::int AS db_message_count,\n  coalesce(max(m.created_at)::text, '') AS db_last_message_at\nFROM (SELECT $1::text AS ext_id) inp\nLEFT JOIN conversations c ON c.channel_account_id = '20000000-0000-0000-0000-000000000002'::uuid AND c.external_user_id = inp.ext_id\nLEFT JOIN conversation_messages m ON m.conversation_id = c.id\nGROUP BY c.id, c.external_user_id, c.last_message_at;",
+        "options": {
+          "queryReplacement": "={{ [ $json.customer_id ] }}"
+        }
+      },
+      "id": "check-supabase-stats",
+      "name": "3. Đọc số liệu hiện tại từ Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        960,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const fb = $('2. Bóc tách từng hội thoại').item.json;\nconst dbRow = $json;\n\nconst fbCount = fb.fb_message_count ?? 0;\nconst dbCount = dbRow.db_message_count ?? 0;\nconst diff = Math.max(0, fbCount - dbCount);\n\nreturn {\n  json: {\n    ...fb,\n    db_conversation_id: dbRow.db_conversation_id ?? null,\n    db_message_count: dbCount,\n    diff_count: diff,\n    needs_sync: diff > 0 || !dbRow.db_conversation_id\n  }\n};"
+      },
+      "id": "compare-sync-status",
+      "name": "4. So sánh trạng thái đồng bộ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (\n  SELECT $1::jsonb AS data\n),\nins AS (\n  INSERT INTO conversations (organization_id, chatbot_id, channel_account_id, external_user_id, status, mode, started_at, last_message_at, metadata)\n  SELECT\n    '00000000-0000-0000-0000-000000000001'::uuid,\n    '10000000-0000-0000-0000-000000000001'::uuid,\n    '20000000-0000-0000-0000-000000000002'::uuid,\n    data->>'customer_id',\n    'active',\n    'AI',\n    (data->>'fb_updated_time')::timestamptz,\n    (data->>'fb_updated_time')::timestamptz,\n    jsonb_build_object('customer_name', data->>'customer_name')\n  FROM input\n  WHERE NOT EXISTS (\n    SELECT 1 FROM conversations existing\n    WHERE existing.channel_account_id = '20000000-0000-0000-0000-000000000002'::uuid\n      AND existing.external_user_id = (data->>'customer_id')\n  )\n  RETURNING id\n)\nSELECT coalesce(\n  (SELECT id FROM ins),\n  (SELECT id FROM conversations WHERE channel_account_id = '20000000-0000-0000-0000-000000000002'::uuid AND external_user_id = ($1::jsonb->>'customer_id'))\n) AS conversation_id;",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json) ] }}"
+        }
+      },
+      "id": "ensure-conversation-db",
+      "name": "5. Đảm bảo Conversation tồn tại trong DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1440,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://graph.facebook.com/v26.0/' + $('4. So sánh trạng thái đồng bộ').item.json.fb_conversation_id + '/messages?fields=id,message,created_time,from,attachments&limit=100' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-fb-messages",
+      "name": "6. Kéo tin nhắn từ Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const pageId = '1274733055725344';\nconst items = $input.all();\nconst out = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const rawMsgs = item.json.data ?? [];\n  let convId = null;\n  try {\n    const convDb = $('5. Đảm bảo Conversation tồn tại trong DB').itemMatching(i).json;\n    convId = convDb.conversation_id;\n  } catch (e) {\n    try {\n      convId = $('5. Đảm bảo Conversation tồn tại trong DB').all()[i]?.json?.conversation_id;\n    } catch (e2) {}\n  }\n\n  for (const m of rawMsgs) {\n    // Chặn rác: Bỏ qua tin nhắn không có text và không có attachments\n    const msgText = (m.message || '').trim();\n    const hasAttachments = Boolean(m.attachments?.data?.length);\n    if (!msgText && !hasAttachments) continue;\n\n    const isFromPage = m.from?.id === pageId;\n    out.push({\n      conversation_id: convId,\n      external_message_id: m.id,\n      sender_type: isFromPage ? 'ASSISTANT' : 'USER',\n      role: isFromPage ? 'assistant' : 'user',\n      content: msgText || '[Đính kèm file/hình ảnh]',\n      created_at: m.created_time,\n      attachments: JSON.stringify(m.attachments?.data || [])\n    });\n  }\n}\n\nreturn out.length > 0 ? out.map(x => ({ json: x })) : [{ json: { empty: true } }];"
+      },
+      "id": "normalize-messages-to-db",
+      "name": "7. Chuẩn hóa tin nhắn",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (\n  SELECT $1::jsonb AS data\n)\nINSERT INTO conversation_messages (conversation_id, sender_type, role, content, external_message_id, created_at, attachments, metadata)\nSELECT\n  (data->>'conversation_id')::uuid,\n  data->>'sender_type',\n  data->>'role',\n  data->>'content',\n  data->>'external_message_id',\n  (data->>'created_at')::timestamptz,\n  coalesce((data->>'attachments')::jsonb, '[]'::jsonb),\n  '{}'::jsonb\nFROM input\nWHERE data->>'external_message_id' IS NOT NULL\n  AND data->>'conversation_id' IS NOT NULL\n  AND nullif(trim(data->>'content'), '') IS NOT NULL\nON CONFLICT (conversation_id, external_message_id) WHERE (external_message_id IS NOT NULL) DO NOTHING\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json) ] }}"
+        }
+      },
+      "id": "insert-messages-supabase",
+      "name": "8. Lưu tin nhắn vào Supabase",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2160,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const convItems = $('4. So sánh trạng thái đồng bộ').all();\nconst out = [];\n\nfor (const it of convItems) {\n  const d = it.json;\n  const isSynced = (d.db_message_count + d.diff_count) >= d.fb_message_count;\n  \n  out.push({\n    \"Khách hàng\": d.customer_name,\n    \"Facebook ID (PSID)\": d.customer_id,\n    \"Số tin nhắn trên Page\": d.fb_message_count,\n    \"Số tin nhắn trong Database\": d.db_message_count + d.diff_count,\n    \"Trạng thái đồng bộ\": isSynced ? \"✅ ĐÃ KHỚP 100% (ĐÃ ĐỒNG BỘ)\" : \"⏳ ĐANG CẬP NHẬT\",\n    \"Thời gian tin nhắn cuối\": d.fb_updated_time,\n    \"Link xem hội thoại trên Facebook\": d.conversation_link,\n    \"Thời gian kiểm tra\": new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })\n  });\n}\n\nreturn out.map(x => ({ json: x }));"
+      },
+      "id": "dashboard-summary-monitor",
+      "name": "9. BẢNG THEO DÕI GIÁM SÁT ĐỒNG BỘ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Bấm Để Kiểm tra & Đồng bộ Ngay": {
+      "main": [
+        [
+          {
+            "node": "1. Lấy danh sách hội thoại từ Meta Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tự động kiểm tra mỗi 15 phút": {
+      "main": [
+        [
+          {
+            "node": "1. Lấy danh sách hội thoại từ Meta Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Lấy danh sách hội thoại từ Meta Page": {
+      "main": [
+        [
+          {
+            "node": "2. Bóc tách từng hội thoại",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Bóc tách từng hội thoại": {
+      "main": [
+        [
+          {
+            "node": "3. Đọc số liệu hiện tại từ Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Đọc số liệu hiện tại từ Supabase": {
+      "main": [
+        [
+          {
+            "node": "4. So sánh trạng thái đồng bộ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. So sánh trạng thái đồng bộ": {
+      "main": [
+        [
+          {
+            "node": "5. Đảm bảo Conversation tồn tại trong DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Đảm bảo Conversation tồn tại trong DB": {
+      "main": [
+        [
+          {
+            "node": "6. Kéo tin nhắn từ Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. Kéo tin nhắn từ Facebook": {
+      "main": [
+        [
+          {
+            "node": "7. Chuẩn hóa tin nhắn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Chuẩn hóa tin nhắn": {
+      "main": [
+        [
+          {
+            "node": "8. Lưu tin nhắn vào Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Lưu tin nhắn vào Supabase": {
+      "main": [
+        [
+          {
+            "node": "9. BẢNG THEO DÕI GIÁM SÁT ĐỒNG BỘ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "cd856ded-c2bc-4555-94a1-a7f3f952170a",
+  "activeVersionId": null,
+  "versionCounter": 7,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-11T03:45:19.000Z",
+      "createdAt": "2026-09-11T03:45:19.000Z",
+      "role": "workflow:owner",
+      "workflowId": "03MetaSyncMonitor",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": null
+}
