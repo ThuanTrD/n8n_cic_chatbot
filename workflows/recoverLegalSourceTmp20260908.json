@@ -2,7 +2,7 @@
   "updatedAt": "2026-09-08T02:50:46.823Z",
   "createdAt": "2026-09-08T02:50:46.823Z",
   "id": "recoverLegalSourceTmp20260908",
-  "name": "Temporary legal ingestion recovery",
+  "name": "[90 - LEGAL] 03 - Phục hồi Ingestion (Tạm thời)",
   "description": null,
   "active": false,
   "isArchived": false,
@@ -68,7 +68,20 @@
   "versionCounter": 1,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "2c10632a-ac8a-49",
+      "name": "Type: Temp-Dev"
+    },
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "d56b60ce-98e0-49",
+      "name": "Domain: Legal-RAG"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-09-08T02:50:46.829Z",

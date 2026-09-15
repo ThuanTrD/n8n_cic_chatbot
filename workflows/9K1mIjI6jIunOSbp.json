@@ -2,7 +2,7 @@
   "updatedAt": "2026-08-25T03:36:32.000Z",
   "createdAt": "2026-08-25T03:33:04.847Z",
   "id": "9K1mIjI6jIunOSbp",
-  "name": "TEMP - ENJICAD Page ID Diagnostic",
+  "name": "[01 - ENJICAD] 08 - Page ID Diagnostic (TEMP)",
   "description": "Temporary read-only lookup for the ENJICAD Facebook Page ID before webhook testing.",
   "active": false,
   "isArchived": true,
@@ -70,7 +70,20 @@
   "versionCounter": 3,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "2c10632a-ac8a-49",
+      "name": "Type: Temp-Dev"
+    },
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "a5372436-bd87-47",
+      "name": "Product: ENJICAD"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-08-25T03:33:04.851Z",

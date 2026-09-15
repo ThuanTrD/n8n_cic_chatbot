@@ -2,7 +2,7 @@
   "updatedAt": "2026-08-26T09:57:15.000Z",
   "createdAt": "2026-08-26T09:23:36.991Z",
   "id": "yW1A9s1Lmoq9wZQp",
-  "name": "Hermes CMS IntelliCAD - Credential Check",
+  "name": "[02 - INTELLICAD] 03 - Kiểm tra kết nối Gateway & AI",
   "description": "Isolated manual test of the Hermes model endpoint and stored Header Auth credential; no production side effects.",
   "active": false,
   "isArchived": true,
@@ -95,7 +95,20 @@
   "versionCounter": 14,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "2c10632a-ac8a-49",
+      "name": "Type: Temp-Dev"
+    },
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "f0c66198-4bb5-4f",
+      "name": "Product: IntelliCAD"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-08-26T09:23:36.995Z",

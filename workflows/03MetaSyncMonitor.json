@@ -1,12 +1,33 @@
 {
-  "updatedAt": "2026-09-11T02:48:42.000Z",
+  "updatedAt": "2026-09-15T04:18:20.750Z",
   "createdAt": "2026-09-11T02:05:34.000Z",
   "id": "03MetaSyncMonitor",
-  "name": "01 - META - Theo dõi & Đồng bộ Hội thoại Fanpage vào Supabase",
+  "name": "[80 - META] 01 - Theo dõi & Đồng bộ Hội thoại Fanpage vào Supabase",
   "description": null,
   "active": true,
   "isArchived": false,
   "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  ca.id::text AS channel_account_id,\n  ca.name AS page_name,\n  ca.external_account_id AS page_id,\n  ca.secret_ref AS access_token,\n  coalesce((ca.config->>'product_id')::bigint, 1369) AS product_id,\n  coalesce(ca.config->>'product_name', 'CMS IntelliCAD') AS product_name,\n  coalesce((ca.config->>'chatbot_id')::uuid, '10000000-0000-0000-0000-000000000001'::uuid)::text AS chatbot_id\nFROM channel_accounts ca\nWHERE ca.channel_type = 'facebook'\n  AND ca.status = 'connected'\n  AND nullif(trim(ca.secret_ref), '') IS NOT NULL\n  AND nullif(trim(ca.external_account_id), '') IS NOT NULL\nORDER BY ca.created_at ASC;",
+        "options": {}
+      },
+      "id": "ca-fetch-active-pages-01",
+      "name": "0. Đọc danh sách Fanpage từ DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        368
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
+        }
+      }
+    },
     {
       "parameters": {},
       "id": "trigger-manual-sync",
@@ -14,8 +35,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        200,
-        300
+        -224,
+        272
       ]
     },
     {
@@ -34,20 +55,19 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        200,
-        500
+        -224,
+        464
       ]
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "https://graph.facebook.com/v26.0/1274733055725344/conversations?fields=id,updated_time,participants,message_count&limit=50",
+        "url": "={{ \"https://graph.facebook.com/v26.0/\" + $json.page_id + \"/conversations?fields=id,updated_time,participants,message_count&limit=50\" }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "__REDACTED_SECRET__"
+              "value": "={{ \"Bearer \" + $json.access_token }}"
             }
           ]
         },
@@ -58,30 +78,29 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        480,
-        400
+        224,
+        368
       ]
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all();\nconst raw = (items[0]?.json?.data) || [];\nconst pageId = '1274733055725344';\nconst out = [];\n\nfor (const c of raw) {\n  const cust = (c.participants?.data || []).find(p => p.id !== pageId);\n  const custId = cust?.id ?? 'Chưa rõ';\n  const custName = cust?.name ?? 'Khách Facebook';\n  out.push({\n    fb_conversation_id: c.id,\n    customer_id: custId,\n    customer_name: custName,\n    fb_message_count: Number(c.message_count ?? 0),\n    fb_updated_time: c.updated_time,\n    conversation_link: `https://business.facebook.com/latest/inbox/all?asset_id=${pageId}&selected_item_id=${custId}`\n  });\n}\n\nreturn out.length > 0 ? out.map(x => ({ json: x })) : [{ json: { empty: true } }];"
+        "jsCode": "const items = $input.all();\nconst out = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const channel = $('0. Đọc danh sách Fanpage từ DB').itemMatching(i)?.json || $('0. Đọc danh sách Fanpage từ DB').all()[i]?.json || {};\n  const pageId = channel.page_id || '1274733055725344';\n  const pageName = channel.page_name || 'Fanpage';\n  const channelAccId = channel.channel_account_id || '20000000-0000-0000-0000-000000000002';\n  const chatbotId = channel.chatbot_id || '10000000-0000-0000-0000-000000000001';\n  const accessToken = channel.access_token || '';\n  const productId = channel.product_id || 1369;\n  const productName = channel.product_name || 'CMS IntelliCAD';\n\n  const raw = item.json?.data || [];\n  for (const c of raw) {\n    const cust = (c.participants?.data || []).find(p => p.id !== pageId);\n    const custId = cust?.id ?? 'Chưa rõ';\n    const custName = cust?.name ?? 'Khách Facebook';\n    out.push({\n      fb_conversation_id: c.id,\n      customer_id: custId,\n      customer_name: custName,\n      fb_message_count: Number(c.message_count ?? 0),\n      fb_updated_time: c.updated_time,\n      page_id: pageId,\n      page_name: pageName,\n      channel_account_id: channelAccId,\n      chatbot_id: chatbotId,\n      access_token: accessToken,\n      product_id: productId,\n      product_name: productName,\n      conversation_link: `https://business.facebook.com/latest/inbox/all?asset_id=${pageId}&selected_item_id=${custId}`\n    });\n  }\n}\n\nreturn out.length > 0 ? out.map(x => ({ json: x })) : [{ json: { empty: true } }];\n"
       },
       "id": "split-fb-convs",
       "name": "2. Bóc tách từng hội thoại",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        720,
-        400
+        448,
+        368
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT\n  coalesce(c.id, '00000000-0000-0000-0000-000000000000'::uuid) AS db_conversation_id,\n  $1 AS external_user_id,\n  c.last_message_at,\n  count(m.id)::int AS db_message_count,\n  coalesce(max(m.created_at)::text, '') AS db_last_message_at\nFROM (SELECT $1::text AS ext_id) inp\nLEFT JOIN conversations c ON c.channel_account_id = '20000000-0000-0000-0000-000000000002'::uuid AND c.external_user_id = inp.ext_id\nLEFT JOIN conversation_messages m ON m.conversation_id = c.id\nGROUP BY c.id, c.external_user_id, c.last_message_at;",
+        "query": "SELECT\n  coalesce(c.id, '00000000-0000-0000-0000-000000000000'::uuid) AS db_conversation_id,\n  $1 AS external_user_id,\n  c.last_message_at,\n  count(m.id)::int AS db_message_count,\n  coalesce(max(m.created_at)::text, '') AS db_last_message_at\nFROM (SELECT $1::text AS ext_id, $2::uuid AS ch_id) inp\nLEFT JOIN conversations c ON c.channel_account_id = inp.ch_id AND c.external_user_id = inp.ext_id\nLEFT JOIN conversation_messages m ON m.conversation_id = c.id\nGROUP BY c.id, c.external_user_id, c.last_message_at;",
         "options": {
-          "queryReplacement": "={{ [ $json.customer_id ] }}"
+          "queryReplacement": "={{ [ $json.customer_id, $json.channel_account_id ] }}"
         }
       },
       "id": "check-supabase-stats",
@@ -89,8 +108,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        960,
-        400
+        672,
+        368
       ],
       "credentials": {
         "postgres": {
@@ -109,14 +128,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1200,
-        400
+        896,
+        368
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH input AS (\n  SELECT $1::jsonb AS data\n),\nins AS (\n  INSERT INTO conversations (organization_id, chatbot_id, channel_account_id, external_user_id, status, mode, started_at, last_message_at, metadata)\n  SELECT\n    '00000000-0000-0000-0000-000000000001'::uuid,\n    '10000000-0000-0000-0000-000000000001'::uuid,\n    '20000000-0000-0000-0000-000000000002'::uuid,\n    data->>'customer_id',\n    'active',\n    'AI',\n    (data->>'fb_updated_time')::timestamptz,\n    (data->>'fb_updated_time')::timestamptz,\n    jsonb_build_object('customer_name', data->>'customer_name')\n  FROM input\n  WHERE NOT EXISTS (\n    SELECT 1 FROM conversations existing\n    WHERE existing.channel_account_id = '20000000-0000-0000-0000-000000000002'::uuid\n      AND existing.external_user_id = (data->>'customer_id')\n  )\n  RETURNING id\n)\nSELECT coalesce(\n  (SELECT id FROM ins),\n  (SELECT id FROM conversations WHERE channel_account_id = '20000000-0000-0000-0000-000000000002'::uuid AND external_user_id = ($1::jsonb->>'customer_id'))\n) AS conversation_id;",
+        "query": "WITH input AS (\n  SELECT $1::jsonb AS data\n),\nins AS (\n  INSERT INTO conversations (organization_id, chatbot_id, channel_account_id, external_user_id, status, mode, started_at, last_message_at, metadata)\n  SELECT\n    '00000000-0000-0000-0000-000000000001'::uuid,\n    (data->>'chatbot_id')::uuid,\n    (data->>'channel_account_id')::uuid,\n    data->>'customer_id',\n    'active',\n    'AI',\n    (data->>'fb_updated_time')::timestamptz,\n    (data->>'fb_updated_time')::timestamptz,\n    jsonb_build_object(\n      'customer_name', data->>'customer_name',\n      'page_id', data->>'page_id',\n      'page_name', data->>'page_name',\n      'product_id', data->>'product_id',\n      'product_name', data->>'product_name'\n    )\n  FROM input\n  WHERE NOT EXISTS (\n    SELECT 1 FROM conversations existing\n    WHERE existing.channel_account_id = (data->>'channel_account_id')::uuid\n      AND existing.external_user_id = (data->>'customer_id')\n  )\n  RETURNING id\n)\nSELECT coalesce(\n  (SELECT id FROM ins),\n  (SELECT id FROM conversations WHERE channel_account_id = ($1::jsonb->>'channel_account_id')::uuid AND external_user_id = ($1::jsonb->>'customer_id'))\n) AS conversation_id;",
         "options": {
           "queryReplacement": "={{ [ JSON.stringify($json) ] }}"
         }
@@ -126,8 +145,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        1440,
-        400
+        1120,
+        368
       ],
       "credentials": {
         "postgres": {
@@ -138,14 +157,13 @@
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "={{ 'https://graph.facebook.com/v26.0/' + $('4. So sánh trạng thái đồng bộ').item.json.fb_conversation_id + '/messages?fields=id,message,created_time,from,attachments&limit=100' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "__REDACTED_SECRET__"
+              "value": "={{ \"Bearer \" + $(\"4. So sánh trạng thái đồng bộ\").item.json.access_token }}"
             }
           ]
         },
@@ -156,22 +174,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1680,
-        400
+        1344,
+        368
       ]
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const pageId = '1274733055725344';\nconst items = $input.all();\nconst out = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const rawMsgs = item.json.data ?? [];\n  let convId = null;\n  try {\n    const convDb = $('5. Đảm bảo Conversation tồn tại trong DB').itemMatching(i).json;\n    convId = convDb.conversation_id;\n  } catch (e) {\n    try {\n      convId = $('5. Đảm bảo Conversation tồn tại trong DB').all()[i]?.json?.conversation_id;\n    } catch (e2) {}\n  }\n\n  for (const m of rawMsgs) {\n    // Chặn rác: Bỏ qua tin nhắn không có text và không có attachments\n    const msgText = (m.message || '').trim();\n    const hasAttachments = Boolean(m.attachments?.data?.length);\n    if (!msgText && !hasAttachments) continue;\n\n    const isFromPage = m.from?.id === pageId;\n    out.push({\n      conversation_id: convId,\n      external_message_id: m.id,\n      sender_type: isFromPage ? 'ASSISTANT' : 'USER',\n      role: isFromPage ? 'assistant' : 'user',\n      content: msgText || '[Đính kèm file/hình ảnh]',\n      created_at: m.created_time,\n      attachments: JSON.stringify(m.attachments?.data || [])\n    });\n  }\n}\n\nreturn out.length > 0 ? out.map(x => ({ json: x })) : [{ json: { empty: true } }];"
+        "jsCode": "const items = $input.all();\nconst out = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const rawMsgs = item.json.data ?? [];\n  let convId = null;\n  let pageId = null;\n  \n  try {\n    const parent = $('4. So sánh trạng thái đồng bộ').itemMatching(i).json;\n    pageId = parent.page_id;\n  } catch (e) {\n    try {\n      pageId = $('4. So sánh trạng thái đồng bộ').all()[i]?.json?.page_id;\n    } catch (e2) {}\n  }\n  pageId = pageId || '1274733055725344';\n\n  try {\n    const convDb = $('5. Đảm bảo Conversation tồn tại trong DB').itemMatching(i).json;\n    convId = convDb.conversation_id;\n  } catch (e) {\n    try {\n      convId = $('5. Đảm bảo Conversation tồn tại trong DB').all()[i]?.json?.conversation_id;\n    } catch (e2) {}\n  }\n\n  for (const m of rawMsgs) {\n    const msgText = (m.message || '').trim();\n    const hasAttachments = Boolean(m.attachments?.data?.length);\n    if (!msgText && !hasAttachments) continue;\n\n    const isFromPage = m.from?.id === pageId;\n    out.push({\n      conversation_id: convId,\n      external_message_id: m.id,\n      sender_type: isFromPage ? 'ASSISTANT' : 'USER',\n      role: isFromPage ? 'assistant' : 'user',\n      content: msgText || '[Đính kèm file/hình ảnh]',\n      created_at: m.created_time,\n      attachments: JSON.stringify(m.attachments?.data || [])\n    });\n  }\n}\n\nreturn out.length > 0 ? out.map(x => ({ json: x })) : [{ json: { empty: true } }];\n"
       },
       "id": "normalize-messages-to-db",
       "name": "7. Chuẩn hóa tin nhắn",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1920,
-        400
+        1568,
+        368
       ]
     },
     {
@@ -187,8 +204,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        2160,
-        400
+        1792,
+        368
       ],
       "credentials": {
         "postgres": {
@@ -199,7 +216,6 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
         "jsCode": "const convItems = $('4. So sánh trạng thái đồng bộ').all();\nconst out = [];\n\nfor (const it of convItems) {\n  const d = it.json;\n  const isSynced = (d.db_message_count + d.diff_count) >= d.fb_message_count;\n  \n  out.push({\n    \"Khách hàng\": d.customer_name,\n    \"Facebook ID (PSID)\": d.customer_id,\n    \"Số tin nhắn trên Page\": d.fb_message_count,\n    \"Số tin nhắn trong Database\": d.db_message_count + d.diff_count,\n    \"Trạng thái đồng bộ\": isSynced ? \"✅ ĐÃ KHỚP 100% (ĐÃ ĐỒNG BỘ)\" : \"⏳ ĐANG CẬP NHẬT\",\n    \"Thời gian tin nhắn cuối\": d.fb_updated_time,\n    \"Link xem hội thoại trên Facebook\": d.conversation_link,\n    \"Thời gian kiểm tra\": new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })\n  });\n}\n\nreturn out.map(x => ({ json: x }));"
       },
       "id": "dashboard-summary-monitor",
@@ -207,8 +223,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2400,
-        400
+        2016,
+        368
       ]
     }
   ],
@@ -217,7 +233,7 @@
       "main": [
         [
           {
-            "node": "1. Lấy danh sách hội thoại từ Meta Page",
+            "node": "0. Đọc danh sách Fanpage từ DB",
             "type": "main",
             "index": 0
           }
@@ -228,7 +244,7 @@
       "main": [
         [
           {
-            "node": "1. Lấy danh sách hội thoại từ Meta Page",
+            "node": "0. Đọc danh sách Fanpage từ DB",
             "type": "main",
             "index": 0
           }
@@ -322,21 +338,40 @@
           }
         ]
       ]
+    },
+    "0. Đọc danh sách Fanpage từ DB": {
+      "main": [
+        [
+          {
+            "node": "1. Lấy danh sách hội thoại từ Meta Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
   "staticData": null,
   "meta": null,
   "nodeGroups": [],
-  "pinData": null,
-  "versionId": "cd856ded-c2bc-4555-94a1-a7f3f952170a",
+  "pinData": {},
+  "versionId": "5393d4c9-26a7-42de-8dba-29301b8dea0c",
   "activeVersionId": null,
-  "versionCounter": 7,
+  "versionCounter": 12,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "a323ca3c-cd85-40",
+      "name": "Domain: Meta"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-09-11T03:45:19.000Z",
@@ -357,5 +392,8 @@
       }
     }
   ],
-  "versionMetadata": null
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
 }

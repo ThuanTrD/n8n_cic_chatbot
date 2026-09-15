@@ -1,11 +1,11 @@
 {
-  "updatedAt": "2026-08-22T08:46:56.188Z",
+  "updatedAt": "2026-09-15T04:21:27.000Z",
   "createdAt": "2026-08-21T07:24:26.077Z",
   "id": "Yns4Vi7tQiwFHW32",
-  "name": "AI Tool AI Agent Reply_lấy ở ytb",
+  "name": "[99 - SYSTEM] 02 - AI Tool Agent Reply",
   "description": null,
   "active": false,
-  "isArchived": false,
+  "isArchived": true,
   "nodes": [
     {
       "parameters": {
@@ -1584,12 +1584,19 @@
   "meta": null,
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "e36312e5-50fc-4f6a-a231-4008d7e4525a",
+  "versionId": "953405af-84bd-4c94-91a0-9667f25e0871",
   "activeVersionId": null,
   "versionCounter": 2,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "2c10632a-ac8a-49",
+      "name": "Type: Temp-Dev"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-08-21T07:24:26.083Z",

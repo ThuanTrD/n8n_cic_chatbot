@@ -2,7 +2,7 @@
   "updatedAt": "2026-09-11T07:32:01.000Z",
   "createdAt": "2026-09-11T07:32:01.000Z",
   "id": "systemDbGarbageCollector",
-  "name": "99 - SYSTEM - Tự động dọn rác & Tối ưu Database Supabase",
+  "name": "[99 - SYSTEM] 01 - Tự động dọn rác & Tối ưu Database Supabase",
   "description": null,
   "active": true,
   "isArchived": false,
@@ -118,7 +118,14 @@
   "versionCounter": 1,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "e9032854-4558-40",
+      "name": "Type: System"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-09-11T07:34:17.000Z",

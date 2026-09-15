@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-09-11T09:45:15.000Z",
+  "updatedAt": "2026-09-15T04:16:45.000Z",
   "createdAt": "2026-09-04T08:33:20.211Z",
   "id": "XxSiIs3HSzXfgoWl",
-  "name": "02 - META - Daily Extract Full 21 Fields",
+  "name": "[80 - META] 02 - Daily Extract Full 21 Fields",
   "description": null,
   "active": true,
   "isArchived": false,
@@ -15,7 +15,7 @@
       "typeVersion": 1,
       "position": [
         400,
-        400
+        256
       ]
     },
     {
@@ -35,13 +35,13 @@
       "typeVersion": 1.2,
       "position": [
         400,
-        608
+        448
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH active_convs AS (\n  SELECT DISTINCT c.id AS conversation_id, c.external_user_id, c.channel_account_id, c.last_message_at, c.metadata\n  FROM conversations c\n  JOIN conversation_messages m ON m.conversation_id = c.id\n  WHERE m.created_at >= NOW() - INTERVAL '365 days'\n)\nSELECT\n  ac.conversation_id,\n  coalesce(ac.metadata->>'customer_name', '') AS fb_customer_name,\n  ac.external_user_id,\n  ac.channel_account_id,\n  ac.last_message_at,\n  coalesce(ca.channel_type, 'facebook') AS platform,\n  coalesce(ca.external_account_id, ca.config->>'page_id', '') AS page_id,\n  CASE WHEN lower(coalesce(ca.channel_type, 'facebook')) = 'facebook'\n    THEN 'https://business.facebook.com/latest/inbox/all?asset_id=' || coalesce(ca.external_account_id, ca.config->>'page_id', ca.secret_ref, '') || '&selected_item_id=' || ac.external_user_id\n    ELSE '' END AS conversation_link,\n  COALESCE((\n    SELECT json_agg(json_build_object(\n      'id', m.id,\n      'sender', m.sender_type,\n      'text', m.content,\n      'created_at', m.created_at\n    ) ORDER BY m.created_at ASC)\n    FROM conversation_messages m\n    WHERE m.conversation_id = ac.conversation_id\n  ), '[]'::json) AS messages,\n  (\n    SELECT row_to_json(l) FROM (\n      SELECT l.id AS lead_id, l.full_name, l.phone, l.email, l.company,\n             l.customer_type, l.requested_quantity, l.need, l.status AS lead_status,\n             qr.request_code, qr.status AS quote_status\n      FROM leads l\n      LEFT JOIN quote_requests qr ON qr.conversation_id = l.conversation_id\n      WHERE l.conversation_id = ac.conversation_id\n      ORDER BY l.updated_at DESC LIMIT 1\n    ) l\n  ) AS old_lead\nFROM active_convs ac\nLEFT JOIN channel_accounts ca ON ca.id = ac.channel_account_id\nORDER BY ac.last_message_at DESC NULLS LAST;",
+        "query": "WITH active_convs AS (\n  SELECT DISTINCT c.id AS conversation_id, c.external_user_id, c.channel_account_id, c.last_message_at, c.metadata\n  FROM conversations c\n  JOIN conversation_messages m ON m.conversation_id = c.id\n  WHERE m.created_at >= NOW() - INTERVAL '365 days'\n)\nSELECT\n  ac.conversation_id,\n  coalesce(ac.metadata->>'customer_name', '') AS fb_customer_name,\n  ac.external_user_id,\n  ac.channel_account_id,\n  ac.last_message_at,\n  coalesce(ca.channel_type, 'facebook') AS platform,\n  coalesce(ca.external_account_id, ca.config->>'page_id', '') AS page_id,\n  coalesce(ca.name, ac.metadata->>'page_name', 'Fanpage') AS page_name,\n  coalesce((ca.config->>'product_id')::bigint, (ac.metadata->>'product_id')::bigint, 1369) AS product_id,\n  coalesce(ca.config->>'product_name', ac.metadata->>'product_name', 'CMS IntelliCAD') AS product_name,\n  CASE WHEN lower(coalesce(ca.channel_type, 'facebook')) = 'facebook'\n    THEN 'https://business.facebook.com/latest/inbox/all?asset_id=' || coalesce(ca.external_account_id, ca.config->>'page_id', ca.secret_ref, '') || '&selected_item_id=' || ac.external_user_id\n    ELSE '' END AS conversation_link,\n  COALESCE((\n    SELECT json_agg(json_build_object(\n      'id', m.id,\n      'sender', m.sender_type,\n      'text', m.content,\n      'created_at', m.created_at\n    ) ORDER BY m.created_at ASC)\n    FROM conversation_messages m\n    WHERE m.conversation_id = ac.conversation_id\n  ), '[]'::json) AS messages,\n  (\n    SELECT row_to_json(l) FROM (\n      SELECT l.id AS lead_id, l.full_name, l.phone, l.email, l.company,\n             l.customer_type, l.requested_quantity, l.need, l.status AS lead_status,\n             qr.request_code, qr.status AS quote_status\n      FROM leads l\n      LEFT JOIN quote_requests qr ON qr.conversation_id = l.conversation_id\n      WHERE l.conversation_id = ac.conversation_id\n      ORDER BY l.updated_at DESC LIMIT 1\n    ) l\n  ) AS old_lead\nFROM active_convs ac\nLEFT JOIN channel_accounts ca ON ca.id = ac.channel_account_id\nORDER BY ac.last_message_at DESC NULLS LAST;",
         "options": {}
       },
       "id": "load-pending-conversations",
@@ -49,8 +49,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        688,
-        512
+        624,
+        352
       ],
       "credentials": {
         "postgres": {
@@ -62,15 +62,15 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const row = $json;\nconst old = row.old_lead ?? {};\nconst allMessages = Array.isArray(row.messages) ? row.messages : [];\n\n// 1. Regex bóc tách SĐT & Email\nconst allText = allMessages.map(m => m.text ?? '').join('\\n');\nconst emailMatch = allText.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i);\nconst phoneMatches = allText.match(/(?:\\+84|84|0)(?:[\\s.\\-]?\\d){8,10}/g) ?? [];\nfunction norm(v) {\n  if (!v) return null;\n  let p = v.replace(/[^\\d+]/g, '');\n  if (p.startsWith('+84')) p = '0' + p.slice(3);\n  else if (p.startsWith('84')) p = '0' + p.slice(2);\n  return p;\n}\nconst regexPhone = phoneMatches.length ? norm(phoneMatches[0]) : null;\nconst regexEmail = emailMatch ? emailMatch[0].toLowerCase() : null;\n\n// 2. Cắt gọn thông minh 40 tin nhắn gần nhất\nconst recentMessages = allMessages.slice(-40);\nlet conversation = recentMessages.map((m, i) => `${i + 1}. [${m.sender ?? 'KHÁCH'}]: ${m.text ?? ''}`).join('\\n');\nif (conversation.length > 8000) {\n  conversation = '...(lược bớt hội thoại cũ)...\\n' + conversation.slice(-8000);\n}\n\nconst prompt = `Bạn là chuyên gia thẩm định & trích xuất khách hàng tiềm năng cho phần mềm CMS IntelliCAD.\nNhiệm vụ: Phân tích hội thoại, chấm điểm độ nóng của Lead (1 - 100) và xuất đúng định dạng JSON bên dưới.\n\nTIÊU CHÍ CHẤM ĐIỂM LEAD (lead_score: 1 - 100) & PHÂN LOẠI (lead_tier):\n- HOT (80 - 100): Có SĐT/Email rõ ràng, hỏi mua bản quyền cụ thể, cần báo giá gấp, hỏi phương thức thanh toán hoặc mua cho dự án công ty.\n- WARM (50 - 79): Đang tìm hiểu tính năng CAD, hỏi giá sơ bộ, xin bản dùng thử, chưa để lại SĐT.\n- COLD (1 - 49): Hỏi dạo, sinh viên xin tài liệu, spam, chào hàng quảng cáo, nhầm trang.\n\nDỮ LIỆU CŨ HIỆN CÓ:\n- Tên: ${old.full_name ?? 'null'}\n- SĐT: ${old.phone ?? 'null'}\n- Email: ${old.email ?? 'null'}\n- Công ty: ${old.company ?? 'null'}\n- Nhu cầu: ${old.need ?? 'null'}\n- Số lượng: ${old.requested_quantity ?? 'null'}\n\nSĐT trích xuất từ regex: ${regexPhone ?? 'null'}\nEmail trích xuất từ regex: ${regexEmail ?? 'null'}\n\nHỘI THOẠI KHÁCH HÀNG:\n${conversation || '(Không có nội dung)'}\n\nĐỊNH DẠNG JSON BẮT BUỘC:\n{\n  \"product\": \"CMS IntelliCAD\",\n  \"customer_name\": \"Tên khách hoặc null\",\n  \"phone\": \"Số điện thoại hoặc null\",\n  \"email\": \"Email hoặc null\",\n  \"company\": \"Tên công ty hoặc null\",\n  \"customer_type\": \"Cá nhân | Doanh nghiệp | Chưa xác định\",\n  \"quantity\": 1,\n  \"need\": \"Tóm tắt nhu cầu cụ thể\",\n  \"request_quote\": true,\n  \"lead_score\": 85,\n  \"lead_tier\": \"HOT\",\n  \"lead_summary\": \"Khách cần 3 key cho công ty xây dựng, đã để lại SĐT\",\n  \"confidence\": 0.95\n}`;\n\nreturn {\n  json: {\n    conversation_id: row.conversation_id,\n    external_user_id: row.external_user_id,\n    channel_account_id: row.channel_account_id,\n    platform: row.platform,\n    page_id: row.page_id,\n    conversation_link: row.conversation_link,\n    last_message_at: row.last_message_at,\n    old_lead: old,\n    fb_customer_name: row.fb_customer_name || '',\n    regex_phone: regexPhone,\n    regex_email: regexEmail,\n    ai_payload: {\n      model: \"qwen3-vl-30b\",\n      messages: [\n        { \"role\": \"system\", \"content\": \"Bạn là chuyên gia thẩm định Lead bán hàng B2B. Luôn trả lời bằng định dạng JSON thuần túy, không giải thích.\" },\n        { \"role\": \"user\", \"content\": prompt }\n      ],\n      temperature: 0.1,\n      max_tokens: 1000\n    }\n  }\n};"
+        "jsCode": "const row = $json;\nconst old = row.old_lead ?? {};\nconst allMessages = Array.isArray(row.messages) ? row.messages : [];\nconst pageId = String(row.page_id || '');\nconst isTechaz = (pageId === '1274733055725344');\n\n// 1. Regex bóc tách SĐT & Email\nconst allText = allMessages.map(m => m.text ?? \"\").join(\"\\n\");\nconst emailMatch = allText.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i);\nconst phoneMatches = allText.match(/(?:\\+84|84|0)(?:[\\s.\\-]?\\d){8,10}/g) ?? [];\nfunction norm(v) {\n  if (!v) return null;\n  let p = v.replace(/[^\\d+]/g, \"\");\n  if (p.startsWith(\"+84\")) p = \"0\" + p.slice(3);\n  else if (p.startsWith(\"84\")) p = \"0\" + p.slice(2);\n  return p;\n}\nconst regexPhone = phoneMatches.length ? norm(phoneMatches[0]) : null;\nconst regexEmail = emailMatch ? emailMatch[0].toLowerCase() : null;\n\n// 2. Cắt gọn thông minh 40 tin nhắn gần nhất\nconst recentMessages = allMessages.slice(-40);\nlet conversation = recentMessages.map((m, i) => `${i + 1}. [${m.sender ?? \"KHÁCH\"}]: ${m.text ?? \"\"}`).join(\"\\n\");\nif (conversation.length > 8000) {\n  conversation = \"...(lược bớt hội thoại cũ)...\\n\" + conversation.slice(-8000);\n}\n\nlet prompt = \"\";\n\nif (isTechaz) {\n  // --- PAGE TECHAZ: CHỈ CÓ DUY NHẤT 1 SẢN PHẨM LÀ CMS INTELLICAD ---\n  prompt = `Bạn là chuyên gia thẩm định & trích xuất khách hàng tiềm năng cho phần mềm bản quyền CMS IntelliCAD (Công ty Cổ phần Techaz).\nNhiệm vụ: Phân tích kỹ hội thoại Facebook Messenger để trích xuất đầy đủ thông tin khách hàng và nhu cầu/mong muốn thực tế của họ về CMS IntelliCAD.\n\nTIÊU CHÍ PHÂN TÍCH:\n- Sản phẩm luôn là: CMS IntelliCAD (các phiên bản: PE, PE Plus, Pro).\n- Nhu cầu (need): Khách muốn dùng thử (trial), hỏi giá bản quyền vĩnh viễn/thuê bao, xin báo giá bao nhiêu license, hỏi so sánh AutoCAD, hay gặp lỗi cài đặt.\n- Yêu cầu báo giá (request_quote): true nếu khách hỏi giá, xin báo giá, hỏi chi phí mua, cung cấp MST xuất hóa đơn; false nếu chỉ dùng thử/hỏi kỹ thuật.\n- Điểm Lead: HOT (80-100, có SĐT/Email rõ ràng, cần báo giá gấp), WARM (50-79, tìm hiểu tính năng, chưa có SĐT), COLD (1-49, spam, chào hàng).\n\nDỮ LIỆU CŨ HIỆN CÓ:\n- Tên: ${old.full_name ?? \"null\"} | SĐT: ${old.phone ?? \"null\"} | Email: ${old.email ?? \"null\"} | Công ty: ${old.company ?? \"null\"}\n- SĐT trích xuất regex: ${regexPhone ?? \"null\"} | Email: ${regexEmail ?? \"null\"}\n\nHỘI THOẠI KHÁCH HÀNG (SẢN PHẨM: CMS IntelliCAD):\n${conversation || \"(Không có nội dung)\"}\n\nĐỊNH DẠNG JSON BẮT BUỘC (DUY NHẤT JSON HỢP LỆ):\n{\n  \"product_name\": \"CMS IntelliCAD\",\n  \"product_code\": \"CMS_INTELLICAD\",\n  \"customer_name\": \"Tên khách hoặc null\",\n  \"phone\": \"Số điện thoại hoặc null\",\n  \"email\": \"Email hoặc null\",\n  \"company\": \"Tên công ty hoặc null\",\n  \"customer_type\": \"Cá nhân | Doanh nghiệp | Chưa xác định\",\n  \"quantity\": 1,\n  \"need\": \"Mô tả chi tiết nhu cầu\",\n  \"request_quote\": true,\n  \"intent\": \"Báo giá & Mua bản quyền | Dùng thử phần mềm | Tư vấn kỹ thuật | Tìm hiểu thông tin\",\n  \"lead_score\": 85,\n  \"lead_tier\": \"HOT | WARM | COLD\",\n  \"lead_summary\": \"Tóm tắt ngắn gọn 1 câu\",\n  \"confidence\": 0.95\n}`;\n} else {\n  // --- PAGE CIC: ĐA DẠNG NHIỀU SẢN PHẨM & GIẢI PHÁP ---\n  prompt = `Bạn là chuyên gia thẩm định & trích xuất khách hàng tiềm năng cao cấp của Công ty Cổ phần Công nghệ và Tư vấn CIC (CIC JSC).\n\nBỐI CẢNH DOANH NGHIỆP:\n- Page Facebook: \"CIC Technology and Consultancy JSC\"\n- Công ty CIC cung cấp ĐA DẠNG CÁC SẢN PHẨM & GIẢI PHÁP KỸ THUẬT:\n  1. Phần mềm CAD: \"enjiCAD\" (CAD bản quyền thay thế AutoCAD)\n  2. Robot & Thiết bị Xây dựng: \"Robot Xây dựng\" (Robot gạt phẳng, xoa nền, xoa mịn bê tông; Robot kiểm tra trạm biến áp,...)\n  3. Phần mềm Kết cấu CSi: \"ETABS\", \"SAP2000\", \"SAFE\", \"CSiBridge\", \"PERFORM-3D\"\n  4. Phần mềm Địa kỹ thuật: \"PLAXIS 2D\", \"PLAXIS 3D\", \"GEO5\", \"GeoStudio\"\n  5. Phần mềm Xây dựng & Dự toán: \"Escon 15\", \"RDW\", \"VinaSAS\", \"stCAD\", \"IDEA StatiCa\"\n  6. Thiết bị thí nghiệm & đo đạc: Máy quét 3D Laser, Radar xuyên đất (GPR), Thiết bị kiểm tra kết cấu bê tông, NDT\n  7. Giao thông & Môi trường: \"PTV VISSIM\", \"PTV VISUM\", \"CadnaA\", \"OILMAP\"\n\nQUY TẮC BÓC TÁCH CỰC KỲ CẨN THẬN:\n- \"product_name\": Đọc kỹ toàn bộ tin nhắn, câu hỏi, và form đăng ký để xác định CHÍNH XÁC tên sản phẩm/giải pháp khách hàng đang quan tâm hoặc xin báo giá.\n  * Tuyệt đối KHÔNG tự ý mặc định là \"enjiCAD\" nếu khách hỏi về Robot, Kết cấu hoặc thiết bị khác!\n  * Ví dụ khách hỏi về Robot xoa nền/gạt phẳng -> ghi: \"Robot Xây dựng\" hoặc tên cụ thể.\n  * Nếu khách hỏi phần mềm CAD -> ghi: \"enjiCAD\".\n  * Nếu khách hỏi phần mềm khác -> ghi đúng tên: \"ETABS\", \"PLAXIS 2D\", \"GEO5\", \"Escon 15\",...\n- \"product_code\": \"ROBOT_XAY_DUNG\" | \"ENJICAD\" | \"PLAXIS_2D\" | \"ETABS\" | \"GEO5\" | \"ESCON\" | \"OTHER\".\n- \"customer_name\": Họ và tên khách hàng (chuẩn hóa tên người thật, ví dụ: \"Đinh Thuật Chống Thấm\", \"Quân Đinh\").\n- \"phone\": Số điện thoại (chuẩn hóa dạng 0xxxxxxxxx).\n- \"email\": Email liên hệ (chữ thường).\n- \"company\": Tên công ty / doanh nghiệp / nhà thầu (ví dụ: \"T&T\", \"CTY Kiến Nam\").\n- \"customer_type\": \"Doanh nghiệp\" (nếu có công ty, nhà thầu, MST) | \"Cá nhân\" | \"Chưa xác định\".\n- \"quantity\": Số lượng cần mua / báo giá (mặc định 1 nếu không nói rõ).\n- \"need\": Chi tiết cụ thể nhu cầu và mong muốn của khách.\n- \"request_quote\": true (nếu khách hỏi giá, xin báo giá, hỏi mua) | false (chỉ hỏi dạo/tìm hiểu).\n- \"lead_score\": 1 - 100.\n- \"lead_tier\": HOT (80-100) | WARM (50-79) | COLD (1-49).\n- \"lead_summary\": 1 câu tóm tắt chính xác.\n\nDỮ LIỆU CŨ HIỆN CÓ:\n- Tên: ${old.full_name ?? \"null\"} | SĐT: ${old.phone ?? \"null\"} | Email: ${old.email ?? \"null\"} | Công ty: ${old.company ?? \"null\"}\n- SĐT trích xuất regex: ${regexPhone ?? \"null\"} | Email: ${regexEmail ?? \"null\"}\n\nHỘI THOẠI KHÁCH HÀNG:\n${conversation || \"(Không có nội dung)\"}\n\nĐỊNH DẠNG JSON BẮT BUỘC (DUY NHẤT JSON HỢP LỆ):\n{\n  \"product_name\": \"Tên sản phẩm cụ thể khách quan tâm\",\n  \"product_code\": \"Mã sản phẩm\",\n  \"customer_name\": \"Tên khách hoặc null\",\n  \"phone\": \"Số điện thoại hoặc null\",\n  \"email\": \"Email hoặc null\",\n  \"company\": \"Tên công ty hoặc null\",\n  \"customer_type\": \"Doanh nghiệp | Cá nhân | Chưa xác định\",\n  \"quantity\": 1,\n  \"need\": \"Mô tả chi tiết nhu cầu\",\n  \"request_quote\": true,\n  \"intent\": \"Báo giá & Mua sản phẩm | Dùng thử phần mềm | Tư vấn kỹ thuật | Tìm hiểu giải pháp\",\n  \"lead_score\": 85,\n  \"lead_tier\": \"HOT | WARM | COLD\",\n  \"lead_summary\": \"Tóm tắt ngắn gọn 1 câu\",\n  \"confidence\": 0.95\n}`;\n}\n\nreturn {\n  json: {\n    conversation_id: row.conversation_id,\n    external_user_id: row.external_user_id,\n    channel_account_id: row.channel_account_id,\n    platform: row.platform,\n    page_id: row.page_id,\n    page_name: row.page_name,\n    conversation_link: row.conversation_link,\n    last_message_at: row.last_message_at,\n    old_lead: old,\n    all_text: allText,\n    fb_customer_name: row.fb_customer_name || \"\",\n    regex_phone: regexPhone,\n    regex_email: regexEmail,\n    ai_payload: {\n      model: \"qwen3-vl-30b\",\n      messages: [\n        { \"role\": \"system\", \"content\": \"Bạn là chuyên gia thẩm định Lead bán hàng B2B. Luôn trả lời bằng định dạng JSON thuần túy, không giải thích.\" },\n        { \"role\": \"user\", \"content\": prompt }\n      ],\n      temperature: 0.1,\n      max_tokens: 1000\n    }\n  }\n};"
       },
       "id": "build-ai-request",
       "name": "Build AI Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        944,
-        512
+        848,
+        352
       ]
     },
     {
@@ -109,8 +109,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1200,
-        512
+        1072,
+        352
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -120,21 +120,21 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const response = $json;\nconst source = $('Build AI Request').item.json;\nconst old = source.old_lead ?? {};\n\nlet rawContent = response.choices?.[0]?.message?.content ?? '';\nlet cleanJson = rawContent.trim();\nif (cleanJson.startsWith('```')) {\n  cleanJson = cleanJson.replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '').trim();\n}\n\nlet ai = {};\ntry {\n  ai = JSON.parse(cleanJson);\n} catch (e) {\n  ai = {\n    customer_name: null,\n    phone: source.regex_phone,\n    email: source.regex_email,\n    company: null,\n    customer_type: 'Chưa xác định',\n    quantity: null,\n    need: null,\n    request_quote: false,\n    lead_score: (source.regex_phone ? 75 : 40),\n    lead_tier: (source.regex_phone ? 'HOT' : 'WARM'),\n    lead_summary: 'Trích xuất tự động qua Regex',\n    confidence: 0.0\n  };\n}\n\nconst pref = (n, o) => (n === null || n === undefined || n === '') ? (o ?? null) : n;\nconst customerName = pref(ai.customer_name, old.full_name) || source.fb_customer_name || 'Khách Facebook';\nconst phone = pref(ai.phone ?? source.regex_phone, old.phone);\nconst email = pref(ai.email ?? source.regex_email, old.email);\nconst company = pref(ai.company, old.company);\nconst quantity = pref(ai.quantity, old.requested_quantity);\nconst need = pref(ai.need, old.need);\n\nlet customerType = ['Cá nhân', 'Doanh nghiệp'].includes(ai.customer_type) ? ai.customer_type : (old.customer_type === 'personal' ? 'Cá nhân' : (old.customer_type === 'business' ? 'Doanh nghiệp' : 'Chưa xác định'));\nconst requestQuote = Boolean(ai.request_quote || old.quote_status);\n\nlet quotationStatus = old.quote_status ?? 'CHƯA BÁO GIÁ';\nif (quotationStatus === 'CHƯA BÁO GIÁ' && requestQuote) {\n  quotationStatus = 'ĐANG XỬ LÝ';\n}\n\nlet leadStatus = old.lead_status ?? 'new';\nif ((phone || email) && need) {\n  leadStatus = 'qualified';\n}\n\nlet score = Number(ai.lead_score ?? 50);\nif (phone && score < 75) score = 80;\nlet tier = String(ai.lead_tier || (score >= 80 ? 'HOT' : (score >= 50 ? 'WARM' : 'COLD'))).toUpperCase();\nconst isHot = tier === 'HOT' || score >= 80;\n\nconst now = new Date().toISOString();\n\nreturn {\n  json: {\n    conversation_id: source.conversation_id,\n    external_user_id: source.external_user_id,\n    customer_name: customerName,\n    phone: phone,\n    email: email,\n    company: company,\n    customer_type: customerType,\n    quantity: quantity,\n    need: need,\n    product: 'CMS IntelliCAD',\n    request_quote: requestQuote,\n    lead_status: leadStatus,\n    quotation_status: quotationStatus,\n    quote_code: old.request_code ?? null,\n    conversation_link: source.conversation_link,\n    last_contact_at: source.last_message_at ?? now,\n    lead_score: score,\n    lead_tier: tier,\n    lead_summary: ai.lead_summary || '',\n    is_hot_lead: isHot,\n    extraction_confidence: Number(ai.confidence ?? 0.8)\n  }\n};"
+        "jsCode": "const response = $json;\nconst source = $('Build AI Request').item.json;\nconst old = source.old_lead ?? {};\n\nlet rawContent = response.choices?.[0]?.message?.content ?? \"\";\nlet cleanJson = rawContent.trim();\nif (cleanJson.startsWith(\"```\")) {\n  cleanJson = cleanJson.replace(/^```(?:json)?\\s*/i, \"\").replace(/```\\s*$/, \"\").trim();\n}\n\nlet ai = {};\ntry {\n  ai = JSON.parse(cleanJson);\n} catch (e) {\n  ai = {\n    product_name: null,\n    product_code: null,\n    customer_name: null,\n    phone: source.regex_phone,\n    email: source.regex_email,\n    company: null,\n    customer_type: \"Chưa xác định\",\n    quantity: null,\n    need: null,\n    request_quote: false,\n    intent: \"Tìm hiểu thông tin\",\n    lead_score: (source.regex_phone ? 75 : 40),\n    lead_tier: (source.regex_phone ? \"HOT\" : \"WARM\"),\n    lead_summary: \"Trích xuất tự động qua Regex\",\n    confidence: 0.0\n  };\n}\n\n// BỘ GIẢI MÃ SẢN PHẨM CHÍNH XÁC THEO PAGE (PRODUCT RESOLVER)\nfunction resolveProduct(pageId, aiProductName, aiProductCode, textContent) {\n  if (String(pageId) === '1274733055725344') {\n    // Techaz page -> 100% CMS IntelliCAD\n    return { id: 1369, name: 'CMS IntelliCAD' };\n  }\n  \n  // CIC Page (192074964188183)\n  const combined = ((aiProductName || '') + ' ' + (aiProductCode || '') + ' ' + (textContent || '')).toLowerCase();\n  \n  if (combined.includes('robot') || combined.includes('xoa nền') || combined.includes('gạt phẳng') || combined.includes('xoa mịn') || combined.includes('bê tông')) {\n    return { id: 1363, name: 'Robot Xây dựng' };\n  }\n  if (combined.includes('enjicad') || combined.includes('enji cad') || combined.includes('cad thay thế')) {\n    return { id: 1103, name: 'enjiCAD' };\n  }\n  if (combined.includes('plaxis')) {\n    if (combined.includes('3d')) return { id: 1128, name: 'PLAXIS 3D' };\n    return { id: 1127, name: 'PLAXIS 2D' };\n  }\n  if (combined.includes('etabs')) {\n    return { id: 1110, name: 'ETABS' };\n  }\n  if (combined.includes('sap2000') || combined.includes('sap 2000')) {\n    return { id: 1109, name: 'SAP2000' };\n  }\n  if (combined.includes('geo5')) {\n    return { id: 1214, name: 'GEO5' };\n  }\n  if (combined.includes('geostudio')) {\n    return { id: 1213, name: 'GeoStudio' };\n  }\n  if (combined.includes('escon')) {\n    return { id: 1105, name: 'Escon 15' };\n  }\n  if (combined.includes('safe')) {\n    return { id: 1111, name: 'SAFE' };\n  }\n  if (combined.includes('csibridge')) {\n    return { id: 1113, name: 'CSiBridge' };\n  }\n  if (combined.includes('vissim')) {\n    return { id: 1147, name: 'PTV VISSIM' };\n  }\n  if (combined.includes('visum')) {\n    return { id: 1146, name: 'PTV VISUM' };\n  }\n  if (combined.includes('cadnaa')) {\n    return { id: 1173, name: 'CadnaA' };\n  }\n  if (combined.includes('radar') || combined.includes('georadar') || combined.includes('gpr')) {\n    return { id: 1207, name: 'Radar xuyên đất (GPR/GEORADAR)' };\n  }\n  if (combined.includes('conquest')) {\n    return { id: 1259, name: 'Thiết bị scan bê tông bằng radar CONQUEST 100' };\n  }\n  if (aiProductName && aiProductName !== 'null' && aiProductName.trim()) {\n    return { id: 1103, name: aiProductName.trim() };\n  }\n  return { id: 1103, name: 'enjiCAD' };\n}\n\nconst resolvedProd = resolveProduct(source.page_id, ai.product_name, ai.product_code, source.all_text);\nconst productId = resolvedProd.id;\nconst productName = resolvedProd.name;\n\nconst pref = (n, o) => (n === null || n === undefined || n === \"\") ? (o ?? null) : n;\nconst customerName = pref(ai.customer_name, old.full_name) || source.fb_customer_name || \"Khách Facebook\";\nconst phone = pref(ai.phone ?? source.regex_phone, old.phone);\nconst email = pref(ai.email ?? source.regex_email, old.email);\nconst company = pref(ai.company, old.company);\nconst quantity = pref(ai.quantity, old.requested_quantity);\nconst need = pref(ai.need, old.need) || (\"Tư vấn giải pháp \" + productName);\n\nlet customerType = [\"Cá nhân\", \"Doanh nghiệp\"].includes(ai.customer_type) ? ai.customer_type : (old.customer_type === \"personal\" ? \"Cá nhân\" : (old.customer_type === \"business\" ? \"Doanh nghiệp\" : \"Chưa xác định\"));\nconst requestQuote = Boolean(ai.request_quote || old.quote_status);\n\nlet quotationStatus = old.quote_status ?? \"CHƯA BÁO GIÁ\";\nif (quotationStatus === \"CHƯA BÁO GIÁ\" && requestQuote) {\n  quotationStatus = \"ĐANG XỬ LÝ\";\n}\n\nlet leadStatus = old.lead_status ?? \"new\";\nif ((phone || email) && need) {\n  leadStatus = \"qualified\";\n}\n\nlet score = Number(ai.lead_score ?? 50);\nif (phone && score < 75) score = 80;\nlet tier = String(ai.lead_tier || (score >= 80 ? \"HOT\" : (score >= 50 ? \"WARM\" : \"COLD\"))).toUpperCase();\nconst isHot = tier === \"HOT\" || score >= 80;\n\nconst now = new Date().toISOString();\n\nreturn {\n  json: {\n    conversation_id: source.conversation_id,\n    external_user_id: source.external_user_id,\n    channel_account_id: source.channel_account_id,\n    product_id: productId,\n    product: productName,\n    customer_name: customerName,\n    phone: phone,\n    email: email,\n    company: company,\n    customer_type: customerType,\n    quantity: quantity,\n    need: need,\n    intent: ai.intent || (requestQuote ? \"Báo giá & Mua sản phẩm\" : \"Tìm hiểu thông tin\"),\n    request_quote: requestQuote,\n    lead_status: leadStatus,\n    quotation_status: quotationStatus,\n    quote_code: old.request_code ?? null,\n    conversation_link: source.conversation_link,\n    last_contact_at: source.last_message_at ?? now,\n    lead_score: score,\n    lead_tier: tier,\n    lead_summary: ai.lead_summary || \"\",\n    is_hot_lead: isHot,\n    extraction_confidence: Number(ai.confidence ?? 0.8)\n  }\n};"
       },
       "id": "merge-build-full-fields",
       "name": "Merge + Build Full 21 Fields",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1472,
-        512
+        1296,
+        352
       ]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH input AS (\n  SELECT $1::jsonb AS data\n),\nlead_upsert AS (\n  INSERT INTO leads (\n    conversation_id, product_id, full_name, phone, email, company,\n    customer_type, requested_quantity, need, source, status, last_contacted_at, idempotency_key, updated_at\n  )\n  SELECT\n    (data->>'conversation_id')::uuid,\n    1369::bigint,\n    coalesce(nullif(trim(data->>'customer_name'), ''), nullif(trim(data->>'fb_customer_name'), ''), 'Khách Facebook'),\n    coalesce(nullif(trim(data->>'phone'), ''), 'Chưa có SĐT'),\n    nullif(trim(data->>'email'), ''),\n    nullif(trim(data->>'company'), ''),\n    CASE WHEN data->>'customer_type' IN ('personal', 'business', 'unknown') THEN data->>'customer_type'\n         WHEN data->>'customer_type' = 'Cá nhân' THEN 'personal'\n         WHEN data->>'customer_type' = 'Doanh nghiệp' THEN 'business'\n         ELSE 'unknown' END,\n    CASE WHEN coalesce(data->>'quantity', '') ~ '^[0-9]+([.,][0-9]+)?$' AND replace(data->>'quantity', ',', '.')::numeric > 0 THEN replace(data->>'quantity', ',', '.')::numeric ELSE NULL END,\n    coalesce(nullif(trim(data->>'need'), ''), 'Tư vấn bản quyền phần mềm CMS IntelliCAD'),\n    'facebook',\n    coalesce(nullif(trim(data->>'lead_status'), ''), 'new'),\n    coalesce((data->>'last_contact_at')::timestamptz, now()),\n    (data->>'conversation_id') || ':1369:customer_profile',\n    now()\n  FROM input\n  ON CONFLICT (idempotency_key) DO UPDATE SET\n    full_name = coalesce(nullif(trim(excluded.full_name), ''), nullif(leads.full_name, 'Khách Facebook'), excluded.full_name, 'Khách Facebook'),\n    phone = CASE \n      WHEN excluded.phone ~ '^[0-9+]+$' AND excluded.phone <> 'Chưa có SĐT' THEN excluded.phone \n      ELSE coalesce(nullif(leads.phone, 'Chưa có SĐT'), excluded.phone, 'Chưa có SĐT') \n    END,\n    email = coalesce(excluded.email, leads.email),\n    company = coalesce(excluded.company, leads.company),\n    customer_type = coalesce(excluded.customer_type, leads.customer_type),\n    requested_quantity = coalesce(excluded.requested_quantity, leads.requested_quantity),\n    need = coalesce(excluded.need, leads.need, 'Tư vấn bản quyền phần mềm CMS IntelliCAD'),\n    status = coalesce(excluded.status, leads.status),\n    last_contacted_at = coalesce(excluded.last_contacted_at, leads.last_contacted_at),\n    updated_at = now()\n  RETURNING id, conversation_id, product_id, full_name, phone, email, company, customer_type, requested_quantity, need, status, last_contacted_at\n),\nquote_upsert AS (\n  INSERT INTO quote_requests (request_code, conversation_id, customer_name, phone, email, company, notes, idempotency_key)\n  SELECT\n    'QR-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)),\n    (data->>'conversation_id')::uuid,\n    coalesce(nullif(trim(data->>'customer_name'), ''), nullif(trim(data->>'fb_customer_name'), ''), 'Khách Facebook'),\n    data->>'phone',\n    nullif(trim(data->>'email'), ''),\n    nullif(trim(data->>'company'), ''),\n    coalesce(nullif(trim(data->>'need'), ''), 'Yêu cầu báo giá CMS IntelliCAD'),\n    (data->>'conversation_id') || ':1369:auto_quote:' || regexp_replace(coalesce(data->>'phone', ''), '[^0-9]', '', 'g')\n  FROM input\n  WHERE coalesce((data->>'request_quote')::boolean, false)\n    AND nullif(trim(data->>'phone'), '') IS NOT NULL\n    AND data->>'phone' <> 'Chưa có SĐT'\n  ON CONFLICT (idempotency_key) DO UPDATE SET\n    customer_name = excluded.customer_name,\n    phone = excluded.phone,\n    email = excluded.email,\n    company = excluded.company,\n    notes = excluded.notes,\n    updated_at = now()\n  RETURNING id, conversation_id, request_code, status\n),\nquote_item AS (\n  INSERT INTO quote_request_items (quote_request_id, product_id, quantity)\n  SELECT q.id, 1369::bigint, greatest(coalesce((i.data->>'quantity')::numeric, 1), 1)\n  FROM quote_upsert q CROSS JOIN input i\n  WHERE NOT EXISTS (\n    SELECT 1 FROM quote_request_items existing\n    WHERE existing.quote_request_id = q.id AND existing.product_id = 1369::bigint AND existing.product_version_id IS NULL\n  )\n  RETURNING quote_request_id, product_id, quantity\n)\nSELECT\n  l.*,\n  coalesce(q.request_code, '') AS quote_code,\n  coalesce(q.status, 'CHƯA BÁO GIÁ') AS quotation_status\nFROM lead_upsert l\nLEFT JOIN quote_upsert q ON q.conversation_id = l.conversation_id;",
+        "query": "WITH input AS (\n  SELECT $1::jsonb AS data\n),\nlead_upsert AS (\n  INSERT INTO leads (\n    conversation_id, product_id, full_name, phone, email, company,\n    customer_type, requested_quantity, need, source, status, last_contacted_at, idempotency_key, updated_at\n  )\n  SELECT\n    (data->>'conversation_id')::uuid,\n    coalesce((data->>'product_id')::bigint, 1369),\n    coalesce(nullif(trim(data->>'customer_name'), ''), nullif(trim(data->>'fb_customer_name'), ''), 'Khách Facebook'),\n    coalesce(nullif(trim(data->>'phone'), ''), 'Chưa có SĐT'),\n    nullif(trim(data->>'email'), ''),\n    nullif(trim(data->>'company'), ''),\n    CASE WHEN data->>'customer_type' IN ('personal', 'business', 'unknown') THEN data->>'customer_type'\n         WHEN data->>'customer_type' = 'Cá nhân' THEN 'personal'\n         WHEN data->>'customer_type' = 'Doanh nghiệp' THEN 'business'\n         ELSE 'unknown' END,\n    CASE WHEN coalesce(data->>'quantity', '') ~ '^[0-9]+([.,][0-9]+)?$' AND replace(data->>'quantity', ',', '.')::numeric > 0 THEN replace(data->>'quantity', ',', '.')::numeric ELSE NULL END,\n    coalesce(nullif(trim(data->>'need'), ''), 'Tư vấn bản quyền phần mềm ' || coalesce(data->>'product', 'CAD')),\n    'facebook',\n    coalesce(nullif(trim(data->>'lead_status'), ''), 'new'),\n    coalesce((data->>'last_contact_at')::timestamptz, now()),\n    (data->>'conversation_id') || ':' || coalesce(data->>'product_id', '1369') || ':customer_profile',\n    now()\n  FROM input\n  ON CONFLICT (idempotency_key) DO UPDATE SET\n    full_name = coalesce(nullif(trim(excluded.full_name), ''), nullif(leads.full_name, 'Khách Facebook'), excluded.full_name, 'Khách Facebook'),\n    phone = CASE \n      WHEN excluded.phone ~ '^[0-9+]+$' AND excluded.phone <> 'Chưa có SĐT' THEN excluded.phone \n      ELSE coalesce(nullif(leads.phone, 'Chưa có SĐT'), excluded.phone, 'Chưa có SĐT') \n    END,\n    email = coalesce(excluded.email, leads.email),\n    company = coalesce(excluded.company, leads.company),\n    customer_type = coalesce(excluded.customer_type, leads.customer_type),\n    requested_quantity = coalesce(excluded.requested_quantity, leads.requested_quantity),\n    need = coalesce(excluded.need, leads.need),\n    status = coalesce(excluded.status, leads.status),\n    last_contacted_at = coalesce(excluded.last_contacted_at, leads.last_contacted_at),\n    updated_at = now()\n  RETURNING id, conversation_id, product_id, full_name, phone, email, company, customer_type, requested_quantity, need, status, last_contacted_at\n),\nquote_upsert AS (\n  INSERT INTO quote_requests (request_code, conversation_id, customer_name, phone, email, company, notes, idempotency_key)\n  SELECT\n    'QR-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)),\n    (data->>'conversation_id')::uuid,\n    coalesce(nullif(trim(data->>'customer_name'), ''), nullif(trim(data->>'fb_customer_name'), ''), 'Khách Facebook'),\n    data->>'phone',\n    nullif(trim(data->>'email'), ''),\n    nullif(trim(data->>'company'), ''),\n    coalesce(nullif(trim(data->>'need'), ''), 'Yêu cầu báo giá ' || coalesce(data->>'product', 'CAD')),\n    (data->>'conversation_id') || ':' || coalesce(data->>'product_id', '1369') || ':auto_quote:' || regexp_replace(coalesce(data->>'phone', ''), '[^0-9]', '', 'g')\n  FROM input\n  WHERE coalesce((data->>'request_quote')::boolean, false)\n    AND nullif(trim(data->>'phone'), '') IS NOT NULL\n    AND data->>'phone' <> 'Chưa có SĐT'\n  ON CONFLICT (idempotency_key) DO UPDATE SET\n    customer_name = excluded.customer_name,\n    phone = excluded.phone,\n    email = excluded.email,\n    company = excluded.company,\n    notes = excluded.notes,\n    updated_at = now()\n  RETURNING id, conversation_id, request_code, status\n),\nquote_item AS (\n  INSERT INTO quote_request_items (quote_request_id, product_id, quantity)\n  SELECT q.id, coalesce((i.data->>'product_id')::bigint, 1369), greatest(coalesce((i.data->>'quantity')::numeric, 1), 1)\n  FROM quote_upsert q CROSS JOIN input i\n  WHERE NOT EXISTS (\n    SELECT 1 FROM quote_request_items existing\n    WHERE existing.quote_request_id = q.id AND existing.product_id = coalesce((i.data->>'product_id')::bigint, 1369) AND existing.product_version_id IS NULL\n  )\n  RETURNING quote_request_id, product_id, quantity\n)\nSELECT\n  l.*,\n  coalesce(q.request_code, '') AS quote_code,\n  coalesce(q.status, 'CHƯA BÁO GIÁ') AS quotation_status\nFROM lead_upsert l\nLEFT JOIN quote_upsert q ON q.conversation_id = l.conversation_id;",
         "options": {
           "queryReplacement": "={{ [ JSON.stringify($json) ] }}"
         }
@@ -144,8 +144,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [
-        1728,
-        512
+        1520,
+        352
       ],
       "credentials": {
         "postgres": {
@@ -164,8 +164,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1984,
-        512
+        1744,
+        448
       ]
     },
     {
@@ -197,8 +197,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2192,
-        496
+        1968,
+        448
       ]
     },
     {
@@ -214,8 +214,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2384,
-        256
+        2192,
+        448
       ],
       "webhookId": "6db3c2ae-3bec-49fe-a77d-9a1b1df6e77b",
       "credentials": {
@@ -225,6 +225,36 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn [{\n  json: {\n    status: 'DATABASE_UPDATED',\n    total_processed: items.length,\n    completed_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "e1a2b3c4-d5e6-47a8-b9c0-112233445566",
+      "name": "Chốt đợt cập nhật DB",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.18.0.1:18650/sync-sheets",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "f2b3c4d5-e6a7-48b9-c0d1-223344556677",
+      "name": "Đồng bộ 2 Tab Google Sheets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1968,
+        256
+      ]
     }
   ],
   "connections": {
@@ -301,6 +331,11 @@
             "node": "OUTPUT - Exact 21 Vietnamese Columns",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Chốt đợt cập nhật DB",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -327,6 +362,17 @@
         ],
         []
       ]
+    },
+    "Chốt đợt cập nhật DB": {
+      "main": [
+        [
+          {
+            "node": "Đồng bộ 2 Tab Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -340,12 +386,19 @@
   },
   "nodeGroups": [],
   "pinData": {},
-  "versionId": "1b7684b6-1147-4d05-9377-ea8fc2237e2f",
+  "versionId": "b2cea5d9-6174-474c-9076-683708dfccfa",
   "activeVersionId": null,
-  "versionCounter": 37,
+  "versionCounter": 40,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "a323ca3c-cd85-40",
+      "name": "Domain: Meta"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-09-04T08:33:20.218Z",

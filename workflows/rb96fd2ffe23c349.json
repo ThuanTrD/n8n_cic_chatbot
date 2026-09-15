@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-09-15T04:19:33.098Z",
-  "createdAt": "2026-09-10T04:39:20.276Z",
-  "id": "extractCustomerSheetBot",
-  "name": "[02 - INTELLICAD] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
-  "description": "Bot t? ??ng ??c l?ch s? cu?c tr? chuy?n (Tab 1), d?ng AI tr?ch xu?t th?ng tin kh?ch h?ng, ph?n lo?i nhu c?u (b?o gi?, ch?a b?o gi?, d?ng th? tr?i nghi?m) v? ghi v?o Tab 2 B?o gi?.",
+  "updatedAt": "2026-09-15T08:56:33.000Z",
+  "createdAt": "2026-09-15T08:40:00.000Z",
+  "id": "rb96fd2ffe23c349",
+  "name": "[03 - ROBOT XÂY DỰNG] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+  "description": null,
   "active": false,
   "isArchived": false,
   "nodes": [
@@ -14,7 +14,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        224,
+        220,
         240
       ]
     },
@@ -34,21 +34,21 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        224,
-        432
+        220,
+        420
       ]
     },
     {
       "parameters": {
-        "command": "/usr/local/bin/node /home/node/bot_extract_all_customers.js"
+        "command": "/usr/local/bin/node /home/node/bot_extract_all_customers_enjicad.js"
       },
       "id": "e4a91c78-1b2c-4f5d-9c3e-8fa1b2c3d4e5",
       "name": "Chạy Bot Trích xuất Khách hàng & Báo giá",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        448,
-        336
+        500,
+        320
       ]
     },
     {
@@ -60,8 +60,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
-        336
+        740,
+        320
       ]
     }
   ],
@@ -101,32 +101,31 @@
     }
   },
   "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
+    "executionOrder": "v1"
   },
   "staticData": null,
   "meta": {},
   "nodeGroups": [],
-  "pinData": {},
-  "versionId": "463f2e72-cbb6-44c3-9eb6-0f8941419544",
-  "activeVersionId": null,
-  "versionCounter": 3,
-  "triggerCount": 1,
+  "pinData": null,
+  "versionId": "ver-cf68cfe4",
+  "activeVersionId": "ver-cf68cfe4",
+  "versionCounter": 1,
+  "triggerCount": 0,
   "sourceWorkflowId": null,
   "tags": [
     {
-      "updatedAt": "2026-09-15T01:17:57.781Z",
-      "createdAt": "2026-09-15T01:17:57.781Z",
-      "id": "f0c66198-4bb5-4f",
-      "name": "Product: IntelliCAD"
+      "updatedAt": "2026-09-15T08:56:33.406Z",
+      "createdAt": "2026-09-15T08:56:33.406Z",
+      "id": "rb8d0052c558c341",
+      "name": "Product: Robot Xây dựng"
     }
   ],
   "shared": [
     {
-      "updatedAt": "2026-09-15T01:37:14.975Z",
-      "createdAt": "2026-09-15T01:37:14.975Z",
+      "updatedAt": "2026-09-15T08:50:10.953Z",
+      "createdAt": "2026-09-15T08:50:10.953Z",
       "role": "workflow:owner",
-      "workflowId": "extractCustomerSheetBot",
+      "workflowId": "rb96fd2ffe23c349",
       "projectId": "x2QGRfCr7rRFrIAb",
       "project": {
         "updatedAt": "2026-08-11T07:08:16.036Z",
@@ -141,8 +140,5 @@
       }
     }
   ],
-  "versionMetadata": {
-    "name": null,
-    "description": null
-  }
+  "versionMetadata": null
 }

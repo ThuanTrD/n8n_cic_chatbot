@@ -2,7 +2,7 @@
   "updatedAt": "2026-09-09T05:26:35.054Z",
   "createdAt": "2026-09-09T05:21:51.921Z",
   "id": "inspectLegalIngest20260909",
-  "name": "TEMP Delete Incomplete Legal Ingestion",
+  "name": "[90 - LEGAL] 04 - Dọn dẹp Ingestion lỗi (Tạm thời)",
   "description": "Temporary read-only inspection",
   "active": false,
   "isArchived": false,
@@ -63,7 +63,20 @@
   "versionCounter": 3,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "2c10632a-ac8a-49",
+      "name": "Type: Temp-Dev"
+    },
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "d56b60ce-98e0-49",
+      "name": "Domain: Legal-RAG"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-09-09T05:21:51.926Z",

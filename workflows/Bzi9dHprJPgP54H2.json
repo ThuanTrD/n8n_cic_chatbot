@@ -2,7 +2,7 @@
   "updatedAt": "2026-09-11T03:43:46.802Z",
   "createdAt": "2026-09-04T03:11:51.811Z",
   "id": "Bzi9dHprJPgP54H2",
-  "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
+  "name": "[90 - LEGAL] 01 - Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
   "description": "Ingest tài liệu pháp lý xây dựng do cơ quan nhà nước ban hành từ Google Drive vào kho pháp lý dùng chung toàn CIC. Có idempotency, OCR theo batch, version bất biến, chunk lineage, embedding và complete-only publication.",
   "active": false,
   "isArchived": false,
@@ -1629,7 +1629,14 @@
   "versionCounter": 180,
   "triggerCount": 1,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "d56b60ce-98e0-49",
+      "name": "Domain: Legal-RAG"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-09-04T03:11:51.884Z",

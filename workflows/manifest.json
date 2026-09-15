@@ -1,17 +1,17 @@
 {
-  "workflowCount": 19,
+  "workflowCount": 30,
   "workflows": [
     {
       "id": "03MetaSyncMonitor",
-      "name": "01 - META - Theo dõi & Đồng bộ Hội thoại Fanpage vào Supabase",
+      "name": "[80 - META] 01 - Theo dõi & Đồng bộ Hội thoại Fanpage vào Supabase",
       "active": true,
       "archived": false,
       "file": "03MetaSyncMonitor.json",
-      "redactions": 5
+      "redactions": 4
     },
     {
       "id": "0BBvkcVoFM38P15y",
-      "name": "04 - Facebook Page Messenger -> Q&A Google Sheets",
+      "name": "[80 - META] 03 - Facebook Page Messenger -> Q&A Google Sheets",
       "active": false,
       "archived": false,
       "file": "0BBvkcVoFM38P15y.json",
@@ -19,7 +19,7 @@
     },
     {
       "id": "9K1mIjI6jIunOSbp",
-      "name": "TEMP - ENJICAD Page ID Diagnostic",
+      "name": "[01 - ENJICAD] 08 - Page ID Diagnostic (TEMP)",
       "active": false,
       "archived": true,
       "file": "9K1mIjI6jIunOSbp.json",
@@ -27,7 +27,7 @@
     },
     {
       "id": "Bzi9dHprJPgP54H2",
-      "name": "Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
+      "name": "[90 - LEGAL] 01 - Nạp văn bản pháp lý xây dựng từ Drive vào Supabase",
       "active": false,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
@@ -35,7 +35,7 @@
     },
     {
       "id": "FKayVMyWoQKSErYE",
-      "name": "Thêm dữ liệu Drive vào CMS IntelliCAD",
+      "name": "[02 - INTELLICAD] 01 - Thêm dữ liệu từ Google Drive",
       "active": false,
       "archived": false,
       "file": "FKayVMyWoQKSErYE.json",
@@ -43,7 +43,7 @@
     },
     {
       "id": "GmiCVh7CyLs4zMMm",
-      "name": "CIC Chatbot Tổng - Qwen Agent RAG Toàn bộ Dữ liệu",
+      "name": "[90 - LEGAL] 02 - CIC Chatbot Tổng - Qwen Agent RAG Toàn bộ Dữ liệu",
       "active": false,
       "archived": false,
       "file": "GmiCVh7CyLs4zMMm.json",
@@ -51,7 +51,7 @@
     },
     {
       "id": "JivRSTL8gODfi5sc",
-      "name": "CMS IntelliCAD - Facebook Chatbot",
+      "name": "[02 - INTELLICAD] 04 - Facebook Chatbot (AI RAG Assistant)",
       "active": false,
       "archived": false,
       "file": "JivRSTL8gODfi5sc.json",
@@ -59,7 +59,7 @@
     },
     {
       "id": "T75y5nS7I6C1rHeK",
-      "name": "thêm sheet vào intellicad",
+      "name": "[02 - INTELLICAD] 02 - Thêm dữ liệu từ Google Sheets",
       "active": false,
       "archived": false,
       "file": "T75y5nS7I6C1rHeK.json",
@@ -67,7 +67,7 @@
     },
     {
       "id": "TyBwz43jg84QeoOA",
-      "name": "thêm dữ liệu enjicad từ drive",
+      "name": "[01 - ENJICAD] 01 - Thêm dữ liệu từ Google Drive",
       "active": false,
       "archived": false,
       "file": "TyBwz43jg84QeoOA.json",
@@ -75,7 +75,7 @@
     },
     {
       "id": "XxSiIs3HSzXfgoWl",
-      "name": "02 - META - Daily Extract Full 21 Fields",
+      "name": "[80 - META] 02 - Daily Extract Full 21 Fields",
       "active": true,
       "archived": false,
       "file": "XxSiIs3HSzXfgoWl.json",
@@ -83,23 +83,63 @@
     },
     {
       "id": "Yns4Vi7tQiwFHW32",
-      "name": "AI Tool AI Agent Reply_lấy ở ytb",
+      "name": "[99 - SYSTEM] 02 - AI Tool Agent Reply",
       "active": false,
-      "archived": false,
+      "archived": true,
       "file": "Yns4Vi7tQiwFHW32.json",
       "redactions": 1
     },
     {
+      "id": "cicMasterChatbot",
+      "name": "[CIC CHATBOT TỔNG] 01 - Trợ lý AI Đa Sản Phẩm & Pháp Lý Xây Dựng",
+      "active": true,
+      "archived": false,
+      "file": "cicMasterChatbot.json",
+      "redactions": 33
+    },
+    {
       "id": "dMoXXuKEuUW7vRFV",
-      "name": "ENJICAD Facebook - Qwen Agent RAG Preload TEST",
+      "name": "[01 - ENJICAD] 07 - Facebook Qwen Agent Preload TEST (Cũ)",
       "active": false,
       "archived": false,
       "file": "dMoXXuKEuUW7vRFV.json",
       "redactions": 35
     },
     {
+      "id": "enjicadCredentialCheck",
+      "name": "[01 - ENJICAD] 03 - Kiểm tra kết nối Gateway & AI",
+      "active": false,
+      "archived": false,
+      "file": "enjicadCredentialCheck.json",
+      "redactions": 2
+    },
+    {
+      "id": "enjicadExtractCustomerSheetBot",
+      "name": "[01 - ENJICAD] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+      "active": false,
+      "archived": false,
+      "file": "enjicadExtractCustomerSheetBot.json",
+      "redactions": 0
+    },
+    {
+      "id": "enjicadFacebookChatbot",
+      "name": "[01 - ENJICAD] 04 - Facebook Chatbot (AI RAG Assistant)",
+      "active": true,
+      "archived": false,
+      "file": "enjicadFacebookChatbot.json",
+      "redactions": 72
+    },
+    {
+      "id": "enjicadSalesSheetSync",
+      "name": "[01 - ENJICAD] 06 - Đồng bộ Báo giá Google Sheet",
+      "active": false,
+      "archived": false,
+      "file": "enjicadSalesSheetSync.json",
+      "redactions": 5
+    },
+    {
       "id": "extractCustomerSheetBot",
-      "name": "CMS IntelliCAD - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+      "name": "[02 - INTELLICAD] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
       "active": false,
       "archived": false,
       "file": "extractCustomerSheetBot.json",
@@ -107,7 +147,7 @@
     },
     {
       "id": "inspectLegalIngest20260909",
-      "name": "TEMP Delete Incomplete Legal Ingestion",
+      "name": "[90 - LEGAL] 04 - Dọn dẹp Ingestion lỗi (Tạm thời)",
       "active": false,
       "archived": false,
       "file": "inspectLegalIngest20260909.json",
@@ -115,15 +155,63 @@
     },
     {
       "id": "intellicadSalesSheetSync",
-      "name": "03 - CMS IntelliCAD - Đồng bộ Báo giá Google Sheet",
+      "name": "[02 - INTELLICAD] 06 - Đồng bộ Báo giá Google Sheet",
       "active": false,
       "archived": false,
       "file": "intellicadSalesSheetSync.json",
       "redactions": 5
     },
     {
+      "id": "rb3f331949907446",
+      "name": "[03 - ROBOT XÂY DỰNG] 06 - Đồng bộ Báo giá Google Sheet",
+      "active": false,
+      "archived": false,
+      "file": "rb3f331949907446.json",
+      "redactions": 5
+    },
+    {
+      "id": "rb75d6d73f045e4e",
+      "name": "[03 - ROBOT XÂY DỰNG] 03 - Kiểm tra kết nối Gateway & AI",
+      "active": false,
+      "archived": false,
+      "file": "rb75d6d73f045e4e.json",
+      "redactions": 2
+    },
+    {
+      "id": "rb96fd2ffe23c349",
+      "name": "[03 - ROBOT XÂY DỰNG] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+      "active": false,
+      "archived": false,
+      "file": "rb96fd2ffe23c349.json",
+      "redactions": 0
+    },
+    {
+      "id": "rbab04bfb438cd4b",
+      "name": "[03 - ROBOT XÂY DỰNG] 02 - Thêm dữ liệu từ Google Sheets",
+      "active": false,
+      "archived": false,
+      "file": "rbab04bfb438cd4b.json",
+      "redactions": 33
+    },
+    {
+      "id": "rbd7133588fdc641",
+      "name": "[03 - ROBOT XÂY DỰNG] 04 - Facebook Chatbot (AI RAG Assistant)",
+      "active": false,
+      "archived": false,
+      "file": "rbd7133588fdc641.json",
+      "redactions": 72
+    },
+    {
+      "id": "rbe52f83faba9e49",
+      "name": "[03 - ROBOT XÂY DỰNG] 01 - Thêm dữ liệu từ Google Drive",
+      "active": false,
+      "archived": false,
+      "file": "rbe52f83faba9e49.json",
+      "redactions": 30
+    },
+    {
       "id": "recoverLegalSourceTmp20260908",
-      "name": "Temporary legal ingestion recovery",
+      "name": "[90 - LEGAL] 03 - Phục hồi Ingestion (Tạm thời)",
       "active": false,
       "archived": false,
       "file": "recoverLegalSourceTmp20260908.json",
@@ -131,7 +219,7 @@
     },
     {
       "id": "rfZhcWA2P0XrWYAb",
-      "name": "thêm dữ liệu enjicad từ sheet",
+      "name": "[01 - ENJICAD] 02 - Thêm dữ liệu từ Google Sheets",
       "active": false,
       "archived": false,
       "file": "rfZhcWA2P0XrWYAb.json",
@@ -139,7 +227,7 @@
     },
     {
       "id": "systemDbGarbageCollector",
-      "name": "99 - SYSTEM - Tự động dọn rác & Tối ưu Database Supabase",
+      "name": "[99 - SYSTEM] 01 - Tự động dọn rác & Tối ưu Database Supabase",
       "active": true,
       "archived": false,
       "file": "systemDbGarbageCollector.json",
@@ -147,7 +235,7 @@
     },
     {
       "id": "yW1A9s1Lmoq9wZQp",
-      "name": "Hermes CMS IntelliCAD - Credential Check",
+      "name": "[02 - INTELLICAD] 03 - Kiểm tra kết nối Gateway & AI",
       "active": false,
       "archived": true,
       "file": "yW1A9s1Lmoq9wZQp.json",
@@ -155,14 +243,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 22,
+    "bearer": 48,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 246,
-    "sensitive_named_values": 9
+    "credential_references": 463,
+    "sensitive_named_values": 19
   }
 }

@@ -2,7 +2,7 @@
   "updatedAt": "2026-08-25T03:13:42.688Z",
   "createdAt": "2026-08-21T04:09:18.299Z",
   "id": "T75y5nS7I6C1rHeK",
-  "name": "thêm sheet vào intellicad",
+  "name": "[02 - INTELLICAD] 02 - Thêm dữ liệu từ Google Sheets",
   "description": null,
   "active": false,
   "isArchived": false,
@@ -1673,7 +1673,14 @@
   "versionCounter": 26,
   "triggerCount": 0,
   "sourceWorkflowId": null,
-  "tags": [],
+  "tags": [
+    {
+      "updatedAt": "2026-09-15T01:17:57.781Z",
+      "createdAt": "2026-09-15T01:17:57.781Z",
+      "id": "f0c66198-4bb5-4f",
+      "name": "Product: IntelliCAD"
+    }
+  ],
   "shared": [
     {
       "updatedAt": "2026-08-21T04:09:18.312Z",
