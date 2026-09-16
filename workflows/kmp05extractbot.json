@@ -1,0 +1,103 @@
+{
+  "id": "kmp05extractbot",
+  "name": "[04 - KOMPAS] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c1f72a44-64b3-4f9e-a89c-5d91e6eb6e91",
+      "name": "Bấm chạy thủ công",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "78a2e12a-3e4b-4a5c-9c71-2bfa51ce4a89",
+      "name": "Lập lịch định kỳ 30 phút",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "command": "/usr/local/bin/node /home/node/.n8n/bot_extract_all_customers_kompas.js"
+      },
+      "id": "e4a91c78-1b2c-4f5d-9c3e-8fa1b2c3d4e5",
+      "name": "Chạy Bot Trích xuất Khách hàng & Báo giá",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const stdout = $input.first().json.stdout || '';\nconst lines = stdout.split('\\n');\nconst summaryLine = lines.find(l => l.includes('HO?N TH?NH:')) || '?? ho?n t?t x? l?';\nreturn [\n  {\n    json: {\n      status: 'SUCCESS',\n      summary: summaryLine,\n      raw_log: stdout\n    }\n  }\n];"
+      },
+      "id": "f5b82d91-2c3d-4e6f-8a4b-9c1d2e3f4a5b",
+      "name": "Tổng kết kết quả",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "Bấm chạy thủ công": {
+      "main": [
+        [
+          {
+            "node": "Chạy Bot Trích xuất Khách hàng & Báo giá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lập lịch định kỳ 30 phút": {
+      "main": [
+        [
+          {
+            "node": "Chạy Bot Trích xuất Khách hàng & Báo giá",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chạy Bot Trích xuất Khách hàng & Báo giá": {
+      "main": [
+        [
+          {
+            "node": "Tổng kết kết quả",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "parentFolderId": "folderKompas"
+}

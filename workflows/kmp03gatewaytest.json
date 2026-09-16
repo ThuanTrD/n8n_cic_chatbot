@@ -1,0 +1,74 @@
+{
+  "id": "kmp03gatewaytest",
+  "name": "[04 - KOMPAS] 03 - Kiểm tra kết nối Gateway & AI",
+  "active": false,
+  "nodes": [
+    {
+      "id": "960045da-e22f-4079-9ada-6b0771063273",
+      "name": "Start Hermes Credential Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "58948b78-20a9-4c93-9402-a051b9f47878",
+      "name": "Hermes Credential Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.18.0.1:18645/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\"model\": \"qwen3-vl-30b\", \"messages\": [{\"role\": \"system\", \"content\": \"B\\u1ea1n l\\u00e0 chuy\\u00ean gia t\\u01b0 v\\u1ea5n k\\u1ef9 thu\\u1eadt ph\\u1ea7n m\\u1ec1m CAD/CAM 3D c\\u01a1 kh\\u00ed KOMPAS-3D c\\u1ee7a CIC.\"}, {\"role\": \"user\", \"content\": \"Gi\\u1edbi thi\\u1ec7u ng\\u1eafn g\\u1ecdn ph\\u1ea7n m\\u1ec1m KOMPAS-3D do CIC ph\\u00e2n ph\\u1ed1i t\\u1ea1i Vi\\u1ec7t Nam, c\\u00e1c module ch\\u00ednh (CAD 3D tham s\\u1ed1, kim lo\\u1ea1i t\\u1ea5m Sheet Metal, b\\u00f3c t\\u00e1ch BOM, m\\u00f4 ph\\u1ecfng APM FEM) v\\u00e0 l\\u1ee3i \\u00edch thay th\\u1ebf SolidWorks.\"}], \"max_tokens\": 500, \"temperature\": 0.2}) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "kCsgQ6QfS5BrgrBO",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start Hermes Credential Test": {
+      "main": [
+        [
+          {
+            "node": "Hermes Credential Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "parentFolderId": "folderKompas"
+}
