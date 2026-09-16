@@ -1,7 +1,11 @@
 {
+  "updatedAt": "2026-09-16T06:36:07.832Z",
+  "createdAt": "2026-09-16T04:33:20.000Z",
   "id": "kmp01driveingest",
   "name": "[04 - KOMPAS] 01 - Thêm dữ liệu từ Google Drive",
-  "active": false,
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
@@ -67,7 +71,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer 8431ec57369b7c9ef3dc9f417263142f60b529bf931f1776eb41cd2a5c4d01a6"
+              "value": "=__REDACTED_SECRET__"
             },
             {
               "name": "Accept",
@@ -128,8 +132,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "qHmgYxpRhMnR1stS",
-          "name": "Google Drive account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueErrorOutput"
@@ -190,8 +194,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -256,8 +260,7 @@
               "fieldValue": "={{ $json.binding_payload.product_id }}"
             }
           ]
-        },
-        "filters": {}
+        }
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -269,8 +272,8 @@
       "name": "Create Product-KB Binding1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -315,8 +318,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -404,8 +407,7 @@
               "fieldValue": "false"
             }
           ]
-        },
-        "filters": {}
+        }
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -417,8 +419,8 @@
       "name": "Create Product Document1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -450,8 +452,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -528,8 +530,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -599,8 +601,8 @@
       "name": "Create Document Version1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -672,8 +674,7 @@
               "fieldValue": "={{ $json.metadata }}"
             }
           ]
-        },
-        "filters": {}
+        }
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -685,8 +686,8 @@
       "name": "Create Product Chunks1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -798,8 +799,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -888,8 +889,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -939,8 +940,8 @@
       "name": "Upsert Chunk Embeddings1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -971,8 +972,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1174,8 +1175,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1320,8 +1321,8 @@
       "name": "Create Product Fact Source1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1382,8 +1383,8 @@
       "name": "Mark Version Completed1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1538,8 +1539,8 @@
       "waitBetweenTries": 15000,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "a5yKp7O9hYQcAIEB",
-          "name": "Google Sheets account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueErrorOutput"
@@ -1615,8 +1616,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1644,8 +1645,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1673,8 +1674,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1796,8 +1797,8 @@
       "name": "Get Supabase OpenAPI Schema1",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1914,8 +1915,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -2005,8 +2006,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -2053,8 +2054,8 @@
       "notesInFlow": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "qHmgYxpRhMnR1stS",
-          "name": "Google Drive account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "INPUT: sự kiện fileCreated. OUTPUT: toàn bộ file được hỗ trợ trong folder để Loop Over Files xử lý tuần tự."
@@ -2221,8 +2222,8 @@
       "name": "Create Structured Fact",
       "credentials": {
         "supabaseApi": {
-          "id": "mTgg1igcx7Bcu83L",
-          "name": "Supabase account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -2432,10 +2433,11 @@
       "webhookId": "92f5ed52-507b-4fdc-8f8b-53173b186456",
       "credentials": {
         "telegramApi": {
-          "id": "65s3rgAiixWIl9mR",
-          "name": "Telegram account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
+      "disabled": true,
       "onError": "continueRegularOutput"
     }
   ],
@@ -3605,5 +3607,38 @@
     "availableInMCP": true,
     "binaryMode": "separate"
   },
-  "parentFolderId": "folderKompas"
+  "staticData": null,
+  "meta": {},
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "2918230d-59d4-45d0-abb1-115868f2e9ec",
+  "activeVersionId": "d118ef57-36af-4362-a502-082ef1ac4079",
+  "versionCounter": 2,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-16T04:33:20.000Z",
+      "createdAt": "2026-09-16T04:33:20.000Z",
+      "role": "workflow:owner",
+      "workflowId": "kmp01driveingest",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
 }

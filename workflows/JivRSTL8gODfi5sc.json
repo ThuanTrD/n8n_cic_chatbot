@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-09-09T07:59:20.487Z",
+  "updatedAt": "2026-09-16T09:53:41.000Z",
   "createdAt": "2026-08-21T01:55:36.743Z",
   "id": "JivRSTL8gODfi5sc",
   "name": "[02 - INTELLICAD] 04 - Facebook Chatbot (AI RAG Assistant)",
   "description": null,
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -91,7 +91,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -194,7 +194,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -887,7 +887,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const base=$('Kiểm tra sau 3 phút1').item.json;\nconst pageId=String(base.page_id||''),customerId=String(base.customer_id||''),customerMessageId=String(base.message_id||'');\nconst customerMessageTs=Number(base.message_timestamp_ms||0),dbHuman=base.db_human_replied===true,dbLatest=base.db_message_is_latest===true;\nconst knownBotRows=Array.isArray(base.known_bot_messages)?base.known_bot_messages:[];\nconst knownBotIds=new Set(knownBotRows.flatMap(row=>Array.isArray(row?.meta_message_ids)?row.meta_message_ids.map(String):[]));\nfunction isKnownBot(message){const id=String(message?.id||'');if(id&&knownBotIds.has(id))return true;const text=String(message?.message||'').trim(),ts=Date.parse(String(message?.created_time||''));return Boolean(text)&&Number.isFinite(ts)&&knownBotRows.some(row=>String(row?.text||'').trim()===text&&Math.abs(Date.parse(String(row?.created_time||''))-ts)<=5000);}\nconst httpFailed=Boolean($json.error),conversations=Array.isArray($json.data)?$json.data:[],conversation=conversations[0]||null,messages=Array.isArray(conversation?.messages?.data)?conversation.messages.data:[];\nlet anchorIndex=messages.findIndex(message=>String(message?.id||'')===customerMessageId),newerMessages=[],anchorFoundBy='none';\nif(anchorIndex>=0){newerMessages=messages.slice(0,anchorIndex);anchorFoundBy='message_id';}else if(customerMessageTs>0){newerMessages=messages.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return Number.isFinite(ts)&&ts>customerMessageTs;});anchorFoundBy='timestamp';}\nconst newerCustomerMessages=newerMessages.filter(message=>String(message?.from?.id||'')===customerId),staleCustomerEvent=!dbLatest||newerCustomerMessages.length>0;\nconst rawPageReplies=newerMessages.filter(message=>{const fromId=String(message?.from?.id||''),toIds=Array.isArray(message?.to?.data)?message.to.data.map(item=>String(item?.id||'')):[];return fromId===pageId&&(toIds.length===0||toIds.includes(customerId))&&String(message?.message||'').trim();});\nconst instantWindowMs=3000,instantPageReplies=rawPageReplies.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return customerMessageTs>0&&Number.isFinite(ts)&&ts-customerMessageTs<=instantWindowMs;});\nconst knownBotReplies=rawPageReplies.filter(isKnownBot),eligiblePageReplies=staleCustomerEvent?[]:rawPageReplies.filter(message=>!instantPageReplies.includes(message)&&!knownBotReplies.includes(message));\nconst humanReplyMessages=[...eligiblePageReplies].reverse().map(message=>({id:String(message?.id||''),created_time:String(message?.created_time||''),text:String(message?.message||'')})).filter(message=>message.id&&message.text.trim());\nconst latestPageReply=eligiblePageReplies[0]||null,metaCheckOk=!httpFailed&&Boolean(conversation),metaHumanReplied=eligiblePageReplies.length>0,humanReplyDetected=!staleCustomerEvent&&(dbHuman||metaHumanReplied);\nconst shouldBotReplyFinal=dbLatest&&!staleCustomerEvent&&!humanReplyDetected&&metaCheckOk;\nreturn {json:{...base,stale_customer_event:staleCustomerEvent,meta_check_ok:metaCheckOk,meta_http_failed:httpFailed,meta_conversation_id:String(conversation?.id||''),anchor_found_by:anchorFoundBy,anchor_message_found:anchorIndex>=0,newer_messages_count:newerMessages.length,newer_customer_message_exists:newerCustomerMessages.length>0,meta_page_replied:metaHumanReplied,human_reply_detected:humanReplyDetected,human_reply_message_id:String(latestPageReply?.id||''),human_reply_created_time:String(latestPageReply?.created_time||''),human_reply_text:String(latestPageReply?.message||''),human_reply_messages:humanReplyMessages,should_bot_reply_final:shouldBotReplyFinal,meta_debug:{page_id:pageId,customer_id:customerId,customer_message_id:customerMessageId,customer_message_timestamp_ms:customerMessageTs,checked_messages:messages.length,anchor_index:anchorIndex,raw_page_reply_count:rawPageReplies.length,known_bot_reply_count:knownBotReplies.length,page_reply_count:eligiblePageReplies.length,instant_page_reply_count:instantPageReplies.length,newer_customer_count:newerCustomerMessages.length,db_human_replied:dbHuman,db_message_is_latest:dbLatest,http_failed:httpFailed}}};"
+        "jsCode": "const base=$('Kiểm tra sau 3 phút1').item.json;\nconst pageId=String(base.page_id||''),customerId=String(base.customer_id||''),customerMessageId=String(base.message_id||'');\nconst customerMessageTs=Number(base.message_timestamp_ms||0),dbHuman=base.db_human_replied===true,dbLatest=base.db_message_is_latest===true;\nconst knownBotRows=Array.isArray(base.known_bot_messages)?base.known_bot_messages:[];\nconst knownBotIds=new Set(knownBotRows.flatMap(row=>Array.isArray(row?.meta_message_ids)?row.meta_message_ids.map(String):[]));\nfunction isKnownBot(message){const id=String(message?.id||'');if(id&&knownBotIds.has(id))return true;const text=String(message?.message||'').trim(),ts=Date.parse(String(message?.created_time||''));return Boolean(text)&&Number.isFinite(ts)&&knownBotRows.some(row=>String(row?.text||'').trim()===text&&Math.abs(Date.parse(String(row?.created_time||''))-ts)<=5000);}\nconst httpFailed=Boolean($json.error),conversations=Array.isArray($json.data)?$json.data:[],conversation=conversations[0]||null,messages=Array.isArray(conversation?.messages?.data)?conversation.messages.data:[];\nlet anchorIndex=messages.findIndex(message=>String(message?.id||'')===customerMessageId),newerMessages=[],anchorFoundBy='none';\nif(anchorIndex>=0){newerMessages=messages.slice(0,anchorIndex);anchorFoundBy='message_id';}else if(customerMessageTs>0){newerMessages=messages.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return Number.isFinite(ts)&&ts>customerMessageTs;});anchorFoundBy='timestamp';}\nconst newerCustomerMessages=newerMessages.filter(message=>String(message?.from?.id||'')===customerId),staleCustomerEvent=!dbLatest||newerCustomerMessages.length>0;\nconst rawPageReplies=newerMessages.filter(message=>{const fromId=String(message?.from?.id||''),toIds=Array.isArray(message?.to?.data)?message.to.data.map(item=>String(item?.id||'')):[];return fromId===pageId&&(toIds.length===0||toIds.includes(customerId))&&String(message?.message||'').trim();});\nconst instantWindowMs=3000,instantPageReplies=rawPageReplies.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return customerMessageTs>0&&Number.isFinite(ts)&&ts-customerMessageTs<=instantWindowMs;});\nconst knownBotReplies=rawPageReplies.filter(isKnownBot),eligiblePageReplies=staleCustomerEvent?[]:rawPageReplies.filter(message=>!instantPageReplies.includes(message)&&!knownBotReplies.includes(message));\nconst humanReplyMessages=[...eligiblePageReplies].reverse().map(message=>({id:String(message?.id||''),created_time:String(message?.created_time||''),text:String(message?.message||'')})).filter(message=>message.id&&message.text.trim());\nconst latestPageReply=eligiblePageReplies[0]||null,metaCheckOk=!httpFailed&&Boolean(conversation),metaHumanReplied=eligiblePageReplies.length>0,humanReplyDetected=!staleCustomerEvent&&(dbHuman||metaHumanReplied);\nconst shouldBotReplyFinal=dbLatest&&!staleCustomerEvent&&!humanReplyDetected;\nreturn {json:{...base,stale_customer_event:staleCustomerEvent,meta_check_ok:metaCheckOk,meta_http_failed:httpFailed,meta_conversation_id:String(conversation?.id||''),anchor_found_by:anchorFoundBy,anchor_message_found:anchorIndex>=0,newer_messages_count:newerMessages.length,newer_customer_message_exists:newerCustomerMessages.length>0,meta_page_replied:metaHumanReplied,human_reply_detected:humanReplyDetected,human_reply_message_id:String(latestPageReply?.id||''),human_reply_created_time:String(latestPageReply?.created_time||''),human_reply_text:String(latestPageReply?.message||''),human_reply_messages:humanReplyMessages,should_bot_reply_final:shouldBotReplyFinal,meta_debug:{page_id:pageId,customer_id:customerId,customer_message_id:customerMessageId,customer_message_timestamp_ms:customerMessageTs,checked_messages:messages.length,anchor_index:anchorIndex,raw_page_reply_count:rawPageReplies.length,known_bot_reply_count:knownBotReplies.length,page_reply_count:eligiblePageReplies.length,instant_page_reply_count:instantPageReplies.length,newer_customer_count:newerCustomerMessages.length,db_human_replied:dbHuman,db_message_is_latest:dbLatest,http_failed:httpFailed}}};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -963,22 +963,29 @@
           "parameters": [
             {
               "name": "user_id",
-              "value": "={{ String($json.customer_id) }}"
-            },
-            {
-              "name": "fields",
-              "value": "id,updated_time,messages.limit(20){id,created_time,from,to,message}"
+              "value": "={{ $json.customer_id }}"
             },
             {
               "name": "access_token",
               "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "fields",
+              "value": "messages{id,created_time,from,to,message}"
             }
           ]
         },
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -1594,7 +1601,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -1731,7 +1738,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -2171,7 +2185,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -2274,7 +2288,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -2930,7 +2944,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const base=$('Kiểm tra sau 3 phút').item.json;\nconst pageId=String(base.page_id||''),customerId=String(base.customer_id||''),customerMessageId=String(base.message_id||'');\nconst customerMessageTs=Number(base.message_timestamp_ms||0),dbHuman=base.db_human_replied===true,dbLatest=base.db_message_is_latest===true;\nconst knownBotRows=Array.isArray(base.known_bot_messages)?base.known_bot_messages:[];\nconst knownBotIds=new Set(knownBotRows.flatMap(row=>Array.isArray(row?.meta_message_ids)?row.meta_message_ids.map(String):[]));\nfunction isKnownBot(message){const id=String(message?.id||'');if(id&&knownBotIds.has(id))return true;const text=String(message?.message||'').trim(),ts=Date.parse(String(message?.created_time||''));return Boolean(text)&&Number.isFinite(ts)&&knownBotRows.some(row=>String(row?.text||'').trim()===text&&Math.abs(Date.parse(String(row?.created_time||''))-ts)<=5000);}\nconst httpFailed=Boolean($json.error),conversations=Array.isArray($json.data)?$json.data:[],conversation=conversations[0]||null,messages=Array.isArray(conversation?.messages?.data)?conversation.messages.data:[];\nlet anchorIndex=messages.findIndex(message=>String(message?.id||'')===customerMessageId),newerMessages=[],anchorFoundBy='none';\nif(anchorIndex>=0){newerMessages=messages.slice(0,anchorIndex);anchorFoundBy='message_id';}else if(customerMessageTs>0){newerMessages=messages.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return Number.isFinite(ts)&&ts>customerMessageTs;});anchorFoundBy='timestamp';}\nconst newerCustomerMessages=newerMessages.filter(message=>String(message?.from?.id||'')===customerId),staleCustomerEvent=!dbLatest||newerCustomerMessages.length>0;\nconst rawPageReplies=newerMessages.filter(message=>{const fromId=String(message?.from?.id||''),toIds=Array.isArray(message?.to?.data)?message.to.data.map(item=>String(item?.id||'')):[];return fromId===pageId&&(toIds.length===0||toIds.includes(customerId))&&String(message?.message||'').trim();});\nconst instantWindowMs=3000,instantPageReplies=rawPageReplies.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return customerMessageTs>0&&Number.isFinite(ts)&&ts-customerMessageTs<=instantWindowMs;});\nconst knownBotReplies=rawPageReplies.filter(isKnownBot),eligiblePageReplies=staleCustomerEvent?[]:rawPageReplies.filter(message=>!instantPageReplies.includes(message)&&!knownBotReplies.includes(message));\nconst humanReplyMessages=[...eligiblePageReplies].reverse().map(message=>({id:String(message?.id||''),created_time:String(message?.created_time||''),text:String(message?.message||'')})).filter(message=>message.id&&message.text.trim());\nconst latestPageReply=eligiblePageReplies[0]||null,metaCheckOk=!httpFailed&&Boolean(conversation),metaHumanReplied=eligiblePageReplies.length>0,humanReplyDetected=!staleCustomerEvent&&(dbHuman||metaHumanReplied);\nconst shouldBotReplyFinal=dbLatest&&!staleCustomerEvent&&!humanReplyDetected&&metaCheckOk;\nreturn {json:{...base,stale_customer_event:staleCustomerEvent,meta_check_ok:metaCheckOk,meta_http_failed:httpFailed,meta_conversation_id:String(conversation?.id||''),anchor_found_by:anchorFoundBy,anchor_message_found:anchorIndex>=0,newer_messages_count:newerMessages.length,newer_customer_message_exists:newerCustomerMessages.length>0,meta_page_replied:metaHumanReplied,human_reply_detected:humanReplyDetected,human_reply_message_id:String(latestPageReply?.id||''),human_reply_created_time:String(latestPageReply?.created_time||''),human_reply_text:String(latestPageReply?.message||''),human_reply_messages:humanReplyMessages,should_bot_reply_final:shouldBotReplyFinal,meta_debug:{page_id:pageId,customer_id:customerId,customer_message_id:customerMessageId,customer_message_timestamp_ms:customerMessageTs,checked_messages:messages.length,anchor_index:anchorIndex,raw_page_reply_count:rawPageReplies.length,known_bot_reply_count:knownBotReplies.length,page_reply_count:eligiblePageReplies.length,instant_page_reply_count:instantPageReplies.length,newer_customer_count:newerCustomerMessages.length,db_human_replied:dbHuman,db_message_is_latest:dbLatest,http_failed:httpFailed}}};"
+        "jsCode": "const base=$('Kiểm tra sau 3 phút').item.json;\nconst pageId=String(base.page_id||''),customerId=String(base.customer_id||''),customerMessageId=String(base.message_id||'');\nconst customerMessageTs=Number(base.message_timestamp_ms||0),dbHuman=base.db_human_replied===true,dbLatest=base.db_message_is_latest===true;\nconst knownBotRows=Array.isArray(base.known_bot_messages)?base.known_bot_messages:[];\nconst knownBotIds=new Set(knownBotRows.flatMap(row=>Array.isArray(row?.meta_message_ids)?row.meta_message_ids.map(String):[]));\nfunction isKnownBot(message){const id=String(message?.id||'');if(id&&knownBotIds.has(id))return true;const text=String(message?.message||'').trim(),ts=Date.parse(String(message?.created_time||''));return Boolean(text)&&Number.isFinite(ts)&&knownBotRows.some(row=>String(row?.text||'').trim()===text&&Math.abs(Date.parse(String(row?.created_time||''))-ts)<=5000);}\nconst httpFailed=Boolean($json.error),conversations=Array.isArray($json.data)?$json.data:[],conversation=conversations[0]||null,messages=Array.isArray(conversation?.messages?.data)?conversation.messages.data:[];\nlet anchorIndex=messages.findIndex(message=>String(message?.id||'')===customerMessageId),newerMessages=[],anchorFoundBy='none';\nif(anchorIndex>=0){newerMessages=messages.slice(0,anchorIndex);anchorFoundBy='message_id';}else if(customerMessageTs>0){newerMessages=messages.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return Number.isFinite(ts)&&ts>customerMessageTs;});anchorFoundBy='timestamp';}\nconst newerCustomerMessages=newerMessages.filter(message=>String(message?.from?.id||'')===customerId),staleCustomerEvent=!dbLatest||newerCustomerMessages.length>0;\nconst rawPageReplies=newerMessages.filter(message=>{const fromId=String(message?.from?.id||''),toIds=Array.isArray(message?.to?.data)?message.to.data.map(item=>String(item?.id||'')):[];return fromId===pageId&&(toIds.length===0||toIds.includes(customerId))&&String(message?.message||'').trim();});\nconst instantWindowMs=3000,instantPageReplies=rawPageReplies.filter(message=>{const ts=Date.parse(String(message?.created_time||''));return customerMessageTs>0&&Number.isFinite(ts)&&ts-customerMessageTs<=instantWindowMs;});\nconst knownBotReplies=rawPageReplies.filter(isKnownBot),eligiblePageReplies=staleCustomerEvent?[]:rawPageReplies.filter(message=>!instantPageReplies.includes(message)&&!knownBotReplies.includes(message));\nconst humanReplyMessages=[...eligiblePageReplies].reverse().map(message=>({id:String(message?.id||''),created_time:String(message?.created_time||''),text:String(message?.message||'')})).filter(message=>message.id&&message.text.trim());\nconst latestPageReply=eligiblePageReplies[0]||null,metaCheckOk=!httpFailed&&Boolean(conversation),metaHumanReplied=eligiblePageReplies.length>0,humanReplyDetected=!staleCustomerEvent&&(dbHuman||metaHumanReplied);\nconst shouldBotReplyFinal=dbLatest&&!staleCustomerEvent&&!humanReplyDetected;\nreturn {json:{...base,stale_customer_event:staleCustomerEvent,meta_check_ok:metaCheckOk,meta_http_failed:httpFailed,meta_conversation_id:String(conversation?.id||''),anchor_found_by:anchorFoundBy,anchor_message_found:anchorIndex>=0,newer_messages_count:newerMessages.length,newer_customer_message_exists:newerCustomerMessages.length>0,meta_page_replied:metaHumanReplied,human_reply_detected:humanReplyDetected,human_reply_message_id:String(latestPageReply?.id||''),human_reply_created_time:String(latestPageReply?.created_time||''),human_reply_text:String(latestPageReply?.message||''),human_reply_messages:humanReplyMessages,should_bot_reply_final:shouldBotReplyFinal,meta_debug:{page_id:pageId,customer_id:customerId,customer_message_id:customerMessageId,customer_message_timestamp_ms:customerMessageTs,checked_messages:messages.length,anchor_index:anchorIndex,raw_page_reply_count:rawPageReplies.length,known_bot_reply_count:knownBotReplies.length,page_reply_count:eligiblePageReplies.length,instant_page_reply_count:instantPageReplies.length,newer_customer_count:newerCustomerMessages.length,db_human_replied:dbHuman,db_message_is_latest:dbLatest,http_failed:httpFailed}}};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -3006,22 +3020,29 @@
           "parameters": [
             {
               "name": "user_id",
-              "value": "={{ String($json.customer_id) }}"
-            },
-            {
-              "name": "fields",
-              "value": "id,updated_time,messages.limit(20){id,created_time,from,to,message}"
+              "value": "={{ $json.customer_id }}"
             },
             {
               "name": "access_token",
               "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "fields",
+              "value": "messages{id,created_time,from,to,message}"
             }
           ]
         },
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -3238,7 +3259,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input=$json;\nlet text=String(input.output??input.text??'').trim();\nif(!text)throw new Error('MESSENGER_FORMAT_EMPTY');\ntext=text.replace(/<br\\s*\\/?\\s*>/gi,'\\n').replace(/\\x60\\x60\\x60[a-z]*\\n?/gi,'').replace(/\\x60\\x60\\x60/g,'');\ntext=text.replace(/\\[(https?:\\/\\/[^\\]\\s]+)\\]\\(\\1\\)/gi,'$1').replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/gi,'$1:\\n$2');\nconst preservedUrls=[];\ntext=text.replace(/https?:\\/\\/[^\\s<>()\\[\\]]+/gi,url=>{const token='__URL_TOKEN_'+preservedUrls.length+'__';preservedUrls.push(url);return token;});\nconst lines=text.split(/\\r?\\n/);const output=[];let tableHeaderSeen=false;\nfor(const raw of lines){\n  let line=raw.trim();\n  if(!line){if(output.length&&output[output.length-1]!=='')output.push('');continue;}\n  if(/^\\|?[\\s:|-]+\\|?$/.test(line))continue;\n  if(/^\\|.*\\|$/.test(line)){\n    const cells=line.slice(1,-1).split('|').map(v=>v.replace(/\\*\\*/g,'').trim()).filter(Boolean);\n    if(!cells.length)continue;\n    if(!tableHeaderSeen){output.push('📋 '+cells.join(' — '));tableHeaderSeen=true;}\n    else output.push('• '+cells[0]+(cells.length>1?': '+cells.slice(1).join(' / '):''));\n    continue;\n  }\n  line=line.replace(/^#{1,6}\\s*/,'').replace(/^[-*]\\s+/,'• ');\n  output.push(line);\n}\ntext=output.join('\\n').replace(/\\n{3,}/g,'\\n\\n').trim();\n\n// Break an unexpectedly long single block into readable Messenger paragraphs.\nconst initialParagraphs=text.split(/\\n{2,}/).map(v=>v.trim()).filter(Boolean);const readable=[];\nfor(const paragraph of initialParagraphs){\n  if(paragraph.length<=360||/^•/m.test(paragraph)){readable.push(paragraph);continue;}\n  const sentences=paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(v=>v.trim()).filter(Boolean)||[paragraph];\n  let group='';\n  for(const sentence of sentences){\n    if(group&&(group.length+1+sentence.length>280)){readable.push(group);group=sentence;}\n    else group=(group?group+' ':'')+sentence;\n  }\n  if(group)readable.push(group);\n}\n\nfunction boldFirst(value,pattern){return value.replace(pattern,(match,offset,whole)=>{\n  if(whole.slice(Math.max(0,offset-2),offset)==='**'&&whole.slice(offset+match.length,offset+match.length+2)==='**')return match;\n  return '**'+match+'**';\n});}\nlet styled=readable.join('\\n\\n');\nstyled=boldFirst(styled,/(?<!\\*)CMS IntelliCAD(?:\\s+PE Plus|\\s+PE)?(?!\\*)/i);\nstyled=boldFirst(styled,/(?<!\\*)\\b\\d+\\s+bản(?:\\s+quyền)?\\b(?!\\*)/i);\nstyled=boldFirst(styled,/(?<!\\*)\\b(?:báo giá|chính sách ưu đãi|số điện thoại|họ tên|bản dùng thử)\\b(?!\\*)/i);\n\nlet iconCount=0;const maxIcons=3;\nconst paragraphs=styled.split(/\\n{2,}/).map(paragraph=>{\n  if(iconCount>=maxIcons||/^[\\p{Extended_Pictographic}]/u.test(paragraph))return paragraph;\n  let icon='';\n  if(/(?:báo giá|chính sách giá|chiết khấu|ưu đãi)/i.test(paragraph))icon='💰';\n  else if(/(?:số điện thoại|họ tên|thông tin liên hệ)/i.test(paragraph))icon='📌';\n  else if(/(?:dùng thử|bản demo|link tải)/i.test(paragraph))icon='🔗';\n  else if(/(?:tính năng|định dạng|tương thích)/i.test(paragraph))icon='💡';\n  if(icon){iconCount++;return icon+' '+paragraph;}\n  return paragraph;\n});\ntext=paragraphs.join('\\n\\n').replace(/[ \\t]{2,}/g,' ').replace(/\\n{3,}/g,'\\n\\n').replace(/__URL_TOKEN_(\\d+)__/g,(_,i)=>preservedUrls[Number(i)]||'').trim();\nreturn {json:{...input,output:text,messenger_formatted:true,messenger_paragraph_count:paragraphs.length,messenger_icon_count:iconCount}};"
+        "jsCode": "const input=$json;\nlet text=String(input.output??input.text??'').trim();\nif(!text) text = String(input?.choices?.[0]?.message?.content ?? input?.message?.content ?? '').trim();\nif(!text)throw new Error('MESSENGER_FORMAT_EMPTY');\ntext=text.replace(/<br\\s*\\/?\\s*>/gi,'\\n').replace(/\\x60\\x60\\x60[a-z]*\\n?/gi,'').replace(/\\x60\\x60\\x60/g,'');\ntext=text.replace(/\\[(https?:\\/\\/[^\\]\\s]+)\\]\\(\\1\\)/gi,'$1').replace(/\\[([^\\]]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)/gi,'$1:\\n$2');\nconst preservedUrls=[];\ntext=text.replace(/https?:\\/\\/[^\\s<>()\\[\\]]+/gi,url=>{const token='__URL_TOKEN_'+preservedUrls.length+'__';preservedUrls.push(url);return token;});\nconst lines=text.split(/\\r?\\n/);const output=[];let tableHeaderSeen=false;\nfor(const raw of lines){\n  let line=raw.trim();\n  if(!line){if(output.length&&output[output.length-1]!=='')output.push('');continue;}\n  if(/^\\|?[\\s:|-]+\\|?$/.test(line))continue;\n  if(/^\\|.*\\|$/.test(line)){\n    const cells=line.slice(1,-1).split('|').map(v=>v.replace(/\\*\\*/g,'').trim()).filter(Boolean);\n    if(!cells.length)continue;\n    if(!tableHeaderSeen){output.push('📋 '+cells.join(' — '));tableHeaderSeen=true;}\n    else output.push('• '+cells[0]+(cells.length>1?': '+cells.slice(1).join(' / '):''));\n    continue;\n  }\n  line=line.replace(/^#{1,6}\\s*/,'').replace(/^[-*]\\s+/,'• ');\n  output.push(line);\n}\ntext=output.join('\\n').replace(/\\n{3,}/g,'\\n\\n').trim();\n\n// Break an unexpectedly long single block into readable Messenger paragraphs.\nconst initialParagraphs=text.split(/\\n{2,}/).map(v=>v.trim()).filter(Boolean);const readable=[];\nfor(const paragraph of initialParagraphs){\n  if(paragraph.length<=360||/^•/m.test(paragraph)){readable.push(paragraph);continue;}\n  const sentences=paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(v=>v.trim()).filter(Boolean)||[paragraph];\n  let group='';\n  for(const sentence of sentences){\n    if(group&&(group.length+1+sentence.length>280)){readable.push(group);group=sentence;}\n    else group=(group?group+' ':'')+sentence;\n  }\n  if(group)readable.push(group);\n}\n\nfunction boldFirst(value,pattern){return value.replace(pattern,(match,offset,whole)=>{\n  if(whole.slice(Math.max(0,offset-2),offset)==='**'&&whole.slice(offset+match.length,offset+match.length+2)==='**')return match;\n  return '**'+match+'**';\n});}\nlet styled=readable.join('\\n\\n');\nstyled=boldFirst(styled,/(?<!\\*)CMS IntelliCAD(?:\\s+PE Plus|\\s+PE)?(?!\\*)/i);\nstyled=boldFirst(styled,/(?<!\\*)\\b\\d+\\s+bản(?:\\s+quyền)?\\b(?!\\*)/i);\nstyled=boldFirst(styled,/(?<!\\*)\\b(?:báo giá|chính sách ưu đãi|số điện thoại|họ tên|bản dùng thử)\\b(?!\\*)/i);\n\nlet iconCount=0;const maxIcons=3;\nconst paragraphs=styled.split(/\\n{2,}/).map(paragraph=>{\n  if(iconCount>=maxIcons||/^[\\p{Extended_Pictographic}]/u.test(paragraph))return paragraph;\n  let icon='';\n  if(/(?:báo giá|chính sách giá|chiết khấu|ưu đãi)/i.test(paragraph))icon='💰';\n  else if(/(?:số điện thoại|họ tên|thông tin liên hệ)/i.test(paragraph))icon='📌';\n  else if(/(?:dùng thử|bản demo|link tải)/i.test(paragraph))icon='🔗';\n  else if(/(?:tính năng|định dạng|tương thích)/i.test(paragraph))icon='💡';\n  if(icon){iconCount++;return icon+' '+paragraph;}\n  return paragraph;\n});\ntext=paragraphs.join('\\n\\n').replace(/[ \\t]{2,}/g,' ').replace(/\\n{3,}/g,'\\n\\n').replace(/__URL_TOKEN_(\\d+)__/g,(_,i)=>preservedUrls[Number(i)]||'').trim();\nreturn {json:{...input,output:text,messenger_formatted:true,messenger_paragraph_count:paragraphs.length,messenger_icon_count:iconCount}};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -3637,7 +3658,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -3774,7 +3795,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -6191,8 +6219,8 @@
   "nodeGroups": [],
   "pinData": {},
   "versionId": "62a24e98-0c44-45dd-80d8-131b2bf695a7",
-  "activeVersionId": null,
-  "versionCounter": 141,
+  "activeVersionId": "62a24e98-0c44-45dd-80d8-131b2bf695a7",
+  "versionCounter": 143,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [

@@ -1,5 +1,5 @@
 {
-  "workflowCount": 30,
+  "workflowCount": 36,
   "workflows": [
     {
       "id": "03MetaSyncMonitor",
@@ -52,10 +52,10 @@
     {
       "id": "JivRSTL8gODfi5sc",
       "name": "[02 - INTELLICAD] 04 - Facebook Chatbot (AI RAG Assistant)",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "JivRSTL8gODfi5sc.json",
-      "redactions": 72
+      "redactions": 76
     },
     {
       "id": "T75y5nS7I6C1rHeK",
@@ -95,7 +95,7 @@
       "active": true,
       "archived": false,
       "file": "cicMasterChatbot.json",
-      "redactions": 33
+      "redactions": 32
     },
     {
       "id": "dMoXXuKEuUW7vRFV",
@@ -127,7 +127,7 @@
       "active": true,
       "archived": false,
       "file": "enjicadFacebookChatbot.json",
-      "redactions": 72
+      "redactions": 76
     },
     {
       "id": "enjicadSalesSheetSync",
@@ -162,9 +162,57 @@
       "redactions": 5
     },
     {
+      "id": "kmp01driveingest",
+      "name": "[04 - KOMPAS] 01 - Thêm dữ liệu từ Google Drive",
+      "active": true,
+      "archived": false,
+      "file": "kmp01driveingest.json",
+      "redactions": 27
+    },
+    {
+      "id": "kmp02sheetsingst",
+      "name": "[04 - KOMPAS] 02 - Thêm dữ liệu từ Google Sheets",
+      "active": true,
+      "archived": false,
+      "file": "kmp02sheetsingst.json",
+      "redactions": 33
+    },
+    {
+      "id": "kmp03gatewaytest",
+      "name": "[04 - KOMPAS] 03 - Kiểm tra kết nối Gateway & AI",
+      "active": false,
+      "archived": false,
+      "file": "kmp03gatewaytest.json",
+      "redactions": 1
+    },
+    {
+      "id": "kmp04fbchatbotrag",
+      "name": "[04 - KOMPAS] 04 - Facebook Chatbot (AI RAG Assistant)",
+      "active": true,
+      "archived": false,
+      "file": "kmp04fbchatbotrag.json",
+      "redactions": 37
+    },
+    {
+      "id": "kmp05extractbot",
+      "name": "[04 - KOMPAS] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+      "active": false,
+      "archived": false,
+      "file": "kmp05extractbot.json",
+      "redactions": 0
+    },
+    {
+      "id": "kmp06quotesync",
+      "name": "[04 - KOMPAS] 06 - Đồng bộ Báo giá Google Sheet",
+      "active": true,
+      "archived": false,
+      "file": "kmp06quotesync.json",
+      "redactions": 5
+    },
+    {
       "id": "rb3f331949907446",
       "name": "[03 - ROBOT XÂY DỰNG] 06 - Đồng bộ Báo giá Google Sheet",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "rb3f331949907446.json",
       "redactions": 5
@@ -172,15 +220,15 @@
     {
       "id": "rb75d6d73f045e4e",
       "name": "[03 - ROBOT XÂY DỰNG] 03 - Kiểm tra kết nối Gateway & AI",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "rb75d6d73f045e4e.json",
-      "redactions": 2
+      "redactions": 1
     },
     {
       "id": "rb96fd2ffe23c349",
       "name": "[03 - ROBOT XÂY DỰNG] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "rb96fd2ffe23c349.json",
       "redactions": 0
@@ -188,7 +236,7 @@
     {
       "id": "rbab04bfb438cd4b",
       "name": "[03 - ROBOT XÂY DỰNG] 02 - Thêm dữ liệu từ Google Sheets",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "rbab04bfb438cd4b.json",
       "redactions": 33
@@ -196,18 +244,18 @@
     {
       "id": "rbd7133588fdc641",
       "name": "[03 - ROBOT XÂY DỰNG] 04 - Facebook Chatbot (AI RAG Assistant)",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "rbd7133588fdc641.json",
-      "redactions": 72
+      "redactions": 37
     },
     {
       "id": "rbe52f83faba9e49",
       "name": "[03 - ROBOT XÂY DỰNG] 01 - Thêm dữ liệu từ Google Drive",
-      "active": false,
+      "active": true,
       "archived": false,
       "file": "rbe52f83faba9e49.json",
-      "redactions": 30
+      "redactions": 27
     },
     {
       "id": "recoverLegalSourceTmp20260908",
@@ -243,14 +291,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 48,
+    "bearer": 52,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 463,
-    "sensitive_named_values": 19
+    "credential_references": 531,
+    "sensitive_named_values": 18
   }
 }

@@ -1,15 +1,18 @@
 {
+  "updatedAt": "2026-09-16T08:20:48.505Z",
+  "createdAt": "2026-09-16T04:33:20.000Z",
   "id": "kmp06quotesync",
   "name": "[04 - KOMPAS] 06 - Đồng bộ Báo giá Google Sheet",
-  "active": false,
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "rule": {
           "interval": [
             {
-              "field": "minutes",
-              "minutesInterval": 1
+              "field": "hours"
             }
           ]
         }
@@ -67,8 +70,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "googleApi": {
-          "id": "rGI0oBr0ZrkFAAYB",
-          "name": "Google Service Account account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -93,8 +96,8 @@
       "waitBetweenTries": 3000,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -130,8 +133,8 @@
       "waitBetweenTries": 3000,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -501,8 +504,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "googleApi": {
-          "id": "rGI0oBr0ZrkFAAYB",
-          "name": "Google Service Account account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -524,8 +527,8 @@
       "name": "Đánh dấu Sheet đã đồng bộ",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     }
@@ -626,5 +629,47 @@
     "availableInMCP": true,
     "binaryMode": "separate"
   },
-  "parentFolderId": "folderKompas"
+  "staticData": {
+    "node:Mỗi phút": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    }
+  },
+  "meta": {},
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "13031160-3316-49ad-a15b-26e855e52f29",
+  "activeVersionId": "13031160-3316-49ad-a15b-26e855e52f29",
+  "versionCounter": 3,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-16T04:33:20.000Z",
+      "createdAt": "2026-09-16T04:33:20.000Z",
+      "role": "workflow:owner",
+      "workflowId": "kmp06quotesync",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 13031160",
+    "description": ""
+  }
 }

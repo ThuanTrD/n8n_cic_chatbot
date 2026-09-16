@@ -1,10 +1,10 @@
 {
-  "updatedAt": "2026-09-15T08:56:33.000Z",
-  "createdAt": "2026-09-15T08:40:00.000Z",
+  "updatedAt": "2026-09-16T09:53:41.000Z",
+  "createdAt": "2026-09-16T04:33:20.000Z",
   "id": "kmp04fbchatbotrag",
   "name": "[04 - KOMPAS] 04 - Facebook Chatbot (AI RAG Assistant)",
   "description": null,
-  "active": false,
+  "active": true,
   "isArchived": false,
   "nodes": [
     {
@@ -25,8 +25,8 @@
       "name": "Tạm dừng Bot chờ tư vấn viên1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -64,8 +64,8 @@
       "name": "Đặt lại chế độ AI1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -91,7 +91,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer EAGMwCzsMZAZBQBST2SSZBa23OS3K67TZAZA9qEuqdpwPMofuXIJ83THx2p2MjWUsKZBcexUx6MB8LGJ5S9ZCC1cUZCGutx28jw7D8Q6pcuJ9ZAJdkzEl9gTemrKsD4RMuVEgozCz6joAu8ZAJL4yFippkok8AlZB1EkT2HUV5d04oEp5XNzl93m2Pb4JriI1Kqcd93cK1fCDSdB"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -144,8 +144,8 @@
       "name": "Ghi Domain Event - Đã gửi3",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -167,8 +167,8 @@
       "name": "Cập nhật Conversation3",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -194,7 +194,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer EAGMwCzsMZAZBQBST2SSZBa23OS3K67TZAZA9qEuqdpwPMofuXIJ83THx2p2MjWUsKZBcexUx6MB8LGJ5S9ZCC1cUZCGutx28jw7D8Q6pcuJ9ZAJdkzEl9gTemrKsD4RMuVEgozCz6joAu8ZAJL4yFippkok8AlZB1EkT2HUV5d04oEp5XNzl93m2Pb4JriI1Kqcd93cK1fCDSdB"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -241,8 +241,8 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "65s3rgAiixWIl9mR",
-          "name": "Telegram account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueRegularOutput"
@@ -328,8 +328,8 @@
       "name": "AI Agent3",
       "credentials": {
         "openAiApi": {
-          "id": "kCsgQ6QfS5BrgrBO",
-          "name": "OpenAI account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -351,8 +351,8 @@
       "name": "Đọc ngữ cảnh hội thoại1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -432,8 +432,8 @@
       "name": "Kiểm tra Chế độ Bot1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -455,8 +455,8 @@
       "name": "Ghi lịch sử chat - Khách1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -478,8 +478,8 @@
       "name": "Kiểm tra sau 3 phút1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -535,8 +535,8 @@
       "name": "Ghi lịch sử chat - Admin",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -592,8 +592,8 @@
       "name": "Nạp cấu hình Chatbot4",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -629,8 +629,8 @@
       "name": "Upsert Conversation4",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -797,8 +797,8 @@
       "name": "Cập nhật Chế độ HUMAN",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -956,8 +956,8 @@
       "name": "Đồng bộ phản hồi nhân viên từ Meta1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -969,22 +969,29 @@
           "parameters": [
             {
               "name": "user_id",
-              "value": "={{ String($json.customer_id) }}"
-            },
-            {
-              "name": "fields",
-              "value": "id,updated_time,messages.limit(20){id,created_time,from,to,message}"
+              "value": "={{ $json.customer_id }}"
             },
             {
               "name": "access_token",
-              "value": "EAGMwCzsMZAZBQBST2SSZBa23OS3K67TZAZA9qEuqdpwPMofuXIJ83THx2p2MjWUsKZBcexUx6MB8LGJ5S9ZCC1cUZCGutx28jw7D8Q6pcuJ9ZAJdkzEl9gTemrKsD4RMuVEgozCz6joAu8ZAJL4yFippkok8AlZB1EkT2HUV5d04oEp5XNzl93m2Pb4JriI1Kqcd93cK1fCDSdB"
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "fields",
+              "value": "messages{id,created_time,from,to,message}"
             }
           ]
         },
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -1038,8 +1045,8 @@
       "name": "Lưu phản hồi AI - conversation_messages1",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1123,8 +1130,8 @@
       "name": "Nạp Bằng chứng Supabase KOMPAS",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1177,8 +1184,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Chỉ chạy khi policy đã xác nhận có họ tên, SĐT, số lượng và yêu cầu báo giá. Insert idempotent rồi mới cho phép xác nhận."
@@ -1236,8 +1243,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Insert lead khi policy xác nhận đủ họ tên, SĐT và nhu cầu."
@@ -1261,8 +1268,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Insert handoff khi khách yêu cầu người thật/demo/gọi lại."
@@ -1286,8 +1293,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Insert feedback khi khách đánh giá/khen/phàn nàn."
@@ -1431,8 +1438,8 @@
       "notesInFlow": true,
       "credentials": {
         "openAiApi": {
-          "id": "kCsgQ6QfS5BrgrBO",
-          "name": "OpenAI account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueRegularOutput",
@@ -1502,8 +1509,8 @@
       "waitBetweenTries": 1500,
       "credentials": {
         "openAiApi": {
-          "id": "kCsgQ6QfS5BrgrBO",
-          "name": "OpenAI account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueRegularOutput"
@@ -1544,7 +1551,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer EAGMwCzsMZAZBQBST2SSZBa23OS3K67TZAZA9qEuqdpwPMofuXIJ83THx2p2MjWUsKZBcexUx6MB8LGJ5S9ZCC1cUZCGutx28jw7D8Q6pcuJ9ZAJdkzEl9gTemrKsD4RMuVEgozCz6joAu8ZAJL4yFippkok8AlZB1EkT2HUV5d04oEp5XNzl93m2Pb4JriI1Kqcd93cK1fCDSdB"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -1606,8 +1613,8 @@
       "notesInFlow": true,
       "credentials": {
         "openAiApi": {
-          "id": "kCsgQ6QfS5BrgrBO",
-          "name": "OpenAI account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueRegularOutput",
@@ -1631,8 +1638,8 @@
       "name": "Lưu ID xác nhận Handoff Facebook",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1654,8 +1661,8 @@
       "name": "Chuẩn bị kiểm tra Admin sau Handoff",
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       }
     },
@@ -1675,14 +1682,21 @@
             },
             {
               "name": "access_token",
-              "value": "EAGMwCzsMZAZBQBST2SSZBa23OS3K67TZAZA9qEuqdpwPMofuXIJ83THx2p2MjWUsKZBcexUx6MB8LGJ5S9ZCC1cUZCGutx28jw7D8Q6pcuJ9ZAJdkzEl9gTemrKsD4RMuVEgozCz6joAu8ZAJL4yFippkok8AlZB1EkT2HUV5d04oEp5XNzl93m2Pb4JriI1Kqcd93cK1fCDSdB"
+              "value": "__REDACTED_SECRET__"
             }
           ]
         },
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -1880,8 +1894,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Atomic latest-message claim. Chỉ execution của message cuối được đi tiếp; gom tối đa 6 tin USER chưa được HUMAN/ASSISTANT trả lời trong 2 phút."
@@ -1921,8 +1935,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Upsert idempotent lead/profile và quote theo conversation + product, độc lập với intent trả lời hiện tại."
@@ -1996,8 +2010,8 @@
       "notesInFlow": true,
       "credentials": {
         "postgres": {
-          "id": "PgCmsFlow2v2026X",
-          "name": "Postgres CMS Robot Xây dựng Flow 2"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "notes": "Insert handoff khi khách yêu cầu người thật/demo/gọi lại."
@@ -2024,8 +2038,8 @@
       "waitBetweenTries": 2000,
       "credentials": {
         "telegramApi": {
-          "id": "65s3rgAiixWIl9mR",
-          "name": "Telegram account"
+          "id": "__CREDENTIAL_ID__",
+          "name": "__CREDENTIAL_NAME__"
         }
       },
       "onError": "continueRegularOutput"
@@ -2929,25 +2943,18 @@
   "meta": {},
   "nodeGroups": [],
   "pinData": null,
-  "versionId": "ver-fe045d1a",
-  "activeVersionId": "ver-fe045d1a",
-  "versionCounter": 1,
-  "triggerCount": 0,
+  "versionId": "08ef7c29-8fb4-4df4-971a-3f33b19e5a30",
+  "activeVersionId": "08ef7c29-8fb4-4df4-971a-3f33b19e5a30",
+  "versionCounter": 8,
+  "triggerCount": 1,
   "sourceWorkflowId": null,
-  "tags": [
-    {
-      "updatedAt": "2026-09-15T08:56:33.406Z",
-      "createdAt": "2026-09-15T08:56:33.406Z",
-      "id": "rb8d0052c558c341",
-      "name": "Product: Robot Xây dựng"
-    }
-  ],
+  "tags": [],
   "shared": [
     {
-      "updatedAt": "2026-09-15T08:50:10.953Z",
-      "createdAt": "2026-09-15T08:50:10.953Z",
+      "updatedAt": "2026-09-16T04:33:20.000Z",
+      "createdAt": "2026-09-16T04:33:20.000Z",
       "role": "workflow:owner",
-      "workflowId": "rbd7133588fdc641",
+      "workflowId": "kmp04fbchatbotrag",
       "projectId": "x2QGRfCr7rRFrIAb",
       "project": {
         "updatedAt": "2026-08-11T07:08:16.036Z",
@@ -2962,6 +2969,8 @@
       }
     }
   ],
-  "versionMetadata": null,
-  "parentFolderId": "folderKompas"
+  "versionMetadata": {
+    "name": "[04 - KOMPAS] 04 - Facebook Chatbot (AI RAG Assistant)",
+    "description": ""
+  }
 }

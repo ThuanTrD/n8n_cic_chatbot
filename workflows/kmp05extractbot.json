@@ -1,7 +1,11 @@
 {
+  "updatedAt": "2026-09-16T04:45:08.000Z",
+  "createdAt": "2026-09-16T04:33:20.000Z",
   "id": "kmp05extractbot",
   "name": "[04 - KOMPAS] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+  "description": null,
   "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
@@ -99,5 +103,38 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "parentFolderId": "folderKompas"
+  "staticData": null,
+  "meta": {},
+  "nodeGroups": [],
+  "pinData": null,
+  "versionId": "749562cd-7b5b-4380-b7d9-7e968a6c2008",
+  "activeVersionId": "749562cd-7b5b-4380-b7d9-7e968a6c2008",
+  "versionCounter": 1,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-16T04:33:20.000Z",
+      "createdAt": "2026-09-16T04:33:20.000Z",
+      "role": "workflow:owner",
+      "workflowId": "kmp05extractbot",
+      "projectId": "x2QGRfCr7rRFrIAb",
+      "project": {
+        "updatedAt": "2026-08-11T07:08:16.036Z",
+        "createdAt": "2026-08-11T05:14:34.078Z",
+        "id": "x2QGRfCr7rRFrIAb",
+        "name": "TRAN THUAN <fanntn1405@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "[04 - KOMPAS] 05 - Bot Trích xuất Khách hàng & Báo giá Google Sheets",
+    "description": ""
+  }
 }
