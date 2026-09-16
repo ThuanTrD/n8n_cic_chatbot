@@ -1,11 +1,7 @@
 {
-  "updatedAt": "2026-09-15T09:56:59.816Z",
-  "createdAt": "2026-09-15T08:40:00.000Z",
   "id": "rbe52f83faba9e49",
   "name": "[03 - ROBOT XÂY DỰNG] 01 - Thêm dữ liệu từ Google Drive",
-  "description": null,
   "active": false,
-  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
@@ -71,7 +67,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "=Bearer 8431ec57369b7c9ef3dc9f417263142f60b529bf931f1776eb41cd2a5c4d01a6"
             },
             {
               "name": "Accept",
@@ -132,8 +128,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "qHmgYxpRhMnR1stS",
+          "name": "Google Drive account"
         }
       },
       "onError": "continueErrorOutput"
@@ -194,8 +190,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -260,7 +256,8 @@
               "fieldValue": "={{ $json.binding_payload.product_id }}"
             }
           ]
-        }
+        },
+        "filters": {}
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -272,8 +269,8 @@
       "name": "Create Product-KB Binding1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -318,8 +315,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -407,7 +404,8 @@
               "fieldValue": "false"
             }
           ]
-        }
+        },
+        "filters": {}
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -419,8 +417,8 @@
       "name": "Create Product Document1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -452,8 +450,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -530,8 +528,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -601,8 +599,8 @@
       "name": "Create Document Version1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -674,7 +672,8 @@
               "fieldValue": "={{ $json.metadata }}"
             }
           ]
-        }
+        },
+        "filters": {}
       },
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -686,8 +685,8 @@
       "name": "Create Product Chunks1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -713,7 +712,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -799,8 +798,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -889,8 +888,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -940,8 +939,8 @@
       "name": "Upsert Chunk Embeddings1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -972,8 +971,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1059,7 +1058,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -1175,8 +1174,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1321,8 +1320,8 @@
       "name": "Create Product Fact Source1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1383,8 +1382,8 @@
       "name": "Mark Version Completed1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1539,8 +1538,8 @@
       "waitBetweenTries": 15000,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "a5yKp7O9hYQcAIEB",
+          "name": "Google Sheets account"
         }
       },
       "onError": "continueErrorOutput"
@@ -1616,8 +1615,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1645,8 +1644,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1674,8 +1673,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1797,8 +1796,8 @@
       "name": "Get Supabase OpenAPI Schema1",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1915,8 +1914,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2006,8 +2005,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2022,7 +2021,7 @@
             "value": "1KRydHrC3N__e9Iy5QPBTzGTsFnpXs01R",
             "mode": "list",
             "cachedResultName": "robot xay dung",
-            "cachedResultUrl": "https://drive.google.com/drive/folders/1KRydHrC3N__e9Iy5QPBTzGTsFnpXs01R"
+            "cachedResultUrl": "https://drive.google.com/drive/u/0/folders/1KRydHrC3N__e9Iy5QPBTzGTsFnpXs01R"
           },
           "whatToSearch": "files",
           "fileTypes": [
@@ -2054,8 +2053,8 @@
       "notesInFlow": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "qHmgYxpRhMnR1stS",
+          "name": "Google Drive account"
         }
       },
       "notes": "INPUT: sự kiện fileCreated. OUTPUT: toàn bộ file được hỗ trợ trong folder để Loop Over Files xử lý tuần tự."
@@ -2222,8 +2221,8 @@
       "name": "Create Structured Fact",
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2350,7 +2349,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "={{ 'Bearer ' + $env.CIC_AI_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -2433,8 +2432,8 @@
       "webhookId": "92f5ed52-507b-4fdc-8f8b-53173b186456",
       "credentials": {
         "telegramApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "65s3rgAiixWIl9mR",
+          "name": "Telegram account"
         }
       },
       "onError": "continueRegularOutput"
@@ -3605,46 +3604,5 @@
     "executionOrder": "v1",
     "availableInMCP": true,
     "binaryMode": "separate"
-  },
-  "staticData": null,
-  "meta": {},
-  "nodeGroups": [],
-  "pinData": {},
-  "versionId": "d404b7ae-2917-490c-be30-be932b8084db",
-  "activeVersionId": "ver-1474d7e2",
-  "versionCounter": 12,
-  "triggerCount": 0,
-  "sourceWorkflowId": null,
-  "tags": [
-    {
-      "updatedAt": "2026-09-15T08:56:33.406Z",
-      "createdAt": "2026-09-15T08:56:33.406Z",
-      "id": "rb8d0052c558c341",
-      "name": "Product: Robot Xây dựng"
-    }
-  ],
-  "shared": [
-    {
-      "updatedAt": "2026-09-15T08:50:10.953Z",
-      "createdAt": "2026-09-15T08:50:10.953Z",
-      "role": "workflow:owner",
-      "workflowId": "rbe52f83faba9e49",
-      "projectId": "x2QGRfCr7rRFrIAb",
-      "project": {
-        "updatedAt": "2026-08-11T07:08:16.036Z",
-        "createdAt": "2026-08-11T05:14:34.078Z",
-        "id": "x2QGRfCr7rRFrIAb",
-        "name": "TRAN THUAN <fanntn1405@gmail.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "customTelemetryTags": [],
-        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
-      }
-    }
-  ],
-  "versionMetadata": {
-    "name": null,
-    "description": null
   }
 }

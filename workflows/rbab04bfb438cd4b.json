@@ -1,11 +1,7 @@
 {
-  "updatedAt": "2026-09-15T08:56:33.000Z",
-  "createdAt": "2026-09-15T08:40:00.000Z",
   "id": "rbab04bfb438cd4b",
   "name": "[03 - ROBOT XÂY DỰNG] 02 - Thêm dữ liệu từ Google Sheets",
-  "description": null,
   "active": false,
-  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -77,8 +73,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "a5yKp7O9hYQcAIEB",
+          "name": "Google Sheets account"
         }
       }
     },
@@ -165,8 +161,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -266,8 +262,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -310,8 +306,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -390,8 +386,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -449,8 +445,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -561,8 +557,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -659,8 +655,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -717,8 +713,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -754,8 +750,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -797,8 +793,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -834,8 +830,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -892,8 +888,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -980,8 +976,8 @@
       "waitBetweenTries": 5000,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "a5yKp7O9hYQcAIEB",
+          "name": "Google Sheets account"
         }
       },
       "disabled": true
@@ -1077,8 +1073,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1178,8 +1174,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1224,8 +1220,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1289,8 +1285,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1369,8 +1365,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1441,14 +1437,14 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// INPUT: nhiều item từ \"FAQ Aware Chunking - Technical\"\n\nconst items = $input.all();\n\nif (!items.length) {\n  throw new Error('Không có chunk đầu vào');\n}\n\n// Robot Xây dựng trong bảng products\nconst PRODUCT_ID = 1103;\n\nconst TITLE = 'FAQ xử lý kỹ thuật Robot Xây dựng';\nconst SOURCE_TYPE = 'google_sheets';\nconst SOURCE_URL =\n  'https://docs.google.com/spreadsheets/d/121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw/edit#gid=1620486330';\nconst FILE_NAME = 'Xử lý kỹ thuật - Tổng hợp lỗi';\n\nconst chunks = items\n  .map(i => ({\n    chunk_index: i.json.chunk_index,\n    section: i.json.section ?? 'FAQ_KY_THUAT',\n    content: String(i.json.content ?? '').trim(),\n    language_code: i.json.language ?? i.json.language_code ?? 'vi',\n    metadata: i.json.metadata ?? { content_type: 'faq' }\n  }))\n  .filter(x => x.content);\n\nconst documentText = chunks\n  .map(x => x.content)\n  .join('\\n\\n=== CHUNK BOUNDARY ===\\n\\n');\n\n// Hash nhẹ, ổn định, không cần require(\"crypto\")\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length;\n  let h2 = 0x41c6ce57 ^ str.length;\n\n  for (let i = 0, ch; i < str.length; i++) {\n    ch = str.charCodeAt(i);\n    h1 = Math.imul(h1 ^ ch, 2654435761);\n    h2 = Math.imul(h2 ^ ch, 1597334677);\n  }\n\n  h1 =\n    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^\n    Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n\n  h2 =\n    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^\n    Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n\n  return (\n    (h2 >>> 0).toString(16).padStart(8, '0') +\n    (h1 >>> 0).toString(16).padStart(8, '0')\n  );\n}\n\nconst contentHash = hashText(documentText);\n\nreturn [{\n  json: {\n    product_id: PRODUCT_ID,\n    title: TITLE,\n    document_type: 'faq',\n    language_code: 'vi',\n    source_type: SOURCE_TYPE,\n    source_url: SOURCE_URL,\n    file_name: FILE_NAME,\n    mime_type: 'application/vnd.google-apps.spreadsheet',\n    content_hash: contentHash,\n    document_text: documentText,\n    chunks\n  }\n}];"
+        "jsCode": "// INPUT: nhiều item từ \"FAQ Aware Chunking - Technical\"\n\nconst items = $input.all();\n\nif (!items.length) {\n  throw new Error('Không có chunk đầu vào');\n}\n\n// Robot Xây dựng trong bảng products\nconst PRODUCT_ID = 1363;\n\nconst TITLE = 'FAQ xử lý kỹ thuật Robot Xây dựng';\nconst SOURCE_TYPE = 'google_sheets';\nconst SOURCE_URL =\n  'https://docs.google.com/spreadsheets/d/121Uwy2gNV6ZHH1Pny99HpXsnooUTYE7JbtMMWnh7YZw/edit#gid=1620486330';\nconst FILE_NAME = 'Xử lý kỹ thuật - Tổng hợp lỗi';\n\nconst chunks = items\n  .map(i => ({\n    chunk_index: i.json.chunk_index,\n    section: i.json.section ?? 'FAQ_KY_THUAT',\n    content: String(i.json.content ?? '').trim(),\n    language_code: i.json.language ?? i.json.language_code ?? 'vi',\n    metadata: i.json.metadata ?? { content_type: 'faq' }\n  }))\n  .filter(x => x.content);\n\nconst documentText = chunks\n  .map(x => x.content)\n  .join('\\n\\n=== CHUNK BOUNDARY ===\\n\\n');\n\n// Hash nhẹ, ổn định, không cần require(\"crypto\")\nfunction hashText(str) {\n  let h1 = 0xdeadbeef ^ str.length;\n  let h2 = 0x41c6ce57 ^ str.length;\n\n  for (let i = 0, ch; i < str.length; i++) {\n    ch = str.charCodeAt(i);\n    h1 = Math.imul(h1 ^ ch, 2654435761);\n    h2 = Math.imul(h2 ^ ch, 1597334677);\n  }\n\n  h1 =\n    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^\n    Math.imul(h2 ^ (h2 >>> 13), 3266489909);\n\n  h2 =\n    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^\n    Math.imul(h1 ^ (h1 >>> 13), 3266489909);\n\n  return (\n    (h2 >>> 0).toString(16).padStart(8, '0') +\n    (h1 >>> 0).toString(16).padStart(8, '0')\n  );\n}\n\nconst contentHash = hashText(documentText);\n\nreturn [{\n  json: {\n    product_id: PRODUCT_ID,\n    title: TITLE,\n    document_type: 'faq',\n    language_code: 'vi',\n    source_type: SOURCE_TYPE,\n    source_url: SOURCE_URL,\n    file_name: FILE_NAME,\n    mime_type: 'application/vnd.google-apps.spreadsheet',\n    content_hash: contentHash,\n    document_text: documentText,\n    chunks\n  }\n}];"
       },
       "id": "54037298-878c-4845-80e1-dae64044f791",
       "name": "Attach FAQ Document Context",
@@ -1553,8 +1549,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1651,8 +1647,8 @@
       ],
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1701,8 +1697,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1738,8 +1734,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1807,8 +1803,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1844,8 +1840,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1887,8 +1883,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -1966,8 +1962,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2024,8 +2020,8 @@
       "executeOnce": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2081,8 +2077,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2171,8 +2167,8 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "mTgg1igcx7Bcu83L",
+          "name": "Supabase account"
         }
       }
     },
@@ -2322,8 +2318,8 @@
       "name": "Send Telegram Technical Sheet Sync",
       "credentials": {
         "telegramApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "65s3rgAiixWIl9mR",
+          "name": "Telegram account"
         }
       },
       "retryOnFail": true,
@@ -2333,7 +2329,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ctx=$('Resolve Document ID1').first().json;\nconst validation=$('Validate FAQ Embedding Coverage1').first().json;\nreturn [{json:{status:'completed',product_id:ctx.product_id??1103,document_id:ctx.document_id,document_version_id:validation.document_version_id,sheet_faq_count:ctx.chunks?.length??validation.chunk_count,new_faq_count:validation.chunk_count,repaired_embedding_count:0,total_chunk_count:validation.chunk_count,source_name:ctx.file_name??ctx.title??'Google Sheet Robot Xây dựng'}}];"
+        "jsCode": "const ctx=$('Resolve Document ID1').first().json;\nconst validation=$('Validate FAQ Embedding Coverage1').first().json;\nreturn [{json:{status:'completed',product_id:ctx.product_id??1363,document_id:ctx.document_id,document_version_id:validation.document_version_id,sheet_faq_count:ctx.chunks?.length??validation.chunk_count,new_faq_count:validation.chunk_count,repaired_embedding_count:0,total_chunk_count:validation.chunk_count,source_name:ctx.file_name??ctx.title??'Google Sheet Robot Xây dựng'}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2362,14 +2358,25 @@
       "name": "Send Telegram Robot Xây dựng Sheet FAQ1 Sync",
       "credentials": {
         "telegramApi": {
-          "id": "__CREDENTIAL_ID__",
-          "name": "__CREDENTIAL_NAME__"
+          "id": "65s3rgAiixWIl9mR",
+          "name": "Telegram account"
         }
       },
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "trigger-wf02-manual",
+      "name": "Bấm chạy thủ công",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
     }
   ],
   "connections": {
@@ -3275,49 +3282,29 @@
           }
         ]
       ]
+    },
+    "Bấm chạy thủ công": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": true
-  },
-  "staticData": null,
-  "meta": {},
-  "nodeGroups": [],
-  "pinData": null,
-  "versionId": "ver-31bfba0a",
-  "activeVersionId": "ver-31bfba0a",
-  "versionCounter": 1,
-  "triggerCount": 0,
-  "sourceWorkflowId": null,
-  "tags": [
-    {
-      "updatedAt": "2026-09-15T08:56:33.406Z",
-      "createdAt": "2026-09-15T08:56:33.406Z",
-      "id": "rb8d0052c558c341",
-      "name": "Product: Robot Xây dựng"
-    }
-  ],
-  "shared": [
-    {
-      "updatedAt": "2026-09-15T08:50:10.953Z",
-      "createdAt": "2026-09-15T08:50:10.953Z",
-      "role": "workflow:owner",
-      "workflowId": "rbab04bfb438cd4b",
-      "projectId": "x2QGRfCr7rRFrIAb",
-      "project": {
-        "updatedAt": "2026-08-11T07:08:16.036Z",
-        "createdAt": "2026-08-11T05:14:34.078Z",
-        "id": "x2QGRfCr7rRFrIAb",
-        "name": "TRAN THUAN <fanntn1405@gmail.com>",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "customTelemetryTags": [],
-        "creatorId": "201b2249-0e33-4f10-95d5-950073ba4aa9"
-      }
-    }
-  ],
-  "versionMetadata": null
+  }
 }
