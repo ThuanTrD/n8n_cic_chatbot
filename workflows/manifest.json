@@ -95,7 +95,7 @@
       "active": true,
       "archived": false,
       "file": "cicMasterChatbot.json",
-      "redactions": 32
+      "redactions": 38
     },
     {
       "id": "dMoXXuKEuUW7vRFV",
@@ -291,7 +291,7 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 52,
+    "bearer": 57,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
@@ -299,6 +299,6 @@
     "private_key": 0,
     "jwt": 0,
     "credential_references": 531,
-    "sensitive_named_values": 18
+    "sensitive_named_values": 19
   }
 }

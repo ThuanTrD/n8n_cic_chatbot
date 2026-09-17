@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-16T09:53:41.000Z",
+  "updatedAt": "2026-09-17T04:03:35.000Z",
   "createdAt": "2026-09-15T04:56:15.087Z",
   "id": "cicMasterChatbot",
   "name": "[CIC CHATBOT TỔNG] 01 - Trợ lý AI Đa Sản Phẩm & Pháp Lý Xây Dựng",
@@ -91,7 +91,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $('Nạp cấu hình Chatbot4').first().json.access_token || 'EAATwweZBefTkBSWeMNjawnTsBFFubfx2r9tiERhkndnOpS6m5vMaK8XTxPQgEN8YFstawMyad3Qa6vGjcVAWg60biE6SDTAinZCLxsBKopAjYbbSAulP6IvzFqqNTJuGupfjmZCUeZCym72ZBhMEHZBcMNOEgZADJIgr1ltgJBfPihMOyKovZA3H2kVQLccbBgVZCEzTJngDi' }}"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -194,7 +194,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $('Nạp cấu hình Chatbot4').first().json.access_token || 'EAATwweZBefTkBSWeMNjawnTsBFFubfx2r9tiERhkndnOpS6m5vMaK8XTxPQgEN8YFstawMyad3Qa6vGjcVAWg60biE6SDTAinZCLxsBKopAjYbbSAulP6IvzFqqNTJuGupfjmZCUeZCym72ZBhMEHZBcMNOEgZADJIgr1ltgJBfPihMOyKovZA3H2kVQLccbBgVZCEzTJngDi' }}"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -968,7 +968,7 @@
             },
             {
               "name": "access_token",
-              "value": "={{ $json.access_token }}"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "fields",
@@ -979,7 +979,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -1595,7 +1602,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $('Nạp cấu hình Chatbot4').first().json.access_token || 'EAATwweZBefTkBSWeMNjawnTsBFFubfx2r9tiERhkndnOpS6m5vMaK8XTxPQgEN8YFstawMyad3Qa6vGjcVAWg60biE6SDTAinZCLxsBKopAjYbbSAulP6IvzFqqNTJuGupfjmZCUeZCym72ZBhMEHZBcMNOEgZADJIgr1ltgJBfPihMOyKovZA3H2kVQLccbBgVZCEzTJngDi' }}"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -1732,7 +1739,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {}
+            {
+              "name": "Authorization",
+              "value": "__REDACTED_SECRET__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "options": {
@@ -3061,7 +3075,7 @@
   "pinData": {},
   "versionId": "0dc0bca1-14db-4cbc-9dc8-3f08c2d4d2fa",
   "activeVersionId": "a098c805-c29e-400e-8c10-ba49b54e0ac2",
-  "versionCounter": 10,
+  "versionCounter": 16,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [

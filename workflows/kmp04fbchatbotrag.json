@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-16T09:53:41.000Z",
+  "updatedAt": "2026-09-17T03:13:40.000Z",
   "createdAt": "2026-09-16T04:33:20.000Z",
   "id": "kmp04fbchatbotrag",
   "name": "[04 - KOMPAS] 04 - Facebook Chatbot (AI RAG Assistant)",
@@ -2945,7 +2945,7 @@
   "pinData": null,
   "versionId": "08ef7c29-8fb4-4df4-971a-3f33b19e5a30",
   "activeVersionId": "08ef7c29-8fb4-4df4-971a-3f33b19e5a30",
-  "versionCounter": 8,
+  "versionCounter": 9,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

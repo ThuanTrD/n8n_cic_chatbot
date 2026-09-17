@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-16T09:53:41.000Z",
+  "updatedAt": "2026-09-17T03:13:40.000Z",
   "createdAt": "2026-08-21T01:55:36.743Z",
   "id": "enjicadFacebookChatbot",
   "name": "[01 - ENJICAD] 04 - Facebook Chatbot (AI RAG Assistant)",
@@ -6222,7 +6222,7 @@
   "pinData": {},
   "versionId": "ba0f21ae-11b6-4a7f-8656-35fad5332a8a",
   "activeVersionId": "ba0f21ae-11b6-4a7f-8656-35fad5332a8a",
-  "versionCounter": 5,
+  "versionCounter": 6,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [

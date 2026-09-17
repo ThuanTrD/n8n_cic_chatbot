@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-16T09:53:41.000Z",
+  "updatedAt": "2026-09-17T03:13:40.000Z",
   "createdAt": "2026-09-15T08:40:00.000Z",
   "id": "rbd7133588fdc641",
   "name": "[03 - ROBOT XÂY DỰNG] 04 - Facebook Chatbot (AI RAG Assistant)",
@@ -2942,7 +2942,7 @@
   "pinData": null,
   "versionId": "b5feb436-5e1b-474a-a310-2ef7e925330a",
   "activeVersionId": "b5feb436-5e1b-474a-a310-2ef7e925330a",
-  "versionCounter": 6,
+  "versionCounter": 7,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [
