@@ -31,7 +31,7 @@
       "active": false,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
-      "redactions": 9
+      "redactions": 12
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -291,14 +291,14 @@
     }
   ],
   "redactionCounts": {
-    "bearer": 57,
+    "bearer": 59,
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
-    "credential_references": 531,
+    "credential_references": 532,
     "sensitive_named_values": 19
   }
 }
