@@ -71,7 +71,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Accept",

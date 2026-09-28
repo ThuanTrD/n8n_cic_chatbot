@@ -16,7 +16,7 @@ CREDENTIAL_ID = "__CREDENTIAL_ID__"
 CREDENTIAL_NAME = "__CREDENTIAL_NAME__"
 
 SENSITIVE_NAME = re.compile(
-    r"(authorization|password|passphrase|api[_ -]?key|access[_ -]?token|"
+    r"(authorization|password|passphrase|api[_ -]?key|access[_ -]?token|x-goog-api-key|"
     r"refresh[_ -]?token|session[_ -]?token|page[_ -]?access[_ -]?token|secret)",
     re.IGNORECASE,
 )
@@ -27,6 +27,7 @@ SECRET_PATTERNS = [
     ("openai_like", re.compile(r"\bsk-[A-Za-z0-9_-]{16,}")),
     ("github", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}")),
     ("google_api", re.compile(r"\bAIza[0-9A-Za-z_-]{20,}")),
+    ("google_vertex_key", re.compile(r"\bAQ\.[0-9A-Za-z_-]{20,}")),
     ("aws_access", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
     (
         "private_key",
@@ -43,7 +44,9 @@ SECRET_PATTERNS = [
 
 def is_expression(value: str) -> bool:
     stripped = value.lstrip()
-    return stripped.startswith("=") or "{{" in value or "$credentials" in value or "$env" in value
+    if "{{" in value or "$credentials" in value or "$env" in value:
+        return True
+    return False
 
 
 def is_sensitive_name(name: str) -> bool:

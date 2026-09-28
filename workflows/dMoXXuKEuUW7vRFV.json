@@ -91,7 +91,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -194,7 +194,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",
@@ -1594,7 +1594,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             },
             {
               "name": "Content-Type",

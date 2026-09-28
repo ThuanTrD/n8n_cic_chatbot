@@ -31,7 +31,7 @@
       "active": false,
       "archived": false,
       "file": "Bzi9dHprJPgP54H2.json",
-      "redactions": 12
+      "redactions": 14
     },
     {
       "id": "FKayVMyWoQKSErYE",
@@ -47,7 +47,7 @@
       "active": false,
       "archived": false,
       "file": "GmiCVh7CyLs4zMMm.json",
-      "redactions": 35
+      "redactions": 38
     },
     {
       "id": "JivRSTL8gODfi5sc",
@@ -71,7 +71,7 @@
       "active": false,
       "archived": false,
       "file": "TyBwz43jg84QeoOA.json",
-      "redactions": 27
+      "redactions": 28
     },
     {
       "id": "XxSiIs3HSzXfgoWl",
@@ -103,7 +103,7 @@
       "active": false,
       "archived": false,
       "file": "dMoXXuKEuUW7vRFV.json",
-      "redactions": 35
+      "redactions": 38
     },
     {
       "id": "enjicadCredentialCheck",
@@ -167,7 +167,7 @@
       "active": true,
       "archived": false,
       "file": "kmp01driveingest.json",
-      "redactions": 27
+      "redactions": 28
     },
     {
       "id": "kmp02sheetsingst",
@@ -255,7 +255,7 @@
       "active": true,
       "archived": false,
       "file": "rbe52f83faba9e49.json",
-      "redactions": 27
+      "redactions": 28
     },
     {
       "id": "recoverLegalSourceTmp20260908",
@@ -295,10 +295,11 @@
     "openai_like": 0,
     "github": 0,
     "google_api": 0,
+    "google_vertex_key": 1,
     "aws_access": 0,
     "private_key": 0,
     "jwt": 0,
     "credential_references": 532,
-    "sensitive_named_values": 19
+    "sensitive_named_values": 29
   }
 }

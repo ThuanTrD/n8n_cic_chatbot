@@ -312,7 +312,7 @@
             },
             {
               "name": "x-goog-api-key",
-              "value": "=__REDACTED_SECRET__"
+              "value": "__REDACTED_SECRET__"
             }
           ]
         },
